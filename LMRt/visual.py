@@ -25,9 +25,9 @@ def load_gmt_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='gmt_ensemble'):
 
     paths = sorted(glob.glob(os.path.join(exp_dir, 'job_r*')))
     with open(paths[0], 'rb') as f:
-        job_cfg, job_da = pickle.load(f)
+        cfg_dict, res_dict = pickle.load(f)
 
-    gmt_tmp = job_da.gmt_ens_save
+    gmt_tmp = res_dict['gmt_ens_save']
     nt = np.shape(gmt_tmp)[0]
     nEN = np.shape(gmt_tmp)[-1]
     nMC = len(paths)
@@ -35,12 +35,12 @@ def load_gmt_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='gmt_ensemble'):
     gmt = np.ndarray((nt, nEN*nMC))
     for i, path in enumerate(paths):
         with open(path, 'rb') as f:
-            job_cfg, job_da = pickle.load(f)
+            cfg_dict, res_dict = pickle.load(f)
 
         job_gmt = {
-            'gmt_ensemble': job_da.gmt_ens_save,
-            'nhmt_ensemble': job_da.nhmt_ens_save,
-            'shmt_ensemble': job_da.shmt_ens_save,
+            'gmt_ensemble': res_dict['gmt_ens_save'],
+            'nhmt_ensemble': res_dict['nhmt_ens_save'],
+            'shmt_ensemble': res_dict['shmt_ens_save'],
         }
         gmt[:, nEN*i:nEN+nEN*i] = job_gmt[var]
 
@@ -322,9 +322,9 @@ def plot_gmt_ts_from_jobs(exp_dir, savefig_path=None, plot_vars=['gmt_ensemble',
 
     paths = sorted(glob.glob(os.path.join(exp_dir, 'job_r*')))
     with open(paths[0], 'rb') as f:
-        job_cfg, job_da = pickle.load(f)
+        cfg_dict, res_dict = pickle.load(f)
 
-    gmt_tmp = job_da.gmt_ens_save
+    gmt_tmp = res_dict['gmt_ens_save']
     nt = np.shape(gmt_tmp)[0]
     nEN = np.shape(gmt_tmp)[-1]
     nMC = len(paths)
@@ -343,12 +343,12 @@ def plot_gmt_ts_from_jobs(exp_dir, savefig_path=None, plot_vars=['gmt_ensemble',
         gmt = np.ndarray((nt, nEN*nMC))
         for i, path in enumerate(paths):
             with open(path, 'rb') as f:
-                job_cfg, job_da = pickle.load(f)
+                cfg_dict, res_dict = pickle.load(f)
 
             job_gmt = {
-                'gmt_ensemble': job_da.gmt_ens_save,
-                'nhmt_ensemble': job_da.nhmt_ens_save,
-                'shmt_ensemble': job_da.shmt_ens_save,
+                'gmt_ensemble': res_dict['gmt_ens_save'],
+                'nhmt_ensemble': res_dict['nhmt_ens_save'],
+                'shmt_ensemble': res_dict['shmt_ens_save'],
             }
 
             gmt[:, nEN*i:nEN+nEN*i] = job_gmt[var]

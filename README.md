@@ -2,8 +2,8 @@
 
 # LMR Turbo (LMRt)
 
-A lightweight packaged version of the [Last Millennium Reanalysia (LMR)](https://github.com/modons/LMR) framework,
-inspired by LMR_lite.py originated by Professor Greg Hakim (Univ. of Washington).
+A lightweight, packaged version of the [Last Millennium Reanalysia (LMR)](https://github.com/modons/LMR) framework,
+inspired by LMR_lite.py originated by Professor Hakim (Univ. of Washington).
 Ultimately, it aims to provide following features:
 
 + Greater flexibility

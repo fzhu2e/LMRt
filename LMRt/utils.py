@@ -12,6 +12,7 @@ import random
 from spharm import Spharmt, regrid
 import prysm
 import os
+import sys
 from tqdm import tqdm
 import pickle
 
@@ -1109,6 +1110,60 @@ def find_closest_loc(lat, lon, target_lat, target_lon, mode='latlon', verbose=Fa
         return lat_ind, lon_ind
     else:
         return lat_ind[0], lon_ind[0]
+
+
+# Superposed Epoch Analysis
+def sea(X, events, before=3, after=10, highpass=False):
+    '''Applies superposed Epoch Analysis to N-dim array X, at indices 'events',
+        and on a window [-before,after]
+    Inputs:
+        - X: numpy array [time assumed to be the first dimension]
+        - events: indices of events of interest
+        - before: # years over which the pre-event mean is computed
+        - after: length of post-event window
+
+    Outputs:
+        - Xevents : X lined up on events; removes mean of "before" years
+        - Xcomp  : composite of Xevents (same dimensions as X, minus the first one)
+        - tcomp  : the time axis relative to events
+
+    by Julien Emile-Geay
+    '''
+    n_events = len(events)
+    # define array shape
+    sh =  list(X.shape)
+    sh.append( n_events ) # add number of events
+    sh[0] = before+after+1  # replace time axis by time relative to window
+    Xevents = np.empty(sh) # define empty array to hold the result
+
+    # exception handling : the first extreme year must not happen within the "before" indices
+    if any(np.isin(events,np.arange(0,before))) or any(events+after>=X.shape[0]):
+        print("event outside range (either before 'tmin-before' or after 'tmax + after')")
+        sys.exit()
+
+    # high-pass filter X along first axis
+    tcomp = np.arange(-before,after+1) # time axis
+    fc = 1/len(tcomp)
+
+    # reshape X to 2d
+    if highpass:
+        Xr = np.reshape(X,(sh[0],np.prod(sh[1:])))
+        Xr_hp = np.empty_like(Xr)
+        ncols = Xr.shape[1]
+        for k in range(ncols):
+            Xlp = flt.butterworth(Xr[:,k],fc)
+            Xr_hp[:,k] = Xr[:,k] - Xlp
+
+        Xhp = np.reshape(Xr_hp,sh)
+    else:
+        Xhp = X
+
+    for i in range(n_events):
+        Xevents[...,i] = X[events[i]-before:events[i]+after+1,...]
+        Xevents[...,i] -= np.mean(Xevents[0:before,...,i],axis=0) # remove mean over "before" of window
+
+    Xcomp = np.mean(Xevents,axis=Xevents.ndim-1) # compute composite
+    return Xevents, Xcomp, tcomp
 
 
 def coefficient_efficiency(ref,test,valid=None):

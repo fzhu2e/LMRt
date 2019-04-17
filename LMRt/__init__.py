@@ -311,4 +311,10 @@ class ReconJob:
             save_path = os.path.join(save_dirpath, f'job_r{seed:02d}.pkl')
             print(f'\npid={os.getpid()} >>> Saving job.da to: {save_path}')
             with open(save_path, 'wb') as f:
-                pickle.dump([self.cfg, self.da], f)
+                cfg_dict = dict(**self.cfg.toDict())
+                res_dict = {
+                    'gmt_ens_save': self.da.gmt_ens_save,
+                    'nhmt_ens_save': self.da.nhmt_ens_save,
+                    'shmt_ens_save': self.da.shmt_ens_save,
+                }
+                pickle.dump([cfg_dict, res_dict], f)
