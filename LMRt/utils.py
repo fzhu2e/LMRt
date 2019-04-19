@@ -181,7 +181,7 @@ def get_prior(filepath, datatype, cfg, anom_reference_period=(1951, 1980), verbo
     return datadict
 
 
-def get_nc_vars(filepath, varnames, useLib='netCDF4'):
+def get_nc_vars(filepath, varnames, useLib='xarray', annulize=False):
     ''' Get variables from given ncfile
     '''
     var_list = []

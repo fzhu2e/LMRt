@@ -446,3 +446,71 @@ def plot_vslite_params(lat_obs, lon_obs, T1, T2, M1, M2,
         plt.savefig(save_path, bbox_inches='tight')
 
     return fig
+
+
+def plot_volc_events(gmt, event_yrs, start_yr=0, before=3, after=10, highpass=False, qs=[0.05, 0.5, 0.95],
+                     pannel_size=[4, 4], grid_nrow=5, grid_ncol=5, clr=sns.xkcd_rgb['pale red'],
+                     ylim=[-0.6, 0.3], ylabel='T anom. (K)'):
+    ''' plot gmt over the periors of volcanic eruption events
+
+    Args:
+        gmt (2d array): the mean temperature timeseries in shape of (time, ensemble)
+    '''
+    # Superposed Epoch Analysis
+    Xevents, Xcomp, tcomp = utils.sea(gmt, event_yrs, start_yr=start_yr, before=before, after=after, highpass=highpass)
+
+    n_events = len(event_yrs)
+    if grid_nrow*grid_ncol <= n_events:
+        grid_nrow = n_events // grid_ncol + 1
+
+    gs = gridspec.GridSpec(grid_nrow, grid_ncol)
+    gs.update(wspace=0.5, hspace=1)
+
+    sns.set(style="darkgrid", font_scale=2)
+    fig = plt.figure(figsize=[pannel_size[1]*grid_ncol, pannel_size[0]*grid_nrow])
+
+    ax = {}
+    for i in range(n_events):
+        Xevents_qs = mquantiles(Xevents[:, :, i], qs, axis=-1)
+        ax[i] = plt.subplot(gs[i])
+        ax[i].set_title(f'{event_yrs[i]} (AD)')
+        ax[i].plot(tcomp, Xevents_qs[:, 1], '-', lw=3, color=clr)
+        ax[i].fill_between(tcomp, Xevents_qs[:, 0], Xevents_qs[:, -1], alpha=0.3, color=clr)
+        ax[i].axvline(x=0, ls=':', color='grey')
+        ax[i].axhline(y=0, ls=':', color='grey')
+        ax[i].set_xlabel('Year')
+        ax[i].set_ylim(ylim)
+        ax[i].set_yticks(np.arange(-0.6, 0.4, 0.2))
+        if i % grid_ncol == 0:
+            ax[i].set_ylabel(ylabel)
+
+    return fig
+
+
+def plot_volc_composites(gmt, event_yrs, start_yr=0, before=3, after=10, highpass=False, qs=[0.05, 0.5, 0.95],
+                         figsize=[12, 8], title_str=None,
+                         clr=sns.xkcd_rgb['pale red'], ylim=[-0.6, 0.3], ylabel='T anom. (K)'):
+    ''' plot gmt over the periors of volcanic eruption events
+
+    Args:
+        gmt (2d array): the mean temperature timeseries in shape of (time, ensemble)
+    '''
+    # Superposed Epoch Analysis
+    Xevents, Xcomp, tcomp = utils.sea(gmt, event_yrs, start_yr=start_yr, before=before, after=after, highpass=highpass)
+    Xevents_qs = mquantiles(Xcomp, qs, axis=-1)
+
+    sns.set(style="darkgrid", font_scale=2)
+    fig, ax = plt.subplots(figsize=figsize)
+
+    if title_str:
+        ax.set_title(title_str)
+    ax.plot(tcomp, Xevents_qs[:, 1], '-', lw=3, color=clr)
+    ax.fill_between(tcomp, Xevents_qs[:, 0], Xevents_qs[:, -1], alpha=0.3, color=clr)
+    ax.axvline(x=0, ls=':', color='grey')
+    ax.axhline(y=0, ls=':', color='grey')
+    ax.set_xlabel('Year')
+    ax.set_ylim(ylim)
+    ax.set_yticks(np.arange(-0.6, 0.4, 0.2))
+    ax.set_ylabel(ylabel)
+
+    return fig
