@@ -15,6 +15,10 @@ import os
 import sys
 from tqdm import tqdm
 import pickle
+from scipy import signal
+import statsmodels.api as sm
+import glob
+from scipy.stats.mstats import mquantiles
 
 from . import load_gridded_data  # original file from LMR
 
@@ -1112,7 +1116,137 @@ def find_closest_loc(lat, lon, target_lat, target_lon, mode='latlon', verbose=Fa
         return lat_ind[0], lon_ind[0]
 
 
+def load_gmt_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='gmt_ensemble'):
+    # load data
+    if not os.path.exists(exp_dir):
+        raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
+
+    paths = sorted(glob.glob(os.path.join(exp_dir, 'job_r*')))
+    with open(paths[0], 'rb') as f:
+        cfg_dict, res_dict = pickle.load(f)
+
+    gmt_tmp = res_dict['gmt_ens_save']
+    nt = np.shape(gmt_tmp)[0]
+    nEN = np.shape(gmt_tmp)[-1]
+    nMC = len(paths)
+
+    gmt = np.ndarray((nt, nEN*nMC))
+    for i, path in enumerate(paths):
+        with open(path, 'rb') as f:
+            cfg_dict, res_dict = pickle.load(f)
+
+        job_gmt = {
+            'gmt_ensemble': res_dict['gmt_ens_save'],
+            'nhmt_ensemble': res_dict['nhmt_ens_save'],
+            'shmt_ensemble': res_dict['shmt_ens_save'],
+        }
+        gmt[:, nEN*i:nEN+nEN*i] = job_gmt[var]
+
+    if qs is not None:
+        gmt_qs = mquantiles(gmt, qs, axis=-1)
+    else:
+        gmt_qs = gmt
+    return gmt_qs
+
+
+#===============================================
 # Superposed Epoch Analysis
+#-----------------------------------------------
+def tsPad(x,t,params=(2,1,2),padFrac=0.1,diag=False):
+    """ tsPad: pad a timeseries based on timeseries model predictions
+
+        Args:
+        - x: Evenly-spaced timeseries [np.array]
+        - t: Time axis  [np.array]
+        - params: ARIMA model order parameters (p,d,q)
+        - padFrac: padding fraction (scalar) such that padLength = padFrac*length(series)
+        - diag: if True, outputs diagnostics of the fitted ARIMA model
+
+        Output:
+         - xp, tp, padded timeseries and augmented axis
+
+        Author: Julien Emile-Geay
+    """
+    padLength =  np.round(len(t)*padFrac).astype(np.int64)
+
+    #if (n-p1 <0)
+    #   disp('Timeseries is too short for desired padding')
+    #elseif p1 > round(n/5) % Heuristic Bound to ensure AR model stability
+    #   p = round(n/5);
+    #else
+    #   p= p1;
+    #end
+
+    if not (np.std(np.diff(t)) == 0):
+        raise ValueError("t needs to be composed of even increments")
+    else:
+        dt = np.diff(t)[0] # computp time interval
+
+    # fit ARIMA model
+    fwd_mod = sm.tsa.ARIMA(x,params).fit()  # model with time going forward
+    bwd_mod = sm.tsa.ARIMA(np.flip(x,0),params).fit()  # model with time going backwards
+
+    # predict forward & backward
+    fwd_pred  = fwd_mod.forecast(padLength); xf = fwd_pred[0]
+    bwd_pred  = bwd_mod.forecast(padLength); xb = np.flip(bwd_pred[0],0)
+
+    # define extra time axes
+    tf = np.linspace(max(t)+dt, max(t)+padLength*dt,padLength)
+    tb = np.linspace(min(t)-padLength*dt, min(t)-1, padLength)
+
+    # extend time series
+    tp = np.arange(t[0]-padLength*dt,t[-1]+padLength*dt+1,dt)
+    xp = np.empty(len(tp))
+    xp[np.isin(tp,t)] =x
+    xp[np.isin(tp,tb)]=xb
+    xp[np.isin(tp,tf)]=xf
+
+    return xp, tp
+
+def butterworth(x,fc,fs=1, filter_order=3,pad='reflect',reflect_type='odd',params=(2,1,2),padFrac=0.1):
+    '''Applies a Butterworth filter with frequency fc, with padding
+
+    Arguments:
+        - X = 1d numpy array
+        - fc = cutoff frequency. If scalar, it is interpreted as a low-frequency cutoff (lowpass)
+                 If fc is a 2-tuple,  it is interpreted as a frequency band (f1, f2), with f1 < f2 (bandpass)
+        - fs = sampling frequency
+        - filter_order = order n of Butterworth filter
+        - pad = boolean indicating whether tsPad needs to be applied
+        - params = model parameters for ARIMA model (if pad = True)
+        - padFrac = fraction of the series to be padded
+
+    Output : xf, filtered array
+
+    Author: Julien Emile-Geay
+    '''
+    nyq = 0.5 * fs
+
+    if isinstance(fc, list) and len(fc) == 2:
+        fl = fc[0] / nyq
+        fh = fc[1] / nyq
+        b, a = signal.butter(filter_order, [fl, fh], btype='bandpass')
+    else:
+        fl = fc / nyq
+        b, a = signal.butter(filter_order, fl      , btype='lowpass')
+
+    t = np.arange(len(x)) # define time axis
+    padLength =  np.round(len(x)*padFrac).astype(np.int64)
+
+    if (pad=='ARIMA'):
+        xp,tp = tsPad(x,t,params=params)
+    elif (pad=='reflect'):
+        # extend time series
+        xp = np.pad(x,(padLength,padLength),mode='reflect',reflect_type=reflect_type)
+        tp = np.arange(t[0]-padLength,t[-1]+padLength+1,1)
+    else:
+        xp = x; tp = t
+
+    xpf = signal.filtfilt(b, a, xp)
+    xf  = xpf[np.isin(tp,t)]
+
+    return xf
+
 def sea(X, events, before=3, after=10, highpass=False):
     '''Applies superposed Epoch Analysis to N-dim array X, at indices 'events',
         and on a window [-before,after]
@@ -1151,7 +1285,7 @@ def sea(X, events, before=3, after=10, highpass=False):
         Xr_hp = np.empty_like(Xr)
         ncols = Xr.shape[1]
         for k in range(ncols):
-            Xlp = flt.butterworth(Xr[:,k],fc)
+            Xlp = butterworth(Xr[:,k],fc)
             Xr_hp[:,k] = Xr[:,k] - Xlp
 
         Xhp = np.reshape(Xr_hp,sh)
@@ -1159,16 +1293,16 @@ def sea(X, events, before=3, after=10, highpass=False):
         Xhp = X
 
     for i in range(n_events):
-        Xevents[...,i] = X[events[i]-before:events[i]+after+1,...]
+        #  Xevents[...,i] = X[events[i]-before:events[i]+after+1,...]
+        Xevents[...,i] = Xhp[events[i]-before:events[i]+after+1,...]
         Xevents[...,i] -= np.mean(Xevents[0:before,...,i],axis=0) # remove mean over "before" of window
 
     Xcomp = np.mean(Xevents,axis=Xevents.ndim-1) # compute composite
     return Xevents, Xcomp, tcomp
+#===============================================
 
-
-def coefficient_efficiency(ref,test,valid=None):
-    """
-    Compute the coefficient of efficiency for a test time series, with respect to a reference time series.
+def coefficient_efficiency(ref, test, valid=None):
+    """ Compute the coefficient of efficiency for a test time series, with respect to a reference time series.
 
     Inputs:
     test:  test array
@@ -1222,10 +1356,10 @@ def coefficient_efficiency(ref,test,valid=None):
 
     return CE
 
+
 def generate_latlon(nlats, nlons, include_endpts=False,
                     lat_bnd=(-90,90), lon_bnd=(0, 360)):
-    """
-    Generate regularly spaced latitude and longitude arrays where each point
+    """ Generate regularly spaced latitude and longitude arrays where each point
     is the center of the respective grid cell.
 
     Parameters
@@ -1281,8 +1415,7 @@ def generate_latlon(nlats, nlons, include_endpts=False,
 
 
 def calculate_latlon_bnds(lats, lons):
-    """
-    Calculate the bounds for regularly gridded lats and lons.
+    """ Calculate the bounds for regularly gridded lats and lons.
 
     Parameters
     ----------
@@ -1337,9 +1470,7 @@ def calculate_latlon_bnds(lats, lons):
 
 
 def cov_localization(locRad, Y, X, X_coords):
-    """
-    Originator: R. Tardif,
-                Dept. Atmos. Sciences, Univ. of Washington
+    """ Originator: R. Tardif, Dept. Atmos. Sciences, Univ. of Washington
     -----------------------------------------------------------------
      Inputs:
         locRad : Localization radius (distance in km beyond which cov are forced to zero)
@@ -1419,9 +1550,7 @@ def cov_localization(locRad, Y, X, X_coords):
 
 
 def haversine(lon1, lat1, lon2, lat2):
-    """
-    Calculate the great circle distance between two points
-    on the earth (specified in decimal degrees)
+    """ Calculate the great circle distance between two points on the earth (specified in decimal degrees)
     """
 
     # convert decimal degrees to radians
@@ -1436,8 +1565,7 @@ def haversine(lon1, lat1, lon2, lat2):
 
 
 def enkf_update_array(Xb, obvalue, Ye, ob_err, loc=None, inflate=None):
-    """
-    Function to do the ensemble square-root filter (EnSRF) update
+    """ Function to do the ensemble square-root filter (EnSRF) update
     (ref: Whitaker and Hamill, Mon. Wea. Rev., 2002)
 
     Originator: G. J. Hakim, with code borrowed from L. Madaus
@@ -1520,8 +1648,7 @@ def enkf_update_array(Xb, obvalue, Ye, ob_err, loc=None, inflate=None):
 
 
 def global_hemispheric_means(field, lat):
-    """
-    Adapted from LMR_utils.py by Greg Hakim & Robert Tardif | U. of Washington
+    """ Adapted from LMR_utils.py by Greg Hakim & Robert Tardif | U. of Washington
 
      compute global and hemispheric mean valuee for all times in the input (i.e. field) array
      input:  field[ntime,nlat,nlon] or field[nlat,nlon]
@@ -1618,19 +1745,64 @@ def global_hemispheric_means(field, lat):
     return gm, nhm, shm
 
 
+
+def Kalman_ESRF(cfg, vY, vR, vYe, Xb_in,
+                proxy_manager, X, Xb_one_aug, Xb_one_coords, verbose=False):
+
+    if verbose:
+        print('Ensemble square root filter...')
+
+    begin_time = time()
+
+    # number of state variables
+    nx = Xb_in.shape[0]
+
+    # augmented state vector with Ye appended
+    # Xb = np.append(Xb_in, vYe, axis=0)
+    Xb = Xb_one_aug
+
+    inflate = cfg.core.inflation_fact
+
+    # need to add code block to compute localization factor
+    nobs = len(vY)
+    if verbose: print('appended state...')
+    for k in range(nobs):
+        #if np.mod(k,100)==0: print k
+        obvalue = vY[k]
+        ob_err = vR[k]
+        Ye = Xb[nx+k,:]
+        Y = proxy_manager.sites_assim_proxy_objs[k]
+        loc = cov_localization(cfg.core.loc_rad, Y, X, Xb_one_coords)
+        Xa = enkf_update_array(Xb, obvalue, Ye, ob_err, loc=loc, inflate=inflate)
+        Xb = Xa
+
+    # ensemble mean and perturbations
+    Xap = Xa[0:nx,:] - Xa[0:nx,:].mean(axis=1,keepdims=True)
+    xam = Xa[0:nx,:].mean(axis=1)
+
+    elapsed_time = time() - begin_time
+    if verbose:
+        print('-----------------------------------------------------')
+        print('completed in ' + str(elapsed_time) + ' seconds')
+        print('-----------------------------------------------------')
+
+    return xam, Xap, Xa
+
+
 def Kalman_optimal(Y, vR, Ye, Xb, loc_rad=None, nsvs=None, transform_only=False, verbose=False):
     ''' Kalman Filter
 
-    Y: observation vector (p x 1)
-    vR: observation error variance vector (p x 1)
-    Ye: prior-estimated observation vector (p x n)
-    Xbp: prior ensemble perturbation matrix (m x n)
+    Args:
+        Y: observation vector (p x 1)
+        vR: observation error variance vector (p x 1)
+        Ye: prior-estimated observation vector (p x n)
+        Xbp: prior ensemble perturbation matrix (m x n)
 
     Originator:
 
-    Greg Hakim
-    University of Washington
-    26 February 2018
+        Greg Hakim
+        University of Washington
+        26 February 2018
 
     Modifications:
     11 April 2018: Fixed bug in handling singular value matrix (rectangular, not square)
@@ -1727,47 +1899,3 @@ def Kalman_optimal(Y, vR, Ye, Xb, loc_rad=None, nsvs=None, transform_only=False,
         'readme': readme,
     }
     return xam, Xap, SVD
-
-
-def Kalman_ESRF(cfg, vY, vR, vYe, Xb_in,
-                proxy_manager, X, Xb_one_aug, Xb_one_coords, verbose=False):
-
-    if verbose:
-        print('Ensemble square root filter...')
-
-    begin_time = time()
-
-    # number of state variables
-    nx = Xb_in.shape[0]
-
-    # augmented state vector with Ye appended
-    # Xb = np.append(Xb_in, vYe, axis=0)
-    Xb = Xb_one_aug
-
-    inflate = cfg.core.inflation_fact
-
-    # need to add code block to compute localization factor
-    nobs = len(vY)
-    if verbose: print('appended state...')
-    for k in range(nobs):
-        #if np.mod(k,100)==0: print k
-        obvalue = vY[k]
-        ob_err = vR[k]
-        Ye = Xb[nx+k,:]
-        Y = proxy_manager.sites_assim_proxy_objs[k]
-        loc = cov_localization(cfg.core.loc_rad, Y, X, Xb_one_coords)
-        Xa = enkf_update_array(Xb, obvalue, Ye, ob_err, loc=loc, inflate=inflate)
-        Xb = Xa
-
-    # ensemble mean and perturbations
-    Xap = Xa[0:nx,:] - Xa[0:nx,:].mean(axis=1,keepdims=True)
-    xam = Xa[0:nx,:].mean(axis=1)
-
-    elapsed_time = time() - begin_time
-    if verbose:
-        print('-----------------------------------------------------')
-        print('completed in ' + str(elapsed_time) + ' seconds')
-        print('-----------------------------------------------------')
-
-    return xam, Xap, Xa
-

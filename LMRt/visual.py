@@ -18,36 +18,6 @@ from . import utils
 from . import load_gridded_data
 
 
-def load_gmt_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='gmt_ensemble'):
-    # load data
-    if not os.path.exists(exp_dir):
-        raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
-
-    paths = sorted(glob.glob(os.path.join(exp_dir, 'job_r*')))
-    with open(paths[0], 'rb') as f:
-        cfg_dict, res_dict = pickle.load(f)
-
-    gmt_tmp = res_dict['gmt_ens_save']
-    nt = np.shape(gmt_tmp)[0]
-    nEN = np.shape(gmt_tmp)[-1]
-    nMC = len(paths)
-
-    gmt = np.ndarray((nt, nEN*nMC))
-    for i, path in enumerate(paths):
-        with open(path, 'rb') as f:
-            cfg_dict, res_dict = pickle.load(f)
-
-        job_gmt = {
-            'gmt_ensemble': res_dict['gmt_ens_save'],
-            'nhmt_ensemble': res_dict['nhmt_ens_save'],
-            'shmt_ensemble': res_dict['shmt_ens_save'],
-        }
-        gmt[:, nEN*i:nEN+nEN*i] = job_gmt[var]
-
-    gmt_qs = mquantiles(gmt, qs, axis=-1)
-    return gmt_qs
-
-
 def plot_gmt_vs_inst(gmt_qs, ana_pathdict,
                      verif_yrs=np.arange(1880, 2001), ref_period=[1951, 1980],
                      var='gmt_ensemble', lmr_label='LMR'):
@@ -165,7 +135,13 @@ def plot_corr_ce(corr_dict, ce_dict, lw=3, ms=10,
                      sns.xkcd_rgb['medium green'],
                      sns.xkcd_rgb['amber'],
                      sns.xkcd_rgb['purpleish'],
-                 ], ncol=1):
+                 ],
+                 corr_ls='-o',
+                 ce_ls='--o',
+                 lgd_ncol=1, lgd_loc='upper right',
+                 lgd_bbox_to_anchor=(1.3, 1., 0, 0),
+                 ylim=[0, 1],
+                 ):
     exp_names = list(corr_dict.keys())
     inst_names = list(corr_dict[exp_names[0]].keys())
 
@@ -186,14 +162,15 @@ def plot_corr_ce(corr_dict, ce_dict, lw=3, ms=10,
             inst_ce[exp_name].append(ce_dict[exp_name][inst_name])
 
     for i, exp_name in enumerate(exp_names):
-        ax.plot(inst_cat, inst_corr[exp_name], '-o', lw=lw, ms=ms, color=colors[i % len(colors)],
+        ax.plot(inst_cat, inst_corr[exp_name], corr_ls, lw=lw, ms=ms, color=colors[i % len(colors)],
                 alpha=1, label=f'corr ({exp_name})')
-        ax.plot(inst_cat, inst_ce[exp_name], '-*', lw=lw, ms=ms, color=colors[i % len(colors)],
+        ax.plot(inst_cat, inst_ce[exp_name], ce_ls, lw=lw, ms=ms, color=colors[i % len(colors)],
                 alpha=1, label=f'CE ({exp_name})')
 
+    ax.set_ylim(ylim)
     ax.set_title('corr and CE against LMR')
     ax.set_ylabel('coefficient')
-    ax.legend(frameon=False, ncol=ncol)
+    ax.legend(frameon=False, ncol=lgd_ncol, loc=lgd_loc, bbox_to_anchor=lgd_bbox_to_anchor)
 
     return fig
 
