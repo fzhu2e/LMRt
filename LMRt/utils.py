@@ -181,7 +181,7 @@ def get_prior(filepath, datatype, cfg, anom_reference_period=(1951, 1980), verbo
     return datadict
 
 
-def get_nc_vars(filepath, varnames, useLib='netCDF4', annualize=False):
+def get_nc_vars(filepath, varnames, useLib='netCDF4'):
     ''' Get variables from given ncfile
     '''
     var_list = []
@@ -189,7 +189,7 @@ def get_nc_vars(filepath, varnames, useLib='netCDF4', annualize=False):
     if type(varnames) is str:
         varnames = [varnames]
 
-    def load_with_xarray(annualize=False):
+    def load_with_xarray(annualize=annualize):
         with xr.open_dataset(filepath) as ds:
 
             if annualize:
@@ -1247,12 +1247,13 @@ def butterworth(x,fc,fs=1, filter_order=3,pad='reflect',reflect_type='odd',param
 
     return xf
 
-def sea(X, events, before=3, after=10, highpass=False):
+def sea(X, events, start_yr=0, before=3, after=10, highpass=False):
     '''Applies superposed Epoch Analysis to N-dim array X, at indices 'events',
         and on a window [-before,after]
     Inputs:
         - X: numpy array [time assumed to be the first dimension]
         - events: indices of events of interest
+        - start_yr (int): the start year of X
         - before: # years over which the pre-event mean is computed
         - after: length of post-event window
 
@@ -1263,38 +1264,40 @@ def sea(X, events, before=3, after=10, highpass=False):
 
     by Julien Emile-Geay
     '''
-    n_events = len(events)
-    # define array shape
-    sh =  list(X.shape)
-    sh.append( n_events ) # add number of events
-    sh[0] = before+after+1  # replace time axis by time relative to window
-    Xevents = np.empty(sh) # define empty array to hold the result
 
     # exception handling : the first extreme year must not happen within the "before" indices
-    if any(np.isin(events,np.arange(0,before))) or any(events+after>=X.shape[0]):
+    if any(np.isin(events,np.arange(0,before)+start_yr)) or any(events+after>=X.shape[0]+start_yr):
         print("event outside range (either before 'tmin-before' or after 'tmax + after')")
         sys.exit()
 
-    # high-pass filter X along first axis
     tcomp = np.arange(-before,after+1) # time axis
-    fc = 1/len(tcomp)
-
     # reshape X to 2d
     if highpass:
+        # high-pass filter X along first axis
+        fc = 1/len(tcomp)
+        sh = list(X.shape)
         Xr = np.reshape(X,(sh[0],np.prod(sh[1:])))
         Xr_hp = np.empty_like(Xr)
         ncols = Xr.shape[1]
         for k in range(ncols):
-            Xlp = butterworth(Xr[:,k],fc)
-            Xr_hp[:,k] = Xr[:,k] - Xlp
+            Xlp = butterworth(Xr[:, k], fc)
+            Xr_hp[:,k] = Xr[:, k] - Xlp
 
         Xhp = np.reshape(Xr_hp,sh)
+
     else:
         Xhp = X
 
+    n_events = len(events)
+    # define array shape
+    sh = list(Xhp.shape)
+    sh.append(n_events) # add number of events
+    sh[0] = before+after+1  # replace time axis by time relative to window
+    Xevents = np.empty(sh) # define empty array to hold the result
+
+
     for i in range(n_events):
-        #  Xevents[...,i] = X[events[i]-before:events[i]+after+1,...]
-        Xevents[...,i] = Xhp[events[i]-before:events[i]+after+1,...]
+        Xevents[...,i] = Xhp[events[i]-before-start_yr:events[i]+after+1-start_yr,...]
         Xevents[...,i] -= np.mean(Xevents[0:before,...,i],axis=0) # remove mean over "before" of window
 
     Xcomp = np.mean(Xevents,axis=Xevents.ndim-1) # compute composite
