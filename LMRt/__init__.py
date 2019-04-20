@@ -12,6 +12,7 @@ from collections import namedtuple
 import numpy as np
 import pickle
 from tqdm import tqdm
+import xarray as xr
 
 from . import utils
 
@@ -24,7 +25,7 @@ Prior = namedtuple('Prior', ['prior_dict', 'ens', 'prior_sample_indices', 'coord
 
 Y = namedtuple('Y', ['Ye_assim', 'Ye_assim_coords', 'Ye_eval', 'Ye_eval_coords'])
 
-DA = namedtuple('DA', ['gmt_ens_save', 'nhmt_ens_save', 'shmt_ens_save'])
+Results = namedtuple('Results', ['field_ens'])
 
 
 class ReconJob:
@@ -274,12 +275,10 @@ class ReconJob:
 
         grid = utils.make_grid(prior)
 
-        gmt_ens_save = np.zeros((nyr, grid.nens))
-        nhmt_ens_save = np.zeros((nyr, grid.nens))
-        shmt_ens_save = np.zeros((nyr, grid.nens))
+        field_ens = np.zeros((nyr, grid.nens, grid.nlat, grid.nlon))
 
         for yr_idx, target_year in enumerate(tqdm(recon_years, desc=f'KF updating (pid={os.getpid()})')):
-            gmt_ens_save[yr_idx], nhmt_ens_save[yr_idx], shmt_ens_save[yr_idx] = utils.update_year(
+            field_ens[yr_idx] = utils.update_year(
                 yr_idx, target_year,
                 cfg, Xb_one_aug, Xb_one_coords, prior, proxy_manager.sites_assim_proxy_objs,
                 assim_proxy_count, eval_proxy_count, grid,
@@ -287,8 +286,8 @@ class ReconJob:
                 verbose=verbose
             )
 
-        self.da = DA(gmt_ens_save, nhmt_ens_save, shmt_ens_save)
-        print(f'\npid={os.getpid()} >>> job.da created')
+        self.res = Results(field_ens)
+        print(f'\npid={os.getpid()} >>> job.res created')
 
     def run(self, prior_filepath, prior_datatype, db_proxies_filepath, db_metadata_filepath,
             recon_years=None, seed=0, precalib_filesdict=None, ye_filesdict=None,
@@ -306,15 +305,40 @@ class ReconJob:
 
         run_da_func[mode](recon_years=recon_years, verbose=verbose)
 
+        if recon_years is None:
+            yr_start = self.cfg.core.recon_period[0]
+            yr_end = self.cfg.core.recon_period[-1]
+            recon_years = list(range(yr_start, yr_end+1))
+
+        grid = utils.make_grid(self.prior)
+        nyr = np.size(recon_years)
+
+        gmt_ens = np.zeros((nyr, grid.nens))
+        nhmt_ens = np.zeros((nyr, grid.nens))
+        shmt_ens = np.zeros((nyr, grid.nens))
+        field_ens_save = self.res.field_ens
+        field_ens_mean = np.average(field_ens_save, axis=1)
+
+        for k in range(grid.nens):
+            gmt_ens[:, k], nhmt_ens[:, k], shmt_ens[:, k] = utils.global_hemispheric_means(
+                field_ens_save[:, k, :, :], grid.lat
+            )
+
         if save_dirpath:
             os.makedirs(save_dirpath, exist_ok=True)
-            save_path = os.path.join(save_dirpath, f'job_r{seed:02d}.pkl')
-            print(f'\npid={os.getpid()} >>> Saving job.da to: {save_path}')
-            with open(save_path, 'wb') as f:
-                cfg_dict = dict(**self.cfg.toDict())
-                res_dict = {
-                    'gmt_ens_save': self.da.gmt_ens_save,
-                    'nhmt_ens_save': self.da.nhmt_ens_save,
-                    'shmt_ens_save': self.da.shmt_ens_save,
-                }
-                pickle.dump([cfg_dict, res_dict], f)
+            save_path = os.path.join(save_dirpath, f'job_r{seed:02d}.nc')
+            ds = xr.Dataset(
+                data_vars={
+                    'tas_ens_mean': (('year', 'lat', 'lon'), field_ens_mean),
+                    'gmt_ens': (('year', 'ens'), gmt_ens),
+                    'nhmt_ens': (('year', 'ens'), nhmt_ens),
+                    'shmt_ens': (('year', 'ens'), shmt_ens),
+                },
+                coords={
+                    'year': recon_years,
+                    'lat': grid.lat,
+                    'lon': grid.lon,
+                    'ens': np.arange(grid.nens)
+                },
+            )
+            ds.to_netcdf(save_path)

@@ -417,7 +417,7 @@ def regrid_prior(cfg, X, verbose=False):
         # updating dimension of new state vector
         Nx = Nx + new_dims
 
-        return Xb_one, Xb_one_coords, new_state_info
+    return Xb_one, Xb_one_coords, new_state_info
 
 
 def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict=None, verbose=False):
@@ -976,10 +976,6 @@ def update_year(yr_idx, target_year,
             print(f'Y.psm_obj.R={Y.psm_obj.R}')
             print(f'np.min(xbvar)={np.min(xbvar)}, np.max(xbvar)={np.max(xbvar)}')
             print(f'np.min(xavar)={np.min(xavar)}, np.max(xavar)={np.max(xavar)}')
-            #  print(f'np.min(vardiff)={np.min(vardiff)}')
-            #  print(f'np.max(vardiff)={np.max(vardiff)}')
-            #  print(f'ob_err={ob_err}')
-            #  print(f'nYobs={nYobs}')
             raise SystemExit(1)
 
         if verbose:
@@ -987,13 +983,8 @@ def update_year(yr_idx, target_year,
 
         Xb = Xa
 
-    #  xam_lalo = Xa[ibeg_tas:iend_tas+1, :].T.reshape(grid.nens, grid.nlat, grid.nlon)
     xam_lalo = Xb[ibeg_tas:iend_tas+1, :].T.reshape(grid.nens, grid.nlat, grid.nlon)
-
-    gmt_ens, nhmt_ens, shmt_ens = global_hemispheric_means(xam_lalo, grid.lat)
-
-    return gmt_ens, nhmt_ens, shmt_ens
-
+    return xam_lalo
 
 def regrid_sphere(nlat, nlon, Nens, X, ntrunc):
     """ Truncate lat,lon grid to another resolution in spherical harmonic space. Triangular truncation
@@ -1115,194 +1106,6 @@ def find_closest_loc(lat, lon, target_lat, target_lon, mode='latlon', verbose=Fa
     else:
         return lat_ind[0], lon_ind[0]
 
-
-def load_gmt_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='gmt_ensemble'):
-    # load data
-    if not os.path.exists(exp_dir):
-        raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
-
-    paths = sorted(glob.glob(os.path.join(exp_dir, 'job_r*')))
-    with open(paths[0], 'rb') as f:
-        cfg_dict, res_dict = pickle.load(f)
-
-    gmt_tmp = res_dict['gmt_ens_save']
-    nt = np.shape(gmt_tmp)[0]
-    nEN = np.shape(gmt_tmp)[-1]
-    nMC = len(paths)
-
-    gmt = np.ndarray((nt, nEN*nMC))
-    for i, path in enumerate(paths):
-        with open(path, 'rb') as f:
-            cfg_dict, res_dict = pickle.load(f)
-
-        job_gmt = {
-            'gmt_ensemble': res_dict['gmt_ens_save'],
-            'nhmt_ensemble': res_dict['nhmt_ens_save'],
-            'shmt_ensemble': res_dict['shmt_ens_save'],
-        }
-        gmt[:, nEN*i:nEN+nEN*i] = job_gmt[var]
-
-    if qs is not None:
-        gmt_qs = mquantiles(gmt, qs, axis=-1)
-    else:
-        gmt_qs = gmt
-    return gmt_qs
-
-
-#===============================================
-# Superposed Epoch Analysis
-#-----------------------------------------------
-def tsPad(x,t,params=(2,1,2),padFrac=0.1,diag=False):
-    """ tsPad: pad a timeseries based on timeseries model predictions
-
-        Args:
-        - x: Evenly-spaced timeseries [np.array]
-        - t: Time axis  [np.array]
-        - params: ARIMA model order parameters (p,d,q)
-        - padFrac: padding fraction (scalar) such that padLength = padFrac*length(series)
-        - diag: if True, outputs diagnostics of the fitted ARIMA model
-
-        Output:
-         - xp, tp, padded timeseries and augmented axis
-
-        Author: Julien Emile-Geay
-    """
-    padLength =  np.round(len(t)*padFrac).astype(np.int64)
-
-    #if (n-p1 <0)
-    #   disp('Timeseries is too short for desired padding')
-    #elseif p1 > round(n/5) % Heuristic Bound to ensure AR model stability
-    #   p = round(n/5);
-    #else
-    #   p= p1;
-    #end
-
-    if not (np.std(np.diff(t)) == 0):
-        raise ValueError("t needs to be composed of even increments")
-    else:
-        dt = np.diff(t)[0] # computp time interval
-
-    # fit ARIMA model
-    fwd_mod = sm.tsa.ARIMA(x,params).fit()  # model with time going forward
-    bwd_mod = sm.tsa.ARIMA(np.flip(x,0),params).fit()  # model with time going backwards
-
-    # predict forward & backward
-    fwd_pred  = fwd_mod.forecast(padLength); xf = fwd_pred[0]
-    bwd_pred  = bwd_mod.forecast(padLength); xb = np.flip(bwd_pred[0],0)
-
-    # define extra time axes
-    tf = np.linspace(max(t)+dt, max(t)+padLength*dt,padLength)
-    tb = np.linspace(min(t)-padLength*dt, min(t)-1, padLength)
-
-    # extend time series
-    tp = np.arange(t[0]-padLength*dt,t[-1]+padLength*dt+1,dt)
-    xp = np.empty(len(tp))
-    xp[np.isin(tp,t)] =x
-    xp[np.isin(tp,tb)]=xb
-    xp[np.isin(tp,tf)]=xf
-
-    return xp, tp
-
-def butterworth(x,fc,fs=1, filter_order=3,pad='reflect',reflect_type='odd',params=(2,1,2),padFrac=0.1):
-    '''Applies a Butterworth filter with frequency fc, with padding
-
-    Arguments:
-        - X = 1d numpy array
-        - fc = cutoff frequency. If scalar, it is interpreted as a low-frequency cutoff (lowpass)
-                 If fc is a 2-tuple,  it is interpreted as a frequency band (f1, f2), with f1 < f2 (bandpass)
-        - fs = sampling frequency
-        - filter_order = order n of Butterworth filter
-        - pad = boolean indicating whether tsPad needs to be applied
-        - params = model parameters for ARIMA model (if pad = True)
-        - padFrac = fraction of the series to be padded
-
-    Output : xf, filtered array
-
-    Author: Julien Emile-Geay
-    '''
-    nyq = 0.5 * fs
-
-    if isinstance(fc, list) and len(fc) == 2:
-        fl = fc[0] / nyq
-        fh = fc[1] / nyq
-        b, a = signal.butter(filter_order, [fl, fh], btype='bandpass')
-    else:
-        fl = fc / nyq
-        b, a = signal.butter(filter_order, fl      , btype='lowpass')
-
-    t = np.arange(len(x)) # define time axis
-    padLength =  np.round(len(x)*padFrac).astype(np.int64)
-
-    if (pad=='ARIMA'):
-        xp,tp = tsPad(x,t,params=params)
-    elif (pad=='reflect'):
-        # extend time series
-        xp = np.pad(x,(padLength,padLength),mode='reflect',reflect_type=reflect_type)
-        tp = np.arange(t[0]-padLength,t[-1]+padLength+1,1)
-    else:
-        xp = x; tp = t
-
-    xpf = signal.filtfilt(b, a, xp)
-    xf  = xpf[np.isin(tp,t)]
-
-    return xf
-
-def sea(X, events, start_yr=0, before=3, after=10, highpass=False):
-    '''Applies superposed Epoch Analysis to N-dim array X, at indices 'events',
-        and on a window [-before,after]
-    Inputs:
-        - X: numpy array [time assumed to be the first dimension]
-        - events: indices of events of interest
-        - start_yr (int): the start year of X
-        - before: # years over which the pre-event mean is computed
-        - after: length of post-event window
-
-    Outputs:
-        - Xevents : X lined up on events; removes mean of "before" years
-        - Xcomp  : composite of Xevents (same dimensions as X, minus the first one)
-        - tcomp  : the time axis relative to events
-
-    by Julien Emile-Geay
-    '''
-
-    # exception handling : the first extreme year must not happen within the "before" indices
-    if any(np.isin(events,np.arange(0,before)+start_yr)) or any(events+after>=X.shape[0]+start_yr):
-        print("event outside range (either before 'tmin-before' or after 'tmax + after')")
-        sys.exit()
-
-    tcomp = np.arange(-before,after+1) # time axis
-    # reshape X to 2d
-    if highpass:
-        # high-pass filter X along first axis
-        fc = 1/len(tcomp)
-        sh = list(X.shape)
-        Xr = np.reshape(X,(sh[0],np.prod(sh[1:])))
-        Xr_hp = np.empty_like(Xr)
-        ncols = Xr.shape[1]
-        for k in range(ncols):
-            Xlp = butterworth(Xr[:, k], fc)
-            Xr_hp[:,k] = Xr[:, k] - Xlp
-
-        Xhp = np.reshape(Xr_hp,sh)
-
-    else:
-        Xhp = X
-
-    n_events = len(events)
-    # define array shape
-    sh = list(Xhp.shape)
-    sh.append(n_events) # add number of events
-    sh[0] = before+after+1  # replace time axis by time relative to window
-    Xevents = np.empty(sh) # define empty array to hold the result
-
-
-    for i in range(n_events):
-        Xevents[...,i] = Xhp[events[i]-before-start_yr:events[i]+after+1-start_yr,...]
-        Xevents[...,i] -= np.mean(Xevents[0:before,...,i],axis=0) # remove mean over "before" of window
-
-    Xcomp = np.mean(Xevents,axis=Xevents.ndim-1) # compute composite
-    return Xevents, Xcomp, tcomp
-#===============================================
 
 def coefficient_efficiency(ref, test, valid=None):
     """ Compute the coefficient of efficiency for a test time series, with respect to a reference time series.
@@ -1888,17 +1691,202 @@ def Kalman_optimal(Y, vR, Ye, Xb, loc_rad=None, nsvs=None, transform_only=False,
         print('completed in ' + str(elapsed_time) + ' seconds')
         print('-----------------------------------------------------')
 
-    readme = '''
-    The SVD dictionary contains the SVD matrices U,s,V where V
-    is the transpose of what numpy returns. xtinc is the ensemble-mean
-    analysis increment in the intermediate space; *any* state variable
-    can be reconstructed from this matrix.
-    '''
+    #  readme =
+    #  The SVD dictionary contains the SVD matrices U,s,V where V
+    #  is the transpose of what numpy returns. xtinc is the ensemble-mean
+    #  analysis increment in the intermediate space; *any* state variable
+    #  can be reconstructed from this matrix.
     SVD = {
         'U': U,
         's': s,
         'V': np.transpose(V),
         'xtinc': xtinc,
-        'readme': readme,
+        #  'readme': readme,
     }
     return xam, Xap, SVD
+
+
+# ===============================================
+#  Post processing
+# -----------------------------------------------
+def load_gmt_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='gmt_ens'):
+    if not os.path.exists(exp_dir):
+        raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
+
+    paths = sorted(glob.glob(os.path.join(exp_dir, 'job_r*')))
+
+    with xr.open_dataset(paths[0]) as ds:
+        gmt_tmp = ds['gmt_ens'].values
+
+    nt = np.shape(gmt_tmp)[0]
+    nEN = np.shape(gmt_tmp)[-1]
+    nMC = len(paths)
+
+    gmt = np.ndarray((nt, nEN*nMC))
+    for i, path in enumerate(paths):
+        with xr.open_dataset(path) as ds:
+            gmt_ens = ds[var].values
+
+        gmt[:, nEN*i:nEN+nEN*i] = gmt_ens
+
+    if qs is not None:
+        gmt_qs = mquantiles(gmt, qs, axis=-1)
+    else:
+        gmt_qs = gmt
+    return gmt_qs
+
+
+# ===============================================
+#  Superposed Epoch Analysis
+# -----------------------------------------------
+def tsPad(x,t,params=(2,1,2),padFrac=0.1,diag=False):
+    """ tsPad: pad a timeseries based on timeseries model predictions
+
+        Args:
+        - x: Evenly-spaced timeseries [np.array]
+        - t: Time axis  [np.array]
+        - params: ARIMA model order parameters (p,d,q)
+        - padFrac: padding fraction (scalar) such that padLength = padFrac*length(series)
+        - diag: if True, outputs diagnostics of the fitted ARIMA model
+
+        Output:
+         - xp, tp, padded timeseries and augmented axis
+
+        Author: Julien Emile-Geay
+    """
+    padLength =  np.round(len(t)*padFrac).astype(np.int64)
+
+    #if (n-p1 <0)
+    #   disp('Timeseries is too short for desired padding')
+    #elseif p1 > round(n/5) % Heuristic Bound to ensure AR model stability
+    #   p = round(n/5);
+    #else
+    #   p= p1;
+    #end
+
+    if not (np.std(np.diff(t)) == 0):
+        raise ValueError("t needs to be composed of even increments")
+    else:
+        dt = np.diff(t)[0] # computp time interval
+
+    # fit ARIMA model
+    fwd_mod = sm.tsa.ARIMA(x,params).fit()  # model with time going forward
+    bwd_mod = sm.tsa.ARIMA(np.flip(x,0),params).fit()  # model with time going backwards
+
+    # predict forward & backward
+    fwd_pred  = fwd_mod.forecast(padLength); xf = fwd_pred[0]
+    bwd_pred  = bwd_mod.forecast(padLength); xb = np.flip(bwd_pred[0],0)
+
+    # define extra time axes
+    tf = np.linspace(max(t)+dt, max(t)+padLength*dt,padLength)
+    tb = np.linspace(min(t)-padLength*dt, min(t)-1, padLength)
+
+    # extend time series
+    tp = np.arange(t[0]-padLength*dt,t[-1]+padLength*dt+1,dt)
+    xp = np.empty(len(tp))
+    xp[np.isin(tp,t)] =x
+    xp[np.isin(tp,tb)]=xb
+    xp[np.isin(tp,tf)]=xf
+
+    return xp, tp
+
+def butterworth(x,fc,fs=1, filter_order=3,pad='reflect',reflect_type='odd',params=(2,1,2),padFrac=0.1):
+    '''Applies a Butterworth filter with frequency fc, with padding
+
+    Arguments:
+        - X = 1d numpy array
+        - fc = cutoff frequency. If scalar, it is interpreted as a low-frequency cutoff (lowpass)
+                 If fc is a 2-tuple,  it is interpreted as a frequency band (f1, f2), with f1 < f2 (bandpass)
+        - fs = sampling frequency
+        - filter_order = order n of Butterworth filter
+        - pad = boolean indicating whether tsPad needs to be applied
+        - params = model parameters for ARIMA model (if pad = True)
+        - padFrac = fraction of the series to be padded
+
+    Output : xf, filtered array
+
+    Author: Julien Emile-Geay
+    '''
+    nyq = 0.5 * fs
+
+    if isinstance(fc, list) and len(fc) == 2:
+        fl = fc[0] / nyq
+        fh = fc[1] / nyq
+        b, a = signal.butter(filter_order, [fl, fh], btype='bandpass')
+    else:
+        fl = fc / nyq
+        b, a = signal.butter(filter_order, fl      , btype='lowpass')
+
+    t = np.arange(len(x)) # define time axis
+    padLength =  np.round(len(x)*padFrac).astype(np.int64)
+
+    if (pad=='ARIMA'):
+        xp,tp = tsPad(x,t,params=params)
+    elif (pad=='reflect'):
+        # extend time series
+        xp = np.pad(x,(padLength,padLength),mode='reflect',reflect_type=reflect_type)
+        tp = np.arange(t[0]-padLength,t[-1]+padLength+1,1)
+    else:
+        xp = x; tp = t
+
+    xpf = signal.filtfilt(b, a, xp)
+    xf  = xpf[np.isin(tp,t)]
+
+    return xf
+
+def sea(X, events, start_yr=0, before=3, after=10, highpass=False):
+    '''Applies superposed Epoch Analysis to N-dim array X, at indices 'events',
+        and on a window [-before,after]
+    Inputs:
+        - X: numpy array [time assumed to be the first dimension]
+        - events: indices of events of interest
+        - start_yr (int): the start year of X
+        - before: # years over which the pre-event mean is computed
+        - after: length of post-event window
+
+    Outputs:
+        - Xevents : X lined up on events; removes mean of "before" years
+        - Xcomp  : composite of Xevents (same dimensions as X, minus the first one)
+        - tcomp  : the time axis relative to events
+
+    by Julien Emile-Geay
+    '''
+
+    # exception handling : the first extreme year must not happen within the "before" indices
+    if any(np.isin(events,np.arange(0,before)+start_yr)) or any(events+after>=X.shape[0]+start_yr):
+        print("event outside range (either before 'tmin-before' or after 'tmax + after')")
+        sys.exit()
+
+    tcomp = np.arange(-before,after+1) # time axis
+    # reshape X to 2d
+    if highpass:
+        # high-pass filter X along first axis
+        fc = 1/len(tcomp)
+        sh = list(X.shape)
+        Xr = np.reshape(X,(sh[0],np.prod(sh[1:])))
+        Xr_hp = np.empty_like(Xr)
+        ncols = Xr.shape[1]
+        for k in range(ncols):
+            Xlp = butterworth(Xr[:, k], fc)
+            Xr_hp[:,k] = Xr[:, k] - Xlp
+
+        Xhp = np.reshape(Xr_hp,sh)
+
+    else:
+        Xhp = X
+
+    n_events = len(events)
+    # define array shape
+    sh = list(Xhp.shape)
+    sh.append(n_events) # add number of events
+    sh[0] = before+after+1  # replace time axis by time relative to window
+    Xevents = np.empty(sh) # define empty array to hold the result
+
+
+    for i in range(n_events):
+        Xevents[...,i] = Xhp[events[i]-before-start_yr:events[i]+after+1-start_yr,...]
+        Xevents[...,i] -= np.mean(Xevents[0:before,...,i],axis=0) # remove mean over "before" of window
+
+    Xcomp = np.mean(Xevents,axis=Xevents.ndim-1) # compute composite
+    return Xevents, Xcomp, tcomp
+# ===============================================

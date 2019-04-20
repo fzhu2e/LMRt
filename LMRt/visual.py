@@ -281,7 +281,7 @@ def plot_gmt_ts(exp_dir, savefig_path=None, plot_vars=['gmt_ensemble', 'nhmt_ens
     return fig
 
 
-def plot_gmt_ts_from_jobs(exp_dir, savefig_path=None, plot_vars=['gmt_ensemble', 'nhmt_ensemble', 'shmt_ensemble'],
+def plot_gmt_ts_from_jobs(exp_dir, savefig_path=None, plot_vars=['gmt_ens', 'nhmt_ens', 'shmt_ens'],
                           qs=[0.025, 0.25, 0.5, 0.75, 0.975], pannel_size=[10, 4],
                           font_scale=1.5, hspace=0.5, ylim=[-1, 1],
                           plot_prior=False, prior_var_name='tas_sfc_Amon'):
@@ -297,46 +297,27 @@ def plot_gmt_ts_from_jobs(exp_dir, savefig_path=None, plot_vars=['gmt_ensemble',
     if not os.path.exists(exp_dir):
         raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
 
-    paths = sorted(glob.glob(os.path.join(exp_dir, 'job_r*')))
-    with open(paths[0], 'rb') as f:
-        cfg_dict, res_dict = pickle.load(f)
-
-    gmt_tmp = res_dict['gmt_ens_save']
-    nt = np.shape(gmt_tmp)[0]
-    nEN = np.shape(gmt_tmp)[-1]
-    nMC = len(paths)
-
     nvar = len(plot_vars)
+
     sns.set(style="darkgrid", font_scale=font_scale)
     fig = plt.figure(figsize=[pannel_size[0], pannel_size[1]*nvar])
 
     ax_title = {
-        'gmt_ensemble': 'Global mean temperature',
-        'shmt_ensemble': 'SH mean temperature',
-        'nhmt_ensemble': 'NH mean temperature',
+        'gmt_ens': 'Global mean temperature',
+        'shmt_ens': 'SH mean temperature',
+        'nhmt_ens': 'NH mean temperature',
     }
 
     for plot_i, var in enumerate(plot_vars):
-        gmt = np.ndarray((nt, nEN*nMC))
-        for i, path in enumerate(paths):
-            with open(path, 'rb') as f:
-                cfg_dict, res_dict = pickle.load(f)
 
-            job_gmt = {
-                'gmt_ensemble': res_dict['gmt_ens_save'],
-                'nhmt_ensemble': res_dict['nhmt_ens_save'],
-                'shmt_ensemble': res_dict['shmt_ens_save'],
-            }
-
-            gmt[:, nEN*i:nEN+nEN*i] = job_gmt[var]
-
-        gmt_qs = mquantiles(gmt, qs, axis=-1)
+        gmt_qs = utils.load_gmt_from_jobs(exp_dir, qs, var=var)
+        nt = np.shape(gmt_qs)[0]
+        to = np.arange(nt)
 
         # plot
         gs = gridspec.GridSpec(nvar, 1)
         gs.update(wspace=0, hspace=hspace)
 
-        to = np.arange(nt)
         ax = plt.subplot(gs[plot_i, 0])
         if qs[2] == 0.5:
             label='median'
