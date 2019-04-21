@@ -1757,6 +1757,80 @@ def load_field_from_jobs(exp_dir, var='tas_ens_mean'):
 
     return field_em, lat, lon
 
+
+def load_inst_analyses(ana_pathdict, var='gmt',
+                       verif_yrs=np.arange(1880, 2001), ref_period=[1951, 1980]):
+
+    load_func = {
+        'GISTEMP': load_gridded_data.read_gridded_data_GISTEMP,
+        'HadCRUT': load_gridded_data.read_gridded_data_HadCRUT,
+        'BerkeleyEarth': load_gridded_data.read_gridded_data_BerkeleyEarth,
+        'MLOST': load_gridded_data.read_gridded_data_MLOST,
+        'ERA20-20C': load_gridded_data.read_gridded_data_CMIP5_model,
+        '20CR-V2': load_gridded_data.read_gridded_data_CMIP5_model,
+    }
+
+    calib_vars = {
+        'GISTEMP': ['Tsfc'],
+        'HadCRUT': ['Tsfc'],
+        'BerkeleyEarth': ['Tsfc'],
+        'MLOST': ['air'],
+        'ERA20-20C': {'tas_sfc_Amon': 'anom'},
+        '20CR-V2': {'tas_sfc_Amon': 'anom'},
+    }
+
+    syear, eyear = verif_yrs[0], verif_yrs[-1]
+
+    inst_field = {}
+    inst_lat = {}
+    inst_lon = {}
+    inst_gmt = {}
+    inst_nhmt = {}
+    inst_shmt = {}
+    inst_time = {}
+    for name, path in ana_pathdict.items():
+        print(f'Loading {name}: {path} ...')
+        if name in ['ERA20-20C', '20CR-V2']:
+            dd = load_func[name](
+                os.path.dirname(path),
+                os.path.basename(path),
+                calib_vars[name],
+                outtimeavg=list(range(1, 13)),
+                anom_ref=ref_period,
+            )
+            time_grid = dd['tas_sfc_Amon']['years']
+            lat_grid = dd['tas_sfc_Amon']['lat'][:, 0]
+            anomaly_grid = dd['tas_sfc_Amon']['value']
+        else:
+            time_grid, lat_grid, lon_grid, anomaly_grid = load_func[name](
+                os.path.dirname(path),
+                os.path.basename(path),
+                calib_vars[name],
+                outfreq='annual',
+                ref_period=ref_period,
+            )
+
+        inst_field[name] = anomaly_grid
+        inst_lat[name] = lat_grid
+        inst_lon[name] = lon_grid
+
+        gmt, nhmt, shmt = global_hemispheric_means(anomaly_grid, lat_grid)
+        year = np.array([d.year for d in time_grid])
+        mask = (year >= syear) & (year <= eyear)
+        inst_gmt[name] = gmt[mask] - np.nanmean(gmt[mask])
+        inst_nhmt[name] = nhmt[mask] - np.nanmean(nhmt[mask])
+        inst_shmt[name] = shmt[mask] - np.nanmean(shmt[mask])
+        inst_time[name] = year[mask]
+
+    if var == 'field':
+        return inst_field, inst_lat, inst_lon, inst_time
+    elif var == 'gmt':
+        return inst_gmt, inst_time
+    elif var == 'nhmt':
+        return inst_nhmt, inst_time
+    elif var == 'shmt':
+        return inst_shmt, inst_time
+
 # ===============================================
 #  Superposed Epoch Analysis
 # -----------------------------------------------

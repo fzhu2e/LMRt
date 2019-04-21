@@ -13,7 +13,6 @@ from scipy.stats.mstats import mquantiles
 from cartopy.util import add_cyclic_point
 
 from . import utils
-from . import load_gridded_data
 
 
 def plot_field_map(field_var, lat, lon, levels=50,
@@ -47,7 +46,7 @@ def plot_field_map(field_var, lat, lon, levels=50,
 
 def plot_gmt_vs_inst(gmt_qs, ana_pathdict,
                      verif_yrs=np.arange(1880, 2001), ref_period=[1951, 1980],
-                     var='gmt_ensemble', lmr_label='LMR'):
+                     var='gmt', lmr_label='LMR'):
     if np.shape(gmt_qs)[-1] == 1:
         nt = np.size(gmt_qs)
         gmt_qs_new = np.ndarray((nt, 3))
@@ -59,53 +58,8 @@ def plot_gmt_vs_inst(gmt_qs, ana_pathdict,
     syear, eyear = verif_yrs[0], verif_yrs[-1]
     lmr_gmt = gmt_qs[syear:eyear+1, :] - np.mean(gmt_qs[syear:eyear+1, :])
 
-    load_func = {
-        'GISTEMP': load_gridded_data.read_gridded_data_GISTEMP,
-        'HadCRUT': load_gridded_data.read_gridded_data_HadCRUT,
-        'BerkeleyEarth': load_gridded_data.read_gridded_data_BerkeleyEarth,
-        'MLOST': load_gridded_data.read_gridded_data_MLOST,
-        'ERA20-20C': load_gridded_data.read_gridded_data_CMIP5_model,
-        '20CR-V2': load_gridded_data.read_gridded_data_CMIP5_model,
-    }
-
-    calib_vars = {
-        'GISTEMP': ['Tsfc'],
-        'HadCRUT': ['Tsfc'],
-        'BerkeleyEarth': ['Tsfc'],
-        'MLOST': ['air'],
-        'ERA20-20C': {'tas_sfc_Amon': 'anom'},
-        '20CR-V2': {'tas_sfc_Amon': 'anom'},
-    }
-
-    inst_gmt = {}
-    inst_time = {}
-    for name, path in ana_pathdict.items():
-        print(f'Loading {name}: {path} ...')
-        if name in ['ERA20-20C', '20CR-V2']:
-            dd = load_func[name](
-                os.path.dirname(path),
-                os.path.basename(path),
-                calib_vars[name],
-                outtimeavg=list(range(1, 13)),
-                anom_ref=ref_period,
-            )
-            time_grid = dd['tas_sfc_Amon']['years']
-            lat_grid = dd['tas_sfc_Amon']['lat'][:, 0]
-            anomaly_grid = dd['tas_sfc_Amon']['value']
-        else:
-            time_grid, lat_grid, lon_grid, anomaly_grid = load_func[name](
-                os.path.dirname(path),
-                os.path.basename(path),
-                calib_vars[name],
-                outfreq='annual',
-                ref_period=ref_period,
-            )
-
-        gmt, _, _ = utils.global_hemispheric_means(anomaly_grid, lat_grid)
-        year = np.array([d.year for d in time_grid])
-        mask = (year >= syear) & (year <= eyear)
-        inst_gmt[name] = gmt[mask] - np.nanmean(gmt[mask])
-        inst_time[name] = year[mask]
+    inst_gmt, inst_time = utils.load_inst_analyses(
+        ana_pathdict, var=var, verif_yrs=verif_yrs, ref_period=ref_period)
 
     consensus_yrs = np.copy(verif_yrs)
     for name in ana_pathdict.keys():
