@@ -3,19 +3,46 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
-from matplotlib.ticker import ScalarFormatter, FormatStrFormatter
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib as mpl
 import numpy as np
-import pandas as pd
 import os
 import glob
 from scipy.stats.mstats import mquantiles
-import pickle
+from cartopy.util import add_cyclic_point
 
 from . import utils
 from . import load_gridded_data
+
+
+def plot_field_map(field_var, lat, lon, levels=50,
+                   title=None, title_size=20, title_weight='normal', figsize=[10, 8],
+                   projection=ccrs.Robinson(), clim=None, cmap='RdBu_r', extend='both',
+                   cbar_labels=None, cbar_pad=0.05, cbar_orientation='vertical', cbar_aspect=10,
+                   cbar_fraction=0.15, cbar_shrink=0.5):
+    field_var_c, lon_c = add_cyclic_point(field_var, lon)
+
+    fig = plt.figure(figsize=figsize)
+    ax = plt.subplot(projection=projection)
+
+    if title:
+        plt.title(title, fontsize=title_size, fontweight=title_weight)
+
+    ax.set_global()
+    ax.coastlines()
+    im = ax.contourf(lon_c, lat, field_var_c, levels, extend=extend,
+                     transform=ccrs.PlateCarree(), cmap='RdBu_r')
+
+    if clim:
+        im.set_clim(clim)
+
+    cbar = fig.colorbar(im, ax=ax, orientation=cbar_orientation, pad=cbar_pad, aspect=cbar_aspect,
+                        fraction=cbar_fraction, shrink=cbar_shrink)
+    if cbar_labels is not None:
+        cbar.set_ticks(cbar_labels)
+
+    return fig
 
 
 def plot_gmt_vs_inst(gmt_qs, ana_pathdict,

@@ -181,7 +181,7 @@ def get_prior(filepath, datatype, cfg, anom_reference_period=(1951, 1980), verbo
     return datadict
 
 
-def get_nc_vars(filepath, varnames, useLib='xarray', annulize=False):
+def get_nc_vars(filepath, varnames, useLib='xarray', annualize=False):
     ''' Get variables from given ncfile
     '''
     var_list = []
@@ -986,6 +986,7 @@ def update_year(yr_idx, target_year,
     xam_lalo = Xb[ibeg_tas:iend_tas+1, :].T.reshape(grid.nens, grid.nlat, grid.nlon)
     return xam_lalo
 
+
 def regrid_sphere(nlat, nlon, Nens, X, ntrunc):
     """ Truncate lat,lon grid to another resolution in spherical harmonic space. Triangular truncation
 
@@ -1716,7 +1717,7 @@ def load_gmt_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='gmt_ens'):
     paths = sorted(glob.glob(os.path.join(exp_dir, 'job_r*')))
 
     with xr.open_dataset(paths[0]) as ds:
-        gmt_tmp = ds['gmt_ens'].values
+        gmt_tmp = ds[var].values
 
     nt = np.shape(gmt_tmp)[0]
     nEN = np.shape(gmt_tmp)[-1]
@@ -1735,6 +1736,26 @@ def load_gmt_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='gmt_ens'):
         gmt_qs = gmt
     return gmt_qs
 
+
+def load_field_from_jobs(exp_dir, var='tas_ens_mean'):
+    if not os.path.exists(exp_dir):
+        raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
+
+    paths = sorted(glob.glob(os.path.join(exp_dir, 'job_r*')))
+
+    field_ens_mean = []
+    for i, path in enumerate(paths):
+        if i == 0:
+            with xr.open_dataset(path) as ds:
+                lat = ds['lat'].values
+                lon = ds['lon'].values
+
+        with xr.open_dataset(path) as ds:
+            field_ens_mean.append(ds[var].values)
+
+    field_em = np.average(field_ens_mean, axis=0)
+
+    return field_em, lat, lon
 
 # ===============================================
 #  Superposed Epoch Analysis
