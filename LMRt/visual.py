@@ -1,6 +1,7 @@
 ''' Visualization and post processing
 '''
 import seaborn as sns
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import cartopy.crs as ccrs
@@ -10,18 +11,24 @@ import numpy as np
 import os
 import glob
 from scipy.stats.mstats import mquantiles
-from cartopy.util import add_cyclic_point
+from cartopy import util as cutil
 
 from . import utils
 
 
-def plot_field_map(field_var, lat, lon, levels=50,
+def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=False,
                    title=None, title_size=20, title_weight='normal', figsize=[10, 8],
-                   projection=ccrs.Robinson(), clim=None, cmap='RdBu_r', extend='both',
+                   projection=ccrs.Robinson(), transform=ccrs.PlateCarree(),
+                   clim=None, cmap='RdBu_r', extend='both',
                    cbar_labels=None, cbar_pad=0.05, cbar_orientation='vertical', cbar_aspect=10,
-                   cbar_fraction=0.15, cbar_shrink=0.5):
-    field_var_c, lon_c = add_cyclic_point(field_var, lon)
+                   cbar_fraction=0.15, cbar_shrink=0.5, cbar_title='[K]', font_scale=1.5):
 
+    if add_cyclic_point:
+        field_var_c, lon_c = cutil.add_cyclic_point(field_var, lon)
+    else:
+        field_var_c, lon_c = field_var, lon
+
+    sns.set(style='white', font_scale=font_scale)
     fig = plt.figure(figsize=figsize)
     ax = plt.subplot(projection=projection)
 
@@ -29,22 +36,29 @@ def plot_field_map(field_var, lat, lon, levels=50,
         plt.title(title, fontsize=title_size, fontweight=title_weight)
 
     ax.set_global()
+    ax.add_feature(cfeature.LAND, facecolor='gray', alpha=0.3)
+    ax.add_feature(cfeature.OCEAN, facecolor='gray', alpha=0.3)
     ax.coastlines()
+
     im = ax.contourf(lon_c, lat, field_var_c, levels, extend=extend,
-                     transform=ccrs.PlateCarree(), cmap='RdBu_r')
+                     transform=transform, cmap=cmap)
 
     if clim:
         im.set_clim(clim)
 
     cbar = fig.colorbar(im, ax=ax, orientation=cbar_orientation, pad=cbar_pad, aspect=cbar_aspect,
                         fraction=cbar_fraction, shrink=cbar_shrink)
+
     if cbar_labels is not None:
         cbar.set_ticks(cbar_labels)
+
+    if cbar_title:
+        cbar.ax.set_title(cbar_title)
 
     return fig
 
 
-def plot_gmt_vs_inst(gmt_qs, ana_pathdict,
+def plot_gmt_vs_inst(gmt_qs, year, ana_pathdict,
                      verif_yrs=np.arange(1880, 2001), ref_period=[1951, 1980],
                      var='gmt', lmr_label='LMR'):
     if np.shape(gmt_qs)[-1] == 1:
@@ -56,13 +70,18 @@ def plot_gmt_vs_inst(gmt_qs, ana_pathdict,
         gmt_qs = gmt_qs_new
 
     syear, eyear = verif_yrs[0], verif_yrs[-1]
-    lmr_gmt = gmt_qs[syear:eyear+1, :] - np.mean(gmt_qs[syear:eyear+1, :])
+    mask = (year >= syear) & (year <= eyear)
+    mask_ref = (year >= ref_period[0]) & (year <= ref_period[-1])
+    lmr_gmt = gmt_qs[mask] - np.nanmean(gmt_qs[mask_ref, 1])  # remove the mean w.r.t. the ref_period
 
     inst_gmt, inst_time = utils.load_inst_analyses(
         ana_pathdict, var=var, verif_yrs=verif_yrs, ref_period=ref_period)
 
     consensus_yrs = np.copy(verif_yrs)
     for name in ana_pathdict.keys():
+        mask_ref = (inst_time[name] >= ref_period[0]) & (inst_time[name] <= ref_period[-1])
+        inst_gmt[name] -= np.nanmean(inst_gmt[name][mask_ref])  # remove the mean w.r.t. the ref_period
+
         overlap_yrs = np.intersect1d(consensus_yrs, inst_time[name])
         ind_inst = np.searchsorted(inst_time[name], overlap_yrs)
         consensus_yrs = inst_time[name][ind_inst]
@@ -291,9 +310,7 @@ def plot_gmt_ts_from_jobs(exp_dir, savefig_path=None, plot_vars=['gmt_ens', 'nhm
 
     for plot_i, var in enumerate(plot_vars):
 
-        gmt_qs = utils.load_gmt_from_jobs(exp_dir, qs, var=var)
-        nt = np.shape(gmt_qs)[0]
-        to = np.arange(nt)
+        gmt_qs, year = utils.load_gmt_from_jobs(exp_dir, qs, var=var)
 
         # plot
         gs = gridspec.GridSpec(nvar, 1)
@@ -305,10 +322,10 @@ def plot_gmt_ts_from_jobs(exp_dir, savefig_path=None, plot_vars=['gmt_ens', 'nhm
         else:
             label='{}%'.format(qs[2]*100)
 
-        ax.plot(to, gmt_qs[:,2], '-', color=sns.xkcd_rgb['pale red'], alpha=1, label='{}'.format(label))
-        ax.fill_between(to, gmt_qs[:,-2], gmt_qs[:,1], color=sns.xkcd_rgb['pale red'], alpha=0.5,
+        ax.plot(year, gmt_qs[:,2], '-', color=sns.xkcd_rgb['pale red'], alpha=1, label='{}'.format(label))
+        ax.fill_between(year, gmt_qs[:,-2], gmt_qs[:,1], color=sns.xkcd_rgb['pale red'], alpha=0.5,
                 label='{}% to {}%'.format(qs[1]*100, qs[-2]*100))
-        ax.fill_between(to, gmt_qs[:,-1], gmt_qs[:,0], color=sns.xkcd_rgb['pale red'], alpha=0.1,
+        ax.fill_between(year, gmt_qs[:,-1], gmt_qs[:,0], color=sns.xkcd_rgb['pale red'], alpha=0.1,
                 label='{}% to {}%'.format(qs[0]*100, qs[-1]*100))
         ax.set_title(ax_title[var])
         ax.set_ylabel('T anom. (K)')

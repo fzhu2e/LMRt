@@ -1710,7 +1710,9 @@ def Kalman_optimal(Y, vR, Ye, Xb, loc_rad=None, nsvs=None, transform_only=False,
 # ===============================================
 #  Post processing
 # -----------------------------------------------
-def load_gmt_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='gmt_ens'):
+# Correlation and coefficient Efficiency (CE)
+# -----------------------------------------------
+def load_gmt_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='gmt_ens', ref_period=[1951, 1980]):
     if not os.path.exists(exp_dir):
         raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
 
@@ -1718,6 +1720,7 @@ def load_gmt_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='gmt_ens'):
 
     with xr.open_dataset(paths[0]) as ds:
         gmt_tmp = ds[var].values
+        year = ds['year'].values
 
     nt = np.shape(gmt_tmp)[0]
     nEN = np.shape(gmt_tmp)[-1]
@@ -1730,11 +1733,11 @@ def load_gmt_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='gmt_ens'):
 
         gmt[:, nEN*i:nEN+nEN*i] = gmt_ens
 
-    if qs is not None:
+    if qs:
         gmt_qs = mquantiles(gmt, qs, axis=-1)
     else:
         gmt_qs = gmt
-    return gmt_qs
+    return gmt_qs, year
 
 
 def load_field_from_jobs(exp_dir, var='tas_ens_mean'):
@@ -1747,6 +1750,7 @@ def load_field_from_jobs(exp_dir, var='tas_ens_mean'):
     for i, path in enumerate(paths):
         if i == 0:
             with xr.open_dataset(path) as ds:
+                year = ds['year'].values
                 lat = ds['lat'].values
                 lon = ds['lon'].values
 
@@ -1755,12 +1759,11 @@ def load_field_from_jobs(exp_dir, var='tas_ens_mean'):
 
     field_em = np.average(field_ens_mean, axis=0)
 
-    return field_em, lat, lon
+    return field_em, year, lat, lon
 
 
-def load_inst_analyses(ana_pathdict, var='gmt',
-                       verif_yrs=np.arange(1880, 2001), ref_period=[1951, 1980]):
-
+def load_inst_analyses(ana_pathdict, var='gmt', verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980],
+                       sort_lon=True):
     load_func = {
         'GISTEMP': load_gridded_data.read_gridded_data_GISTEMP,
         'HadCRUT': load_gridded_data.read_gridded_data_HadCRUT,
@@ -1800,6 +1803,7 @@ def load_inst_analyses(ana_pathdict, var='gmt',
             )
             time_grid = dd['tas_sfc_Amon']['years']
             lat_grid = dd['tas_sfc_Amon']['lat'][:, 0]
+            lon_grid = dd['tas_sfc_Amon']['lon'][0, :]
             anomaly_grid = dd['tas_sfc_Amon']['value']
         else:
             time_grid, lat_grid, lon_grid, anomaly_grid = load_func[name](
@@ -1809,21 +1813,28 @@ def load_inst_analyses(ana_pathdict, var='gmt',
                 outfreq='annual',
                 ref_period=ref_period,
             )
-
-        inst_field[name] = anomaly_grid
-        inst_lat[name] = lat_grid
-        inst_lon[name] = lon_grid
+            if sort_lon:
+                sorted_lon_grid = sorted(lon_grid)
+                idx = []
+                for lon_gs in sorted_lon_grid:
+                    idx.append(list(lon_grid).index(lon_gs))
+                lon_grid = lon_grid[idx]
+                anomaly_grid = anomaly_grid[:, :, idx]
 
         gmt, nhmt, shmt = global_hemispheric_means(anomaly_grid, lat_grid)
         year = np.array([d.year for d in time_grid])
         mask = (year >= syear) & (year <= eyear)
-        inst_gmt[name] = gmt[mask] - np.nanmean(gmt[mask])
-        inst_nhmt[name] = nhmt[mask] - np.nanmean(nhmt[mask])
-        inst_shmt[name] = shmt[mask] - np.nanmean(shmt[mask])
+        inst_gmt[name] = gmt[mask]
+        inst_nhmt[name] = nhmt[mask]
+        inst_shmt[name] = shmt[mask]
         inst_time[name] = year[mask]
 
+        inst_field[name] = anomaly_grid[mask]
+        inst_lat[name] = lat_grid
+        inst_lon[name] = lon_grid
+
     if var == 'field':
-        return inst_field, inst_lat, inst_lon, inst_time
+        return inst_field, inst_time, inst_lat, inst_lon
     elif var == 'gmt':
         return inst_gmt, inst_time
     elif var == 'nhmt':
@@ -1831,9 +1842,82 @@ def load_inst_analyses(ana_pathdict, var='gmt',
     elif var == 'shmt':
         return inst_shmt, inst_time
 
-# ===============================================
+
+def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980],
+                            valid_frac=0.5):
+    ''' Calculate corr and CE between LMR and instrumental fields
+
+    Note: The time axis of the LMR field is assumed to fully cover the range of verif_yrs
+    '''
+    if not os.path.exists(exp_dir):
+        raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
+
+    field_em, year, lat, lon = load_field_from_jobs(exp_dir, var='tas_ens_mean')
+    syear, eyear = verif_yrs[0], verif_yrs[-1]
+
+    if syear < np.min(year) or eyear > np.max(year):
+        raise ValueError('ERROR: The time axis of the LMR field is not fully covering the range of verif_yrs!!!')
+
+    mask = (year >= syear) & (year <= eyear)
+    mask_ref = (year >= ref_period[0]) & (year <= ref_period[-1])
+    field_lmr = field_em[mask] - np.nanmean(field_em[mask_ref, :, :], axis=0)  # remove the mean w.r.t. the ref_period
+
+    inst_field, inst_time, inst_lat, inst_lon = load_inst_analyses(
+        ana_pathdict, var='field', verif_yrs=verif_yrs, ref_period=ref_period)
+
+    nlat_lmr = np.size(lat)
+    nlon_lmr = np.size(lon)
+    specob_lmr = Spharmt(nlon_lmr, nlat_lmr, gridtype='regular', legfunc='computed')
+
+    corr = {}
+    ce = {}
+    for name in inst_field.keys():
+        mask_ref = (inst_time[name] >= ref_period[0]) & (inst_time[name] <= ref_period[-1])
+        inst_field[name] -= np.nanmean(inst_field[name][mask_ref, :, :], axis=0)  # remove the mean w.r.t. the ref_period
+
+        print(f'Regridding LMR onto {name} ...')
+
+        nlat_inst = np.size(inst_lat[name])
+        nlon_inst = np.size(inst_lon[name])
+
+        corr[name] = np.ndarray((nlat_inst, nlon_inst))
+        ce[name] = np.ndarray((nlat_inst, nlon_inst))
+
+        specob_inst = Spharmt(nlon_inst, nlat_inst, gridtype='regular', legfunc='computed')
+
+        overlap_yrs = np.intersect1d(verif_yrs, inst_time[name])
+        ind_lmr = np.searchsorted(verif_yrs, overlap_yrs)
+        ind_inst = np.searchsorted(inst_time[name], overlap_yrs)
+
+        lmr_on_inst = []
+        for i in ind_lmr:
+            lmr_on_inst_each_yr = regrid(specob_lmr, specob_inst, field_lmr[i], ntrunc=None, smooth=None)
+            lmr_on_inst.append(lmr_on_inst_each_yr)
+
+        lmr_on_inst = np.asarray(lmr_on_inst)
+
+        for i in range(nlat_inst):
+            for j in range(nlon_inst):
+                ts_inst = inst_field[name][ind_inst, i, j]
+                ts_lmr = lmr_on_inst[:, i, j]
+
+                ts_inst_notnan = ts_inst[~np.isnan(ts_inst)]
+                ts_lmr_notnan = ts_lmr[~np.isnan(ts_inst)]
+                nt = len(ind_inst)
+                nt_notnan = np.shape(ts_inst_notnan)[0]
+
+                if nt_notnan/nt >= valid_frac:
+                    corr[name][i, j] = np.corrcoef(ts_inst_notnan, ts_lmr_notnan)[1, 0]
+                else:
+                    corr[name][i, j] = np.nan
+
+                ce[name][i, j] = coefficient_efficiency(ts_inst, ts_lmr, valid_frac)
+
+    return corr, ce, inst_lat, inst_lon
+# -----------------------------------------------
 #  Superposed Epoch Analysis
 # -----------------------------------------------
+
 def tsPad(x,t,params=(2,1,2),padFrac=0.1,diag=False):
     """ tsPad: pad a timeseries based on timeseries model predictions
 
