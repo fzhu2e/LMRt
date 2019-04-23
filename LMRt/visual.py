@@ -283,8 +283,7 @@ def plot_gmt_ts(exp_dir, savefig_path=None, plot_vars=['gmt_ensemble', 'nhmt_ens
 
 def plot_gmt_ts_from_jobs(exp_dir, savefig_path=None, plot_vars=['gmt_ens', 'nhmt_ens', 'shmt_ens'],
                           qs=[0.025, 0.25, 0.5, 0.75, 0.975], pannel_size=[10, 4],
-                          font_scale=1.5, hspace=0.5, ylim=[-1, 1],
-                          plot_prior=False, prior_var_name='tas_sfc_Amon'):
+                          font_scale=1.5, hspace=0.5, ylim=[-1, 1]):
     ''' Plot timeseries
 
     Args:
