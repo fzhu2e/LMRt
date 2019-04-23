@@ -450,11 +450,15 @@ def plot_volc_events(gmt, event_yrs, start_yr=0, before=3, after=10, highpass=Fa
 
     ax = {}
     for i in range(n_events):
-        Xevents_qs = mquantiles(Xevents[:, :, i], qs, axis=-1)
         ax[i] = plt.subplot(gs[i])
         ax[i].set_title(f'{event_yrs[i]} (AD)')
-        ax[i].plot(tcomp, Xevents_qs[:, 1], '-', lw=3, color=clr)
-        ax[i].fill_between(tcomp, Xevents_qs[:, 0], Xevents_qs[:, -1], alpha=0.3, color=clr)
+        if len(np.shape(Xevents)) == 3:
+            Xevents_qs = mquantiles(Xevents[:, :, i], qs, axis=-1)
+            ax[i].plot(tcomp, Xevents_qs[:, 1], '-', lw=3, color=clr)
+            ax[i].fill_between(tcomp, Xevents_qs[:, 0], Xevents_qs[:, -1], alpha=0.3, color=clr)
+        else:
+            ax[i].plot(tcomp, Xevents[:, i], '-', lw=3, color=clr)
+
         ax[i].axvline(x=0, ls=':', color='grey')
         ax[i].axhline(y=0, ls=':', color='grey')
         ax[i].set_xlabel('Year')
