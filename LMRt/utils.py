@@ -452,7 +452,7 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
 
         all_proxy_ids += proxies_list
 
-    all_proxies = []
+    picked_proxies = []
     picked_proxy_ids = []
     start, finish = cfg.core.recon_period
 
@@ -494,7 +494,7 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
                 psm_site_data = psm_data[(proxy_type, site)]
                 psm_obj = PSM(psm_key, psm_site_data['PSMmse'])
                 pobj = Proxy(site, proxy_type, start_yr, end_yr, lat, lon, elev, seasonality, values, time, psm_obj)
-                all_proxies.append(pobj)
+                picked_proxies.append(pobj)
                 picked_proxy_ids.append(site)
             except KeyError:
                 #  err_msg = f'Proxy in database but not found in pre-calibration file {precalib_filesdict[psm_key]}...\nSkipping: {site}'
@@ -505,10 +505,10 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
             # TODO: calibrate
             psm_obj = PSM(psm_key, None)
             pobj = Proxy(site, proxy_type, start_yr, end_yr, lat, lon, elev, seasonality, values, time, psm_obj)
-            all_proxies.append(pobj)
+            picked_proxies.append(pobj)
             picked_proxy_ids.append(site)
 
-    return picked_proxy_ids, all_proxies
+    return picked_proxy_ids, picked_proxies
 
 
 def get_env_vars(prior_filesdict, rename_vars={'d18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
@@ -1739,32 +1739,46 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath):
 
     nyr = np.size(recon_years)
 
-    gmt_ens = np.zeros((nyr, nens))
-    nhmt_ens = np.zeros((nyr, nens))
-    shmt_ens = np.zeros((nyr, nens))
     field_ens_mean = np.average(field_ens_save, axis=1)
 
-    for k in range(nens):
-        gmt_ens[:, k], nhmt_ens[:, k], shmt_ens[:, k] = global_hemispheric_means(
-            field_ens_save[:, k, :, :], lats
-        )
+    if 'tas_sfc_Amon' in prior.prior_dict.keys():
+        gmt_ens = np.zeros((nyr, nens))
+        nhmt_ens = np.zeros((nyr, nens))
+        shmt_ens = np.zeros((nyr, nens))
+
+        for k in range(nens):
+            gmt_ens[:, k], nhmt_ens[:, k], shmt_ens[:, k] = global_hemispheric_means(
+                field_ens_save[:, k, :, :], lats
+            )
 
     os.makedirs(save_dirpath, exist_ok=True)
     save_path = os.path.join(save_dirpath, f'job_r{seed:02d}.nc')
-    ds = xr.Dataset(
-        data_vars={
-            'tas_ens_mean': (('year', 'lat', 'lon'), field_ens_mean),
-            'gmt_ens': (('year', 'ens'), gmt_ens),
-            'nhmt_ens': (('year', 'ens'), nhmt_ens),
-            'shmt_ens': (('year', 'ens'), shmt_ens),
-        },
-        coords={
-            'year': recon_years,
-            'lat': lats,
-            'lon': lons,
-            'ens': np.arange(nens)
-        },
-    )
+    if 'tas_sfc_Amon' in prior.prior_dict.keys():
+        ds = xr.Dataset(
+            data_vars={
+                'tas_ens_mean': (('year', 'lat', 'lon'), field_ens_mean),
+                'gmt_ens': (('year', 'ens'), gmt_ens),
+                'nhmt_ens': (('year', 'ens'), nhmt_ens),
+                'shmt_ens': (('year', 'ens'), shmt_ens),
+            },
+            coords={
+                'year': recon_years,
+                'lat': lats,
+                'lon': lons,
+                'ens': np.arange(nens)
+            },
+        )
+    else:
+        ds = xr.Dataset(
+            data_vars={
+                'field_ens_mean': (('year', 'lat', 'lon'), field_ens_mean),
+            },
+            coords={
+                'year': recon_years,
+                'lat': lats,
+                'lon': lons,
+            },
+        )
     ds.to_netcdf(save_path)
 
 
