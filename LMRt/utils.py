@@ -1707,6 +1707,43 @@ def Kalman_optimal(Y, vR, Ye, Xb, loc_rad=None, nsvs=None, transform_only=False,
     return xam, Xap, SVD
 
 
+def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath):
+    grid = make_grid(prior)
+    lats = grid.lat
+    lons = grid.lon
+    nens = grid.nens
+
+    nyr = np.size(recon_years)
+
+    gmt_ens = np.zeros((nyr, nens))
+    nhmt_ens = np.zeros((nyr, nens))
+    shmt_ens = np.zeros((nyr, nens))
+    field_ens_mean = np.average(field_ens_save, axis=1)
+
+    for k in range(nens):
+        gmt_ens[:, k], nhmt_ens[:, k], shmt_ens[:, k] = global_hemispheric_means(
+            field_ens_save[:, k, :, :], lats
+        )
+
+    os.makedirs(save_dirpath, exist_ok=True)
+    save_path = os.path.join(save_dirpath, f'job_r{seed:02d}.nc')
+    ds = xr.Dataset(
+        data_vars={
+            'tas_ens_mean': (('year', 'lat', 'lon'), field_ens_mean),
+            'gmt_ens': (('year', 'ens'), gmt_ens),
+            'nhmt_ens': (('year', 'ens'), nhmt_ens),
+            'shmt_ens': (('year', 'ens'), shmt_ens),
+        },
+        coords={
+            'year': recon_years,
+            'lat': lats,
+            'lon': lons,
+            'ens': np.arange(nens)
+        },
+    )
+    ds.to_netcdf(save_path)
+
+
 # ===============================================
 #  Post processing
 # -----------------------------------------------

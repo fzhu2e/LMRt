@@ -4,7 +4,7 @@ __author__ = 'Feng Zhu'
 __email__ = 'fengzhu@usc.edu'
 __version__ = '0.1.0'
 
-#  from pathos.multiprocessing import ProcessingPool as Pool
+from pathos.multiprocessing import ProcessingPool as Pool
 import yaml
 import os
 from dotmap import DotMap
@@ -241,7 +241,7 @@ class ReconJob:
         self.da = DA(gmt_ens_save, nhmt_ens_save, shmt_ens_save)
         print(f'\npid={os.getpid()} >>> job.da created')
 
-    def run_da(self, recon_years=None, proxy_inds=None, verbose=False):
+    def run_da(self, recon_years=None, proxy_inds=None, verbose=False, nproc=1, debug=False):
         cfg = self.cfg
         prior = self.prior
         proxy_manager = self.proxy_manager
@@ -277,21 +277,57 @@ class ReconJob:
 
         field_ens = np.zeros((nyr, grid.nens, grid.nlat, grid.nlon))
 
-        for yr_idx, target_year in enumerate(tqdm(recon_years, desc=f'KF updating (pid={os.getpid()})')):
-            field_ens[yr_idx] = utils.update_year(
-                yr_idx, target_year,
-                cfg, Xb_one_aug, Xb_one_coords, prior, proxy_manager.sites_assim_proxy_objs,
-                assim_proxy_count, eval_proxy_count, grid,
-                ibeg_tas, iend_tas,
-                verbose=verbose
-            )
+        if nproc == 1:
+            for yr_idx, target_year in enumerate(tqdm(recon_years, desc=f'KF updating (pid={os.getpid()})')):
+                field_ens[yr_idx] = utils.update_year(
+                    yr_idx, target_year,
+                    cfg, Xb_one_aug, Xb_one_coords, prior, proxy_manager.sites_assim_proxy_objs,
+                    assim_proxy_count, eval_proxy_count, grid,
+                    ibeg_tas, iend_tas,
+                    verbose=verbose
+                )
+        else:
+            def func_wrapper(yr_idx, target_year):
+                if debug:
+                    print('\rpid={os.getpid()} >>> Updating year: {target_year} ...')
+                return utils.update_year(
+                    yr_idx, target_year,
+                    cfg, Xb_one_aug, Xb_one_coords, prior, proxy_manager.sites_assim_proxy_objs,
+                    assim_proxy_count, eval_proxy_count, grid,
+                    ibeg_tas, iend_tas,
+                    verbose=verbose
+                )
+
+            with Pool(nproc) as pool:
+                res = pool.map(func_wrapper, range(np.size(recon_years)), recon_years)
+                field_ens = np.asarray(res)
 
         self.res = Results(field_ens)
         print(f'\npid={os.getpid()} >>> job.res created')
 
+    def save_results(self, save_dirpath, seed=0, recon_years=None):
+        if recon_years is None:
+            yr_start = self.cfg.core.recon_period[0]
+            yr_end = self.cfg.core.recon_period[-1]
+            recon_years = list(range(yr_start, yr_end+1))
+
+        utils.save_to_netcdf(
+                self.prior,
+                self.res.field_ens,
+                recon_years,
+                seed,
+                save_dirpath,
+            )
+
+        save_path = os.path.join(save_dirpath, f'job_r{seed:02d}.nc')
+        print(f'\npid={os.getpid()} >>> Saving results to {save_path}')
+        print('-----------------------------------------------------')
+        print('')
+
     def run(self, prior_filepath, prior_datatype, db_proxies_filepath, db_metadata_filepath,
             recon_years=None, seed=0, precalib_filesdict=None, ye_filesdict=None,
-            verbose=False, print_assim_proxy_count=False, save_dirpath=None, mode='normal'):
+            verbose=False, print_assim_proxy_count=False, save_dirpath=None, mode='normal',
+            nproc=1, debug=False):
 
         self.load_prior(prior_filepath, prior_datatype, verbose=verbose, seed=seed)
         self.load_proxies(db_proxies_filepath, db_metadata_filepath, precalib_filesdict=precalib_filesdict,
@@ -299,46 +335,11 @@ class ReconJob:
         self.load_ye_files(ye_filesdict=ye_filesdict, verbose=verbose)
 
         run_da_func = {
-            'lite': self.run_da_lite,
+            #  'lite': self.run_da_lite,  # TODO: fix the solver
             'normal': self.run_da,
         }
 
-        run_da_func[mode](recon_years=recon_years, verbose=verbose)
-
-        if recon_years is None:
-            yr_start = self.cfg.core.recon_period[0]
-            yr_end = self.cfg.core.recon_period[-1]
-            recon_years = list(range(yr_start, yr_end+1))
-
-        grid = utils.make_grid(self.prior)
-        nyr = np.size(recon_years)
-
-        gmt_ens = np.zeros((nyr, grid.nens))
-        nhmt_ens = np.zeros((nyr, grid.nens))
-        shmt_ens = np.zeros((nyr, grid.nens))
-        field_ens_save = self.res.field_ens
-        field_ens_mean = np.average(field_ens_save, axis=1)
-
-        for k in range(grid.nens):
-            gmt_ens[:, k], nhmt_ens[:, k], shmt_ens[:, k] = utils.global_hemispheric_means(
-                field_ens_save[:, k, :, :], grid.lat
-            )
+        run_da_func[mode](recon_years=recon_years, verbose=verbose, nproc=nproc, debug=debug)
 
         if save_dirpath:
-            os.makedirs(save_dirpath, exist_ok=True)
-            save_path = os.path.join(save_dirpath, f'job_r{seed:02d}.nc')
-            ds = xr.Dataset(
-                data_vars={
-                    'tas_ens_mean': (('year', 'lat', 'lon'), field_ens_mean),
-                    'gmt_ens': (('year', 'ens'), gmt_ens),
-                    'nhmt_ens': (('year', 'ens'), nhmt_ens),
-                    'shmt_ens': (('year', 'ens'), shmt_ens),
-                },
-                coords={
-                    'year': recon_years,
-                    'lat': grid.lat,
-                    'lon': grid.lon,
-                    'ens': np.arange(grid.nens)
-                },
-            )
-            ds.to_netcdf(save_path)
+            self.save_results(save_dirpath, seed=seed, recon_years=recon_years)
