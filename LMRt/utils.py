@@ -447,7 +447,16 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
         for proxy_resolution in proxy_db_cfg[db_name].proxy_resolution:
             resolution_mask |= db_metadata['Resolution (yr)'] == proxy_resolution
 
-        proxies = db_metadata['Proxy ID'][archive_mask & measure_mask & resolution_mask]
+        dbase_mask = db_metadata['Databases'] == 0
+        dbase_mask &= False
+        for proxy_database in proxy_db_cfg[db_name].database_filter:
+            sub_mask = []
+            for p in db_metadata['Databases']:
+                sub_mask.append(proxy_database in p)
+
+            dbase_mask |= sub_mask
+
+        proxies = db_metadata['Proxy ID'][archive_mask & measure_mask & resolution_mask & dbase_mask]
         proxies_list = proxies.tolist()
 
         all_proxy_ids += proxies_list
@@ -1815,7 +1824,7 @@ def load_gmt_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='gmt_ens', ref_period=
     return gmt_qs, year
 
 
-def load_field_from_jobs(exp_dir, var='tas_ens_mean'):
+def load_field_from_jobs(exp_dir, var='tas_ens_mean', average_iter=True):
     if not os.path.exists(exp_dir):
         raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
 
@@ -1832,7 +1841,10 @@ def load_field_from_jobs(exp_dir, var='tas_ens_mean'):
         with xr.open_dataset(path) as ds:
             field_ens_mean.append(ds[var].values)
 
-    field_em = np.average(field_ens_mean, axis=0)
+    if average_iter:
+        field_em = np.average(field_ens_mean, axis=0)
+    else:
+        field_em = field_ens_mean
 
     return field_em, year, lat, lon
 

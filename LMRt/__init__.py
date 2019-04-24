@@ -2,7 +2,7 @@
 '''
 __author__ = 'Feng Zhu'
 __email__ = 'fengzhu@usc.edu'
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 
 from pathos.multiprocessing import ProcessingPool as Pool
 import yaml
