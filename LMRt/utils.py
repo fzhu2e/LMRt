@@ -19,6 +19,7 @@ from scipy import signal
 import statsmodels.api as sm
 import glob
 from scipy.stats.mstats import mquantiles
+import prysm
 
 from . import load_gridded_data  # original file from LMR
 
@@ -541,6 +542,7 @@ def calc_ye(proxy_manager, ptype, psm_name,
     ye_out = []
     count = 0
 
+    # load parameters for specific PSMs from precalculated files
     if 'vslite_params_path' in psm_params:
         # load parameters for VS-Lite
         with open(psm_params['vslite_params_path'], 'rb') as f:
@@ -551,6 +553,21 @@ def calc_ye(proxy_manager, ptype, psm_name,
             M1 = res['M1']
             M2 = res['M2']
 
+    if 'linear_psm_data_path' in psm_params:
+        # load paramters for linear PSM
+        with open(psm_params['linear_psm_data_path'], 'rb') as f:
+            psm_data = pickle.load(f)
+
+            pid_obs = []
+            slope = []
+            intercept = []
+            for k, v in psm_data.items():
+                _, pid = k
+                pid_obs.append(pid)
+                slope.append(v['PSMslope'])
+                intercept.append(v['PSMintercept'])
+
+    # generate pseudoproxy values
     for idx, pobj in enumerate(proxy_manager.all_proxies):
         if pobj.type == ptype:
             count += 1
@@ -564,6 +581,12 @@ def calc_ye(proxy_manager, ptype, psm_name,
                 psm_params['T2'] = T2[ind]
                 psm_params['M1'] = M1[ind]
                 psm_params['M2'] = M2[ind]
+
+            if 'linear_psm_data_path' in psm_params and pobj.id in pid_obs:
+                # load parameters for VS-Lite
+                ind = pid_obs.index(pobj.id)
+                psm_params['slope'] = slope[ind]
+                psm_params['intercept'] = intercept[ind]
 
             ye_tmp, _ = prysm.forward(
                 psm_name, pobj.lat, pobj.lon,
@@ -731,6 +754,7 @@ def overlap_ts(time1, value1, time2, value2):
 def calibrate_psm(proxy_manager, ptype, psm_name,
                   lat_model, lon_model, time_model,
                   inst_vars, verbose=False, **psm_params):
+    # TODO
     precalib_dict = {}
     count = 0
 
@@ -742,7 +766,7 @@ def calibrate_psm(proxy_manager, ptype, psm_name,
             count += 1
             if verbose:
                 print(f'\nProcessing #{count} - {pobj.id} ...')
-            ye_tmp, _ = forward(
+            ye_tmp, _ = prysm.forward(
                 psm_name, pobj.lat, pobj.lon,
                 lat_model, lon_model, time_model,
                 inst_vars, verbose=verbose, **psm_params,
