@@ -281,9 +281,11 @@ def plot_gmt_ts(exp_dir, savefig_path=None, plot_vars=['gmt_ensemble', 'nhmt_ens
     return fig
 
 
-def plot_ts_from_jobs(exp_dir, savefig_path=None, plot_vars=['gmt_ens', 'nhmt_ens', 'shmt_ens'],
-                          qs=[0.025, 0.25, 0.5, 0.75, 0.975], pannel_size=[10, 4], ylabel='T anom. (K)',
-                          font_scale=1.5, hspace=0.5, ylim=[-1, 1], color=sns.xkcd_rgb['pale red']):
+def plot_ts_from_jobs(
+    exp_dir, time_span=[0, 2000], savefig_path=None, plot_vars=['gmt_ens', 'nhmt_ens', 'shmt_ens'],
+    qs=[0.025, 0.25, 0.5, 0.75, 0.975], pannel_size=[10, 4], ylabel='T anom. (K)',
+    font_scale=1.5, hspace=0.5, ylim=[-1, 1], color=sns.xkcd_rgb['pale red']
+):
     ''' Plot timeseries
 
     Args:
@@ -315,6 +317,10 @@ def plot_ts_from_jobs(exp_dir, savefig_path=None, plot_vars=['gmt_ens', 'nhmt_en
 
         ts_qs, year = utils.load_ts_from_jobs(exp_dir, qs, var=var)
 
+        mask = (year >= time_span[0]) & (year <= time_span[-1])
+        ts_qs = ts_qs[mask, :]
+        year = year[mask]
+
         # plot
         gs = gridspec.GridSpec(nvar, 1)
         gs.update(wspace=0, hspace=hspace)
@@ -340,7 +346,13 @@ def plot_ts_from_jobs(exp_dir, savefig_path=None, plot_vars=['gmt_ens', 'nhmt_en
         plt.savefig(savefig_path, bbox_inches='tight')
         plt.close(fig)
 
-    return fig
+    res_dict = {
+        'fig': fig,
+        'ax': ax,
+        'year': year,
+        'ts_qs': ts_qs,
+    }
+    return res_dict
 
 
 def plot_vslite_params(lat_obs, lon_obs, T1, T2, M1, M2,
