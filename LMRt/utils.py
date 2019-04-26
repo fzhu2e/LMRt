@@ -19,7 +19,7 @@ from scipy import signal
 import statsmodels.api as sm
 import glob
 from scipy.stats.mstats import mquantiles
-import prysm
+#  from IPython import embed
 
 from . import load_gridded_data  # original file from LMR
 
@@ -1750,6 +1750,12 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath):
 
     field_ens_mean = np.average(field_ens_save, axis=1)
 
+    nino_ind = nino_indices(field_ens_save, lats, lons)
+    nino12 = nino_ind['nino1+2']
+    nino3 = nino_ind['nino3']
+    nino34 = nino_ind['nino3.4']
+    nino4 = nino_ind['nino4']
+
     if 'tas_sfc_Amon' in prior.prior_dict.keys():
         gmt_ens = np.zeros((nyr, nens))
         nhmt_ens = np.zeros((nyr, nens))
@@ -1762,66 +1768,103 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath):
 
     os.makedirs(save_dirpath, exist_ok=True)
     save_path = os.path.join(save_dirpath, f'job_r{seed:02d}.nc')
-    if 'tas_sfc_Amon' in prior.prior_dict.keys():
-        ds = xr.Dataset(
-            data_vars={
-                'tas_ens_mean': (('year', 'lat', 'lon'), field_ens_mean),
-                'gmt_ens': (('year', 'ens'), gmt_ens),
-                'nhmt_ens': (('year', 'ens'), nhmt_ens),
-                'shmt_ens': (('year', 'ens'), shmt_ens),
-            },
-            coords={
-                'year': recon_years,
-                'lat': lats,
-                'lon': lons,
-                'ens': np.arange(nens)
-            },
-        )
-    else:
-        ds = xr.Dataset(
-            data_vars={
-                'field_ens_mean': (('year', 'lat', 'lon'), field_ens_mean),
-            },
-            coords={
-                'year': recon_years,
-                'lat': lats,
-                'lon': lons,
-            },
-        )
+
+    output_dict = {
+        'tas_ens_mean': (('year', 'lat', 'lon'), field_ens_mean),
+        'gmt_ens': (('year', 'ens'), gmt_ens),
+        'nhmt_ens': (('year', 'ens'), nhmt_ens),
+        'shmt_ens': (('year', 'ens'), shmt_ens),
+        'nino1+2': (('year', 'ens'), nino12),
+        'nino3': (('year', 'ens'), nino3),
+        'nino3.4': (('year', 'ens'), nino34),
+        'nino4': (('year', 'ens'), nino4),
+    }
+
+    ds = xr.Dataset(
+        data_vars=output_dict,
+        coords={
+            'year': recon_years,
+            'lat': lats,
+            'lon': lons,
+            'ens': np.arange(nens)
+        },
+    )
+
     ds.to_netcdf(save_path)
 
 
 # ===============================================
 #  Post processing
 # -----------------------------------------------
+def nino_indices(sst, lats, lons):
+    ''' Calculate Nino indices
+
+    Args:
+        sst: sea-surface temperature, the last two dimensions are assumed to be (lat, lon)
+        lats: the latitudes in format of (-90, 90)
+        lons: the longitudes in format of (0, 360)
+    '''
+    def lon360(lon):
+        # convert from (-180, 180) to (0, 360)
+        return np.mod(lon, 360)
+
+    lats = np.asarray(lats)
+    lons = np.asarray(lons)
+
+    lat_mask = {}
+    lon_mask = {}
+    ind = {}
+
+    lat_mask['nino1+2'] = (lats >= -10) & (lats <= 0)
+    lon_mask['nino1+2'] = (lons >= lon360(-90)) & (lons <= lon360(-80))
+
+    lat_mask['nino3'] = (lats >= -5) & (lats <= 5)
+    lon_mask['nino3'] = (lons >= lon360(-150)) & (lons <= lon360(-90))
+
+    lat_mask['nino3.4'] = (lats >= -5) & (lats <= 5)
+    lon_mask['nino3.4'] = (lons >= lon360(-170)) & (lons <= lon360(-120))
+
+    lat_mask['nino4'] = (lats >= -5) & (lats <= 5)
+    lon_mask['nino4'] = (lons >= lon360(160)) & (lons <= lon360(-150))
+
+    for region in lat_mask.keys():
+        sst_sub = sst[..., lon_mask[region]]
+        sst_sub = sst_sub[..., lat_mask[region], :]
+        ind[region] = np.average(
+            np.average(sst_sub, axis=-1),
+            axis=-1,
+            weights=np.cos(np.deg2rad(lats[lat_mask[region]])),
+        )
+    return ind
+# -----------------------------------------------
 # Correlation and coefficient Efficiency (CE)
 # -----------------------------------------------
-def load_gmt_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='gmt_ens', ref_period=[1951, 1980]):
+def load_ts_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='gmt_ens', ref_period=[1951, 1980]):
     if not os.path.exists(exp_dir):
         raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
 
     paths = sorted(glob.glob(os.path.join(exp_dir, 'job_r*')))
 
     with xr.open_dataset(paths[0]) as ds:
-        gmt_tmp = ds[var].values
+        ts_tmp = ds[var].values
         year = ds['year'].values
 
-    nt = np.shape(gmt_tmp)[0]
-    nEN = np.shape(gmt_tmp)[-1]
+    nt = np.shape(ts_tmp)[0]
+    nEN = np.shape(ts_tmp)[-1]
     nMC = len(paths)
 
-    gmt = np.ndarray((nt, nEN*nMC))
+    ts = np.ndarray((nt, nEN*nMC))
     for i, path in enumerate(paths):
         with xr.open_dataset(path) as ds:
-            gmt_ens = ds[var].values
+            ts_ens = ds[var].values
 
-        gmt[:, nEN*i:nEN+nEN*i] = gmt_ens
+        ts[:, nEN*i:nEN+nEN*i] = ts_ens
 
     if qs:
-        gmt_qs = mquantiles(gmt, qs, axis=-1)
+        ts_qs = mquantiles(ts, qs, axis=-1)
     else:
-        gmt_qs = gmt
-    return gmt_qs, year
+        ts_qs = ts
+    return ts_qs, year
 
 
 def load_field_from_jobs(exp_dir, var='tas_ens_mean', average_iter=True):

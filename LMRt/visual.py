@@ -281,9 +281,9 @@ def plot_gmt_ts(exp_dir, savefig_path=None, plot_vars=['gmt_ensemble', 'nhmt_ens
     return fig
 
 
-def plot_gmt_ts_from_jobs(exp_dir, savefig_path=None, plot_vars=['gmt_ens', 'nhmt_ens', 'shmt_ens'],
-                          qs=[0.025, 0.25, 0.5, 0.75, 0.975], pannel_size=[10, 4],
-                          font_scale=1.5, hspace=0.5, ylim=[-1, 1]):
+def plot_ts_from_jobs(exp_dir, savefig_path=None, plot_vars=['gmt_ens', 'nhmt_ens', 'shmt_ens'],
+                          qs=[0.025, 0.25, 0.5, 0.75, 0.975], pannel_size=[10, 4], ylabel='T anom. (K)',
+                          font_scale=1.5, hspace=0.5, ylim=[-1, 1], color=sns.xkcd_rgb['pale red']):
     ''' Plot timeseries
 
     Args:
@@ -305,11 +305,15 @@ def plot_gmt_ts_from_jobs(exp_dir, savefig_path=None, plot_vars=['gmt_ens', 'nhm
         'gmt_ens': 'Global mean temperature',
         'shmt_ens': 'SH mean temperature',
         'nhmt_ens': 'NH mean temperature',
+        'nino1+2': 'Niño 1+2 index',
+        'nino3': 'Niño 3 index',
+        'nino3.4': 'Niño 3.4 index',
+        'nino4': 'Niño 4 index',
     }
 
     for plot_i, var in enumerate(plot_vars):
 
-        gmt_qs, year = utils.load_gmt_from_jobs(exp_dir, qs, var=var)
+        ts_qs, year = utils.load_ts_from_jobs(exp_dir, qs, var=var)
 
         # plot
         gs = gridspec.GridSpec(nvar, 1)
@@ -321,13 +325,13 @@ def plot_gmt_ts_from_jobs(exp_dir, savefig_path=None, plot_vars=['gmt_ens', 'nhm
         else:
             label='{}%'.format(qs[2]*100)
 
-        ax.plot(year, gmt_qs[:,2], '-', color=sns.xkcd_rgb['pale red'], alpha=1, label='{}'.format(label))
-        ax.fill_between(year, gmt_qs[:,-2], gmt_qs[:,1], color=sns.xkcd_rgb['pale red'], alpha=0.5,
+        ax.plot(year, ts_qs[:,2], '-', color=color, alpha=1, label='{}'.format(label))
+        ax.fill_between(year, ts_qs[:,-2], ts_qs[:,1], color=color, alpha=0.5,
                 label='{}% to {}%'.format(qs[1]*100, qs[-2]*100))
-        ax.fill_between(year, gmt_qs[:,-1], gmt_qs[:,0], color=sns.xkcd_rgb['pale red'], alpha=0.1,
+        ax.fill_between(year, ts_qs[:,-1], ts_qs[:,0], color=color, alpha=0.1,
                 label='{}% to {}%'.format(qs[0]*100, qs[-1]*100))
         ax.set_title(ax_title[var])
-        ax.set_ylabel('T anom. (K)')
+        ax.set_ylabel(ylabel)
         ax.set_xlabel('Year (AD)')
         ax.legend(loc='upper center', ncol=3, frameon=False)
         ax.set_ylim(ylim)
