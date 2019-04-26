@@ -16,6 +16,11 @@ from cartopy import util as cutil
 from . import utils
 
 
+def plot_proxy_sites(proxy_manager):
+    fig = None
+    return fig
+
+
 def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=False,
                    title=None, title_size=20, title_weight='normal', figsize=[10, 8],
                    projection=ccrs.Robinson(), transform=ccrs.PlateCarree(),
@@ -281,11 +286,11 @@ def plot_gmt_ts(exp_dir, savefig_path=None, plot_vars=['gmt_ensemble', 'nhmt_ens
     return fig
 
 
-def plot_ts_from_jobs(
-    exp_dir, time_span=[0, 2000], savefig_path=None, plot_vars=['gmt_ens', 'nhmt_ens', 'shmt_ens'],
-    qs=[0.025, 0.25, 0.5, 0.75, 0.975], pannel_size=[10, 4], ylabel='T anom. (K)',
-    font_scale=1.5, hspace=0.5, ylim=[-1, 1], color=sns.xkcd_rgb['pale red']
-):
+def plot_ts_from_jobs(exp_dir, time_span=[0, 2000], savefig_path=None, plot_vars=['gmt_ens', 'nhmt_ens', 'shmt_ens'],
+                      qs=[0.025, 0.25, 0.5, 0.75, 0.975], pannel_size=[10, 4], ylabel='T anom. (K)',
+                      font_scale=1.5, hspace=0.5, ylim=[-1, 1], color=sns.xkcd_rgb['pale red'],
+                      lgd_ncol=3, lgd_bbox_to_anchor=None,
+                      ref_value=None, ref_time=None, ref_color='k', ref_label='Reference'):
     ''' Plot timeseries
 
     Args:
@@ -294,6 +299,9 @@ def plot_ts_from_jobs(
     Returns:
         fig (figure): the output figure
     '''
+    if type(plot_vars) is not list:
+        plot_vars = [plot_vars]
+
     # load data
     if not os.path.exists(exp_dir):
         raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
@@ -307,10 +315,10 @@ def plot_ts_from_jobs(
         'gmt_ens': 'Global mean temperature',
         'shmt_ens': 'SH mean temperature',
         'nhmt_ens': 'NH mean temperature',
-        'nino1+2': 'Niño 1+2 index',
-        'nino3': 'Niño 3 index',
-        'nino3.4': 'Niño 3.4 index',
-        'nino4': 'Niño 4 index',
+        'nino1+2': 'Annual Niño 1+2 index',
+        'nino3': 'Annual Niño 3 index',
+        'nino3.4': 'Annual Niño 3.4 index',
+        'nino4': 'Annual Niño 4 index',
     }
 
     for plot_i, var in enumerate(plot_vars):
@@ -329,30 +337,60 @@ def plot_ts_from_jobs(
         if qs[2] == 0.5:
             label='median'
         else:
-            label='{}%'.format(qs[2]*100)
+            label=f'{qs[2]*100}%'
 
-        ax.plot(year, ts_qs[:,2], '-', color=color, alpha=1, label='{}'.format(label))
-        ax.fill_between(year, ts_qs[:,-2], ts_qs[:,1], color=color, alpha=0.5,
-                label='{}% to {}%'.format(qs[1]*100, qs[-2]*100))
-        ax.fill_between(year, ts_qs[:,-1], ts_qs[:,0], color=color, alpha=0.1,
-                label='{}% to {}%'.format(qs[0]*100, qs[-1]*100))
-        ax.set_title(ax_title[var])
+        title = ax_title[var]
+        ax.plot(year, ts_qs[:, 2], '-', color=color, alpha=1, label=f'{label}')
+
+        ax.fill_between(year, ts_qs[:, -2], ts_qs[:, 1], color=color, alpha=0.5,
+                label=f'{qs[1]*100}% to {qs[-2]*100}%')
+        ax.fill_between(year, ts_qs[:, -1], ts_qs[:, 0], color=color, alpha=0.1,
+                label=f'{qs[0]*100}% to {qs[-1]*100}%')
+        ax.set_title(title)
         ax.set_ylabel(ylabel)
         ax.set_xlabel('Year (AD)')
-        ax.legend(loc='upper center', ncol=3, frameon=False)
         ax.set_ylim(ylim)
+
+        if type(ref_value) is list:
+            ref_v = ref_value[plot_i]
+        else:
+            ref_v = ref_value
+
+        if type(ref_time) is list:
+            ref_t = ref_time[plot_i]
+        else:
+            ref_t = year
+
+        if type(ref_label) is list:
+            ref_l = ref_label[plot_i]
+        else:
+            ref_l = ref_label
+
+        if ref_v is not None:
+
+            overlap_yrs = np.intersect1d(ref_t, year)
+            ind_ref = np.searchsorted(ref_t, overlap_yrs)
+            ind_ts = np.searchsorted(year, overlap_yrs)
+            corr = np.corrcoef(ts_qs[ind_ts, 2], ref_v[ind_ref])[1, 0]
+            ce = utils.coefficient_efficiency(ts_qs[ind_ts, 2], ref_v[ind_ref])
+
+            ax.plot(ref_t, ref_v, '-', color=ref_color, alpha=1, label=f'{ref_l} (corr={corr:.2f}; CE={ce:.2f})')
+
+            handles, labels = ax.get_legend_handles_labels()
+            order = [0, 2, 3, 1]
+
+            ax.legend(
+                [handles[idx] for idx in order], [labels[idx] for idx in order],
+                loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor
+            )
+        else:
+            ax.legend(loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor)
 
     if savefig_path:
         plt.savefig(savefig_path, bbox_inches='tight')
         plt.close(fig)
 
-    res_dict = {
-        'fig': fig,
-        'ax': ax,
-        'year': year,
-        'ts_qs': ts_qs,
-    }
-    return res_dict
+    return fig
 
 
 def plot_vslite_params(lat_obs, lon_obs, T1, T2, M1, M2,
