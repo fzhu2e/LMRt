@@ -132,7 +132,7 @@ class ReconJob:
         self.prior = Prior(prior_dict, ens, prior_sample_indices, coords, full_state_info, full_state_info)
         print(f'pid={os.getpid()} >>> job.prior created')
         if self.cfg.prior.regrid_method:
-            ens, coords, trunc_state_info = utils.regrid_prior(self.cfg, self.prior)
+            ens, coords, trunc_state_info = utils.regrid_prior(self.cfg, self.prior, verbose=verbose)
             self.prior = Prior(prior_dict, ens, prior_sample_indices, coords, full_state_info, trunc_state_info)
             print(f'pid={os.getpid()} >>> job.prior regridded')
 
@@ -197,51 +197,7 @@ class ReconJob:
         self.ye = Y(Ye_assim, Ye_assim_coords, Ye_eval, Ye_eval_coords)
         print(f'pid={os.getpid()} >>> job.ye created')
 
-    def run_da_lite(self, recon_years=None, proxy_inds=None, da_solver='ESRF', verbose=False):
-        cfg = self.cfg
-        prior = self.prior
-        proxy_manager = self.proxy_manager
-        Ye_assim = self.ye.Ye_assim
-        Ye_assim_coords = self.ye.Ye_assim_coords
-        Ye_eval = self.ye.Ye_eval
-        Ye_eval_coords = self.ye.Ye_eval_coords
-
-        ibeg_tas = prior.trunc_state_info['tas_sfc_Amon']['pos'][0]
-        iend_tas = prior.trunc_state_info['tas_sfc_Amon']['pos'][1]
-
-        if recon_years is None:
-            yr_start = cfg.core.recon_period[0]
-            yr_end = cfg.core.recon_period[-1]
-            recon_years = list(range(yr_start, yr_end+1))
-        else:
-            yr_start, yr_end = recon_years[0], recon_years[-1]
-        print(f'\npid={os.getpid()} >>> Recon. period: [{yr_start}, {yr_end}]')
-
-        Xb_one = prior.ens
-        Xb_one_aug = np.append(Xb_one, Ye_assim, axis=0)
-        Xb_one_aug = np.append(Xb_one_aug, Ye_eval, axis=0)
-        Xb_one_coords = np.append(prior.coords, Ye_assim_coords, axis=0)
-        Xb_one_coords = np.append(Xb_one_coords, Ye_eval_coords, axis=0)
-
-        grid = utils.make_grid(prior)
-        nyr = len(recon_years)
-
-        gmt_ens_save = np.zeros((nyr, grid.nens))
-        nhmt_ens_save = np.zeros((nyr, grid.nens))
-        shmt_ens_save = np.zeros((nyr, grid.nens))
-
-        for yr_idx, target_year in enumerate(tqdm(recon_years, desc=f'KF updating (pid={os.getpid()})')):
-            gmt_ens_save[yr_idx], nhmt_ens_save[yr_idx], shmt_ens_save[yr_idx] = utils.update_year_lite(
-                target_year, cfg, Xb_one, grid, proxy_manager, Ye_assim, Ye_assim_coords,
-                Xb_one_aug, Xb_one_coords, prior,
-                ibeg_tas, iend_tas,
-                da_solver=da_solver,
-                verbose=verbose)
-
-        self.da = DA(gmt_ens_save, nhmt_ens_save, shmt_ens_save)
-        print(f'\npid={os.getpid()} >>> job.da created')
-
-    def run_da(self, recon_years=None, proxy_inds=None, verbose=False, nproc=1, debug=False):
+    def run_da(self, recon_years=None, proxy_inds=None, verbose=False):
         cfg = self.cfg
         prior = self.prior
         proxy_manager = self.proxy_manager
@@ -253,9 +209,6 @@ class ReconJob:
         Ye_eval = self.ye.Ye_eval
         Ye_eval_coords = self.ye.Ye_eval_coords
         eval_proxy_count = np.shape(Ye_eval)[0]
-
-        ibeg_tas = prior.trunc_state_info['tas_sfc_Amon']['pos'][0]
-        iend_tas = prior.trunc_state_info['tas_sfc_Amon']['pos'][1]
 
         if recon_years is None:
             yr_start = cfg.core.recon_period[0]
@@ -275,32 +228,24 @@ class ReconJob:
 
         grid = utils.make_grid(prior)
 
-        field_ens = np.zeros((nyr, grid.nens, grid.nlat, grid.nlon))
+        var_names = prior.trunc_state_info.keys()
+        ibeg = {}
+        iend = {}
+        field_ens = {}
+        for name in var_names:
+            ibeg[name] = prior.trunc_state_info[name]['pos'][0]
+            iend[name] = prior.trunc_state_info[name]['pos'][1]
+            field_ens[name] = np.zeros((nyr, grid.nens, grid.nlat, grid.nlon))
 
-        if nproc == 1:
-            for yr_idx, target_year in enumerate(tqdm(recon_years, desc=f'KF updating (pid={os.getpid()})')):
-                field_ens[yr_idx] = utils.update_year(
-                    yr_idx, target_year,
-                    cfg, Xb_one_aug, Xb_one_coords, prior, proxy_manager.sites_assim_proxy_objs,
-                    assim_proxy_count, eval_proxy_count, grid,
-                    ibeg_tas, iend_tas,
-                    verbose=verbose
-                )
-        else:
-            def func_wrapper(yr_idx, target_year):
-                if debug:
-                    print('\rpid={os.getpid()} >>> Updating year: {target_year} ...')
-                return utils.update_year(
-                    yr_idx, target_year,
-                    cfg, Xb_one_aug, Xb_one_coords, prior, proxy_manager.sites_assim_proxy_objs,
-                    assim_proxy_count, eval_proxy_count, grid,
-                    ibeg_tas, iend_tas,
-                    verbose=verbose
-                )
-
-            with Pool(nproc) as pool:
-                res = pool.map(func_wrapper, range(np.size(recon_years)), recon_years)
-                field_ens = np.asarray(res)
+        for yr_idx, target_year in enumerate(tqdm(recon_years, desc=f'KF updating (pid={os.getpid()})')):
+            res = utils.update_year(
+                yr_idx, target_year,
+                cfg, Xb_one_aug, Xb_one_coords, prior, proxy_manager.sites_assim_proxy_objs,
+                assim_proxy_count, eval_proxy_count, grid,
+                ibeg, iend, verbose=verbose
+            )
+            for name in var_names:
+                field_ens[name][yr_idx] = res[name]
 
         self.res = Results(field_ens)
         print(f'\npid={os.getpid()} >>> job.res created')
@@ -326,20 +271,14 @@ class ReconJob:
 
     def run(self, prior_filepath, prior_datatype, db_proxies_filepath, db_metadata_filepath,
             recon_years=None, seed=0, precalib_filesdict=None, ye_filesdict=None,
-            verbose=False, print_assim_proxy_count=False, save_dirpath=None, mode='normal',
-            nproc=1, debug=False):
+            verbose=False, print_assim_proxy_count=False, save_dirpath=None):
 
         self.load_prior(prior_filepath, prior_datatype, verbose=verbose, seed=seed)
         self.load_proxies(db_proxies_filepath, db_metadata_filepath, precalib_filesdict=precalib_filesdict,
                           verbose=verbose, seed=seed, print_assim_proxy_count=print_assim_proxy_count)
         self.load_ye_files(ye_filesdict=ye_filesdict, verbose=verbose)
 
-        run_da_func = {
-            #  'lite': self.run_da_lite,  # TODO: fix the solver
-            'normal': self.run_da,
-        }
-
-        run_da_func[mode](recon_years=recon_years, verbose=verbose, nproc=nproc, debug=debug)
+        self.run_da(recon_years=recon_years, verbose=verbose)
 
         if save_dirpath:
             self.save_results(save_dirpath, seed=seed, recon_years=recon_years)

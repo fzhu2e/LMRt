@@ -964,8 +964,7 @@ def update_year_lite(target_year, cfg, Xb_one, grid, proxy_manager, ye_all, ye_a
 def update_year(yr_idx, target_year,
                 cfg, Xb_one_aug, Xb_one_coords, X, sites_assim_proxy_objs,
                 assim_proxy_count, eval_proxy_count, grid,
-                ibeg_tas, iend_tas,
-                verbose=False):
+                ibeg, iend, verbose=False):
 
     recon_timescale = cfg.core.recon_timescale
     start_yr = int(target_year-recon_timescale//2)
@@ -1016,7 +1015,10 @@ def update_year(yr_idx, target_year,
 
         Xb = Xa
 
-    xam_lalo = Xb[ibeg_tas:iend_tas+1, :].T.reshape(grid.nens, grid.nlat, grid.nlon)
+    xam_lalo = {}
+    for name in ibeg.keys():
+        xam_lalo[name] = Xb[ibeg[name]:iend[name]+1, :].T.reshape(grid.nens, grid.nlat, grid.nlon)
+
     return xam_lalo
 
 
@@ -1748,13 +1750,15 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath):
 
     nyr = np.size(recon_years)
 
-    field_ens_mean = np.average(field_ens_save, axis=1)
+    var_names = prior.trunc_state_info.keys()
 
-    nino_ind = nino_indices(field_ens_save, lats, lons)
-    nino12 = nino_ind['nino1+2']
-    nino3 = nino_ind['nino3']
-    nino34 = nino_ind['nino3.4']
-    nino4 = nino_ind['nino4']
+    field_ens_mean = {}
+    for name in var_names:
+        field_ens_mean[name] = np.average(field_ens_save[name], axis=1)
+
+    output_dict = {}
+    for name in var_names:
+        output_dict[name] = (('year', 'lat', 'lon'), field_ens_mean[name])
 
     if 'tas_sfc_Amon' in prior.prior_dict.keys():
         gmt_ens = np.zeros((nyr, nens))
@@ -1763,22 +1767,25 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath):
 
         for k in range(nens):
             gmt_ens[:, k], nhmt_ens[:, k], shmt_ens[:, k] = global_hemispheric_means(
-                field_ens_save[:, k, :, :], lats
-            )
+                field_ens_save['tas_sfc_Amon'][:, k, :, :], lats)
+
+        nino_ind = nino_indices(field_ens_save['tas_sfc_Amon'], lats, lons)
+        nino12 = nino_ind['nino1+2']
+        nino3 = nino_ind['nino3']
+        nino34 = nino_ind['nino3.4']
+        nino4 = nino_ind['nino4']
+
+        output_dict['gmt_ens'] = (('year', 'ens'), gmt_ens)
+        output_dict['nhmt_ens'] = (('year', 'ens'), nhmt_ens)
+        output_dict['shmt_ens'] = (('year', 'ens'), shmt_ens)
+
+        output_dict['nino1+2'] = (('year', 'ens'), nino12)
+        output_dict['nino3'] = (('year', 'ens'), nino3)
+        output_dict['nino3.4'] = (('year', 'ens'), nino34)
+        output_dict['nino4'] = (('year', 'ens'), nino4)
 
     os.makedirs(save_dirpath, exist_ok=True)
     save_path = os.path.join(save_dirpath, f'job_r{seed:02d}.nc')
-
-    output_dict = {
-        'tas_ens_mean': (('year', 'lat', 'lon'), field_ens_mean),
-        'gmt_ens': (('year', 'ens'), gmt_ens),
-        'nhmt_ens': (('year', 'ens'), nhmt_ens),
-        'shmt_ens': (('year', 'ens'), shmt_ens),
-        'nino1+2': (('year', 'ens'), nino12),
-        'nino3': (('year', 'ens'), nino3),
-        'nino3.4': (('year', 'ens'), nino34),
-        'nino4': (('year', 'ens'), nino4),
-    }
 
     ds = xr.Dataset(
         data_vars=output_dict,
@@ -1867,7 +1874,7 @@ def load_ts_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='gmt_ens', ref_period=[
     return ts_qs, year
 
 
-def load_field_from_jobs(exp_dir, var='tas_ens_mean', average_iter=True):
+def load_field_from_jobs(exp_dir, var='tas_sfc_Amon', average_iter=True):
     if not os.path.exists(exp_dir):
         raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
 

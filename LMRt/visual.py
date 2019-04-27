@@ -21,7 +21,7 @@ def plot_proxy_sites(proxy_manager):
     return fig
 
 
-def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=False,
+def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                    title=None, title_size=20, title_weight='normal', figsize=[10, 8],
                    projection=ccrs.Robinson(), transform=ccrs.PlateCarree(),
                    clim=None, cmap='RdBu_r', extend='both',
