@@ -286,10 +286,12 @@ def plot_gmt_ts(exp_dir, savefig_path=None, plot_vars=['gmt_ensemble', 'nhmt_ens
     return fig
 
 
-def plot_ts_from_jobs(exp_dir, time_span=[0, 2000], savefig_path=None, plot_vars=['gmt_ens', 'nhmt_ens', 'shmt_ens'],
+def plot_ts_from_jobs(exp_dir, time_span=(0, 2000), savefig_path=None, plot_vars=['gmt_ens', 'nhmt_ens', 'shmt_ens'],
                       qs=[0.025, 0.25, 0.5, 0.75, 0.975], pannel_size=[10, 4], ylabel='T anom. (K)',
                       font_scale=1.5, hspace=0.5, ylim=[-1, 1], color=sns.xkcd_rgb['pale red'],
+                      title=None, plot_title=True,
                       lgd_ncol=3, lgd_bbox_to_anchor=None,
+                      lgd_order=[0, 2, 3, 1],
                       ref_value=None, ref_time=None, ref_color='k', ref_label='Reference'):
     ''' Plot timeseries
 
@@ -299,8 +301,21 @@ def plot_ts_from_jobs(exp_dir, time_span=[0, 2000], savefig_path=None, plot_vars
     Returns:
         fig (figure): the output figure
     '''
-    if type(plot_vars) is not list:
-        plot_vars = [plot_vars]
+    def make_list(item, nvars=1):
+        if type(item) is not list:
+            item = [item]
+            if len(item) == 1:
+                for i in range(1, nvars):
+                    item.append(item[0])
+
+        return item
+
+    plot_vars = make_list(plot_vars)
+    nvars = len(plot_vars)
+
+    time_span = make_list(time_span, nvars)
+    plot_title = make_list(plot_title, nvars)
+    ylabel = make_list(ylabel, nvars)
 
     # load data
     if not os.path.exists(exp_dir):
@@ -325,7 +340,7 @@ def plot_ts_from_jobs(exp_dir, time_span=[0, 2000], savefig_path=None, plot_vars
 
         ts_qs, year = utils.load_ts_from_jobs(exp_dir, qs, var=var)
 
-        mask = (year >= time_span[0]) & (year <= time_span[-1])
+        mask = (year >= time_span[plot_i][0]) & (year <= time_span[plot_i][-1])
         ts_qs = ts_qs[mask, :]
         year = year[mask]
 
@@ -335,33 +350,33 @@ def plot_ts_from_jobs(exp_dir, time_span=[0, 2000], savefig_path=None, plot_vars
 
         ax = plt.subplot(gs[plot_i, 0])
         if qs[2] == 0.5:
-            label='median'
+            label = 'median'
         else:
-            label=f'{qs[2]*100}%'
+            label = f'{qs[2]*100}%'
 
         title = ax_title[var]
+
         ax.plot(year, ts_qs[:, 2], '-', color=color, alpha=1, label=f'{label}')
 
         ax.fill_between(year, ts_qs[:, -2], ts_qs[:, 1], color=color, alpha=0.5,
-                label=f'{qs[1]*100}% to {qs[-2]*100}%')
+                        label=f'{qs[1]*100}% to {qs[-2]*100}%')
         ax.fill_between(year, ts_qs[:, -1], ts_qs[:, 0], color=color, alpha=0.1,
-                label=f'{qs[0]*100}% to {qs[-1]*100}%')
-        ax.set_title(title)
-        ax.set_ylabel(ylabel)
+                        label=f'{qs[0]*100}% to {qs[-1]*100}%')
+        ax.set_ylabel(ylabel[plot_i])
         ax.set_xlabel('Year (AD)')
         ax.set_ylim(ylim)
 
-        if type(ref_value) is list:
+        if type(ref_value) is list and len(ref_value) > 1:
             ref_v = ref_value[plot_i]
         else:
             ref_v = ref_value
 
-        if type(ref_time) is list:
+        if type(ref_time) is list and len(ref_time) > 1:
             ref_t = ref_time[plot_i]
         else:
-            ref_t = year
+            ref_t = ref_time
 
-        if type(ref_label) is list:
+        if type(ref_label) is list and len(ref_label) > 1:
             ref_l = ref_label[plot_i]
         else:
             ref_l = ref_label
@@ -374,16 +389,21 @@ def plot_ts_from_jobs(exp_dir, time_span=[0, 2000], savefig_path=None, plot_vars
             corr = np.corrcoef(ts_qs[ind_ts, 2], ref_v[ind_ref])[1, 0]
             ce = utils.coefficient_efficiency(ts_qs[ind_ts, 2], ref_v[ind_ref])
 
-            ax.plot(ref_t, ref_v, '-', color=ref_color, alpha=1, label=f'{ref_l} (corr={corr:.2f}; CE={ce:.2f})')
+            ax.plot(ref_t, ref_v, '-', color=ref_color, alpha=1, label=f'{ref_l}')
+            if plot_title[plot_i]:
+                ax.set_title(f'{title} (corr={corr:.2f}; CE={ce:.2f})')
 
-            handles, labels = ax.get_legend_handles_labels()
-            order = [0, 2, 3, 1]
-
-            ax.legend(
-                [handles[idx] for idx in order], [labels[idx] for idx in order],
-                loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor
-            )
+            if plot_i == 0:
+                if lgd_order:
+                    handles, labels = ax.get_legend_handles_labels()
+                    ax.legend(
+                        [handles[idx] for idx in lgd_order], [labels[idx] for idx in lgd_order],
+                        loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor
+                    )
+                else:
+                    ax.legend(loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor)
         else:
+            ax.set_title(title)
             ax.legend(loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor)
 
     if savefig_path:
