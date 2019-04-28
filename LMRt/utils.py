@@ -534,7 +534,7 @@ def get_env_vars(prior_filesdict, rename_vars={'d18O': 'd18Opr', 'tos': 'sst', '
             )
             first_item = False
         else:
-            prior_vars[prior_varname] = get_nc_vars(prior_filepath, prior_varname)
+            prior_vars[prior_varname] = get_nc_vars(prior_filepath, prior_varname, useLib=useLib)
 
     if rename_vars:
         for old_name, new_name in rename_vars.items():
@@ -561,6 +561,13 @@ def calc_ye(proxy_manager, ptype, psm_name,
             T2 = res['T2']
             M1 = res['M1']
             M2 = res['M2']
+
+    if 'coral_species_info' in psm_params:
+        # load parameters for VS-Lite
+        with open(psm_params['coral_species_info'], 'rb') as f:
+            res = pickle.load(f)
+            pid_obs = res['pid_obs']
+            species_obs = res['species_obs']
 
     if 'linear_psm_data_path' in psm_params:
         # load paramters for linear PSM
@@ -596,6 +603,11 @@ def calc_ye(proxy_manager, ptype, psm_name,
                 ind = pid_obs.index(pobj.id)
                 psm_params['slope'] = slope[ind]
                 psm_params['intercept'] = intercept[ind]
+
+            if 'coral_species_info' in psm_params:
+                # load parameters for coral d18O
+                ind = pid_obs.index(pobj.id)
+                psm_params['species'] = species_obs[ind]
 
             ye_tmp, _ = prysm.forward(
                 psm_name, pobj.lat, pobj.lon,
@@ -1754,29 +1766,29 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath):
     for name in var_names:
         output_dict[name] = (('year', 'lat', 'lon'), field_ens_mean[name])
 
-    if 'tas_sfc_Amon' in prior.prior_dict.keys():
-        gmt_ens = np.zeros((nyr, nens))
-        nhmt_ens = np.zeros((nyr, nens))
-        shmt_ens = np.zeros((nyr, nens))
+        gm_ens = np.zeros((nyr, nens))
+        nhm_ens = np.zeros((nyr, nens))
+        shm_ens = np.zeros((nyr, nens))
 
         for k in range(nens):
-            gmt_ens[:, k], nhmt_ens[:, k], shmt_ens[:, k] = global_hemispheric_means(
-                field_ens_save['tas_sfc_Amon'][:, k, :, :], lats)
+            gm_ens[:, k], nhm_ens[:, k], shm_ens[:, k] = global_hemispheric_means(
+                field_ens_save[name][:, k, :, :], lats)
 
-        nino_ind = nino_indices(field_ens_save['tas_sfc_Amon'], lats, lons)
-        nino12 = nino_ind['nino1+2']
-        nino3 = nino_ind['nino3']
-        nino34 = nino_ind['nino3.4']
-        nino4 = nino_ind['nino4']
+        output_dict[f'{name}_gm_ens'] = (('year', 'ens'), gm_ens)
+        output_dict[f'{name}_nhm_ens'] = (('year', 'ens'), nhm_ens)
+        output_dict[f'{name}_shm_ens'] = (('year', 'ens'), shm_ens)
 
-        output_dict['gmt_ens'] = (('year', 'ens'), gmt_ens)
-        output_dict['nhmt_ens'] = (('year', 'ens'), nhmt_ens)
-        output_dict['shmt_ens'] = (('year', 'ens'), shmt_ens)
+        if name == 'tas_sfc_Amon':
+            nino_ind = nino_indices(field_ens_save[name], lats, lons)
+            nino12 = nino_ind['nino1+2']
+            nino3 = nino_ind['nino3']
+            nino34 = nino_ind['nino3.4']
+            nino4 = nino_ind['nino4']
 
-        output_dict['nino1+2'] = (('year', 'ens'), nino12)
-        output_dict['nino3'] = (('year', 'ens'), nino3)
-        output_dict['nino3.4'] = (('year', 'ens'), nino34)
-        output_dict['nino4'] = (('year', 'ens'), nino4)
+            output_dict['nino1+2'] = (('year', 'ens'), nino12)
+            output_dict['nino3'] = (('year', 'ens'), nino3)
+            output_dict['nino3.4'] = (('year', 'ens'), nino34)
+            output_dict['nino4'] = (('year', 'ens'), nino4)
 
     os.makedirs(save_dirpath, exist_ok=True)
     save_path = os.path.join(save_dirpath, f'job_r{seed:02d}.nc')
@@ -1938,7 +1950,7 @@ def nino_indices(sst, lats, lons):
 # -----------------------------------------------
 # Correlation and coefficient Efficiency (CE)
 # -----------------------------------------------
-def load_ts_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='gmt_ens', ref_period=[1951, 1980]):
+def load_ts_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='tas_sfc_Amon_gm_ens', ref_period=[1951, 1980]):
     if not os.path.exists(exp_dir):
         raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
 
