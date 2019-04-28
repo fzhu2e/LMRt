@@ -197,7 +197,7 @@ class ReconJob:
         self.ye = Y(Ye_assim, Ye_assim_coords, Ye_eval, Ye_eval_coords)
         print(f'pid={os.getpid()} >>> job.ye created')
 
-    def run_da(self, recon_years=None, proxy_inds=None, verbose=False):
+    def run_da(self, recon_years=None, proxy_inds=None, verbose=False, mode='normal'):
         cfg = self.cfg
         prior = self.prior
         proxy_manager = self.proxy_manager
@@ -237,8 +237,13 @@ class ReconJob:
             iend[name] = prior.trunc_state_info[name]['pos'][1]
             field_ens[name] = np.zeros((nyr, grid.nens, grid.nlat, grid.nlon))
 
+        update_func = {
+            'normal': utils.update_year,
+            'optimal': utils.update_year_optimal,
+        }
+
         for yr_idx, target_year in enumerate(tqdm(recon_years, desc=f'KF updating (pid={os.getpid()})')):
-            res = utils.update_year(
+            res = update_func[mode](
                 yr_idx, target_year,
                 cfg, Xb_one_aug, Xb_one_coords, prior, proxy_manager.sites_assim_proxy_objs,
                 assim_proxy_count, eval_proxy_count, grid,
@@ -271,14 +276,14 @@ class ReconJob:
 
     def run(self, prior_filepath, prior_datatype, db_proxies_filepath, db_metadata_filepath,
             recon_years=None, seed=0, precalib_filesdict=None, ye_filesdict=None,
-            verbose=False, print_assim_proxy_count=False, save_dirpath=None):
+            verbose=False, print_assim_proxy_count=False, save_dirpath=None, mode='normal'):
 
         self.load_prior(prior_filepath, prior_datatype, verbose=verbose, seed=seed)
         self.load_proxies(db_proxies_filepath, db_metadata_filepath, precalib_filesdict=precalib_filesdict,
                           verbose=verbose, seed=seed, print_assim_proxy_count=print_assim_proxy_count)
         self.load_ye_files(ye_filesdict=ye_filesdict, verbose=verbose)
 
-        self.run_da(recon_years=recon_years, verbose=verbose)
+        self.run_da(recon_years=recon_years, mode=mode, verbose=verbose)
 
         if save_dirpath:
             self.save_results(save_dirpath, seed=seed, recon_years=recon_years)

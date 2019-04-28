@@ -19,7 +19,7 @@ from scipy import signal
 import statsmodels.api as sm
 import glob
 from scipy.stats.mstats import mquantiles
-#  from IPython import embed
+from IPython import embed
 
 from . import load_gridded_data  # original file from LMR
 
@@ -981,10 +981,11 @@ def update_year(yr_idx, target_year,
                 Yvals = Y.values[(Y.values.index > start_yr) & (Y.values.index <= end_yr)]
             else:
                 Yvals = Y.values[(Y.values.index >= start_yr) & (Y.values.index <= end_yr)]
-                if Yvals.empty:
-                    raise KeyError()
-                nYobs = len(Yvals)
-                Yobs = Yvals.mean()
+
+            if Yvals.empty:
+                raise KeyError()
+            nYobs = len(Yvals)
+            Yobs = Yvals.mean()
 
         except KeyError:
             continue  # skip to next loop iteration (proxy record)
@@ -1018,6 +1019,97 @@ def update_year(yr_idx, target_year,
     xam_lalo = {}
     for name in ibeg.keys():
         xam_lalo[name] = Xb[ibeg[name]:iend[name]+1, :].T.reshape(grid.nens, grid.nlat, grid.nlon)
+
+    return xam_lalo
+
+
+def update_year_optimal(yr_idx, target_year,
+                        cfg, Xb_one_aug, Xb_one_coords, X, sites_assim_proxy_objs,
+                        assim_proxy_count, eval_proxy_count, grid,
+                        ibeg, iend, verbose=False):
+
+    recon_timescale = cfg.core.recon_timescale
+    start_yr = int(target_year-recon_timescale//2)
+    end_yr = int(target_year+recon_timescale//2)
+
+    Xb = Xb_one_aug.copy()
+
+    v_Yobs = []
+    v_loc = []
+    v_Ye = []
+    v_ob_err = []
+    for proxy_idx, Y in enumerate(sites_assim_proxy_objs):
+        try:
+            if recon_timescale > 1:
+                # exclude lower bound to not include same obs in adjacent time intervals
+                Yvals = Y.values[(Y.values.index > start_yr) & (Y.values.index <= end_yr)]
+            else:
+                Yvals = Y.values[(Y.values.index >= start_yr) & (Y.values.index <= end_yr)]
+
+            if Yvals.empty:
+                raise KeyError()
+            nYobs = len(Yvals)
+            v_Yobs.append(Yvals.mean())
+
+        except KeyError:
+            continue  # skip to next loop iteration (proxy record)
+
+        v_loc.append(cov_localization(cfg.core.loc_rad, Y, X, Xb_one_coords))
+        v_Ye.append(Xb[proxy_idx - (assim_proxy_count+eval_proxy_count)])
+        v_ob_err.append(Y.psm_obj.R/float(nYobs))
+
+    if len(v_Ye) == 0:
+        Xa = Xb
+    else:
+        v_Yobs = np.asarray(v_Yobs)
+        v_loc = np.asarray(v_loc)
+        v_Ye = np.asarray(v_Ye)
+        v_ob_err = np.asarray(v_ob_err)
+
+        # EnKF update
+        nens = np.shape(Xb)[-1]
+        nobs = len(v_Ye)
+
+        xbm = np.mean(Xb, axis=1)
+        Xbp = np.subtract(Xb, xbm[:, None])
+        mye = np.mean(v_Ye, axis=1)
+        ye = np.subtract(v_Ye, mye[:, None])
+
+        Risr = np.diag(1/np.sqrt(v_ob_err))
+        Htp = np.dot(Risr, ye) / np.sqrt(nens-1)
+        Htm = np.dot(Risr, mye[:, None])
+        Yt = np.dot(Risr, v_Yobs)
+        # numpy svd quirk: V is actually V^T
+        U, s, V = np.linalg.svd(Htp, full_matrices=True)
+        nsvs = len(s) - 1
+        innov = np.dot(U.T, Yt-np.squeeze(Htm))
+        # Kalman gain
+        Kpre = s[0:nsvs]/(s[0:nsvs]*s[0:nsvs] + 1)
+        K = np.zeros([nens, nobs])
+        np.fill_diagonal(K, Kpre)
+        # ensemble-mean analysis increment in transformed space
+        xhatinc = np.dot(K, innov)
+        # ensemble-mean analysis increment in the transformed ensemble space
+        xtinc = np.dot(V.T, xhatinc)/np.sqrt(nens-1)
+
+        # ensemble-mean analysis increment in the original space
+        xinc = np.dot(Xbp, xtinc)
+        # ensemble mean analysis in the original space
+        xam = xbm + xinc
+
+        # transform the ensemble perturbations
+        lam = np.zeros([nobs, nens])
+        np.fill_diagonal(lam, s[0:nsvs])
+        tmp = np.linalg.inv(np.dot(lam, lam.T) + np.identity(nobs))
+        sigsq = np.identity(nens) - np.dot(np.dot(lam.T, tmp), lam)
+        sig = np.sqrt(sigsq)
+        T = np.dot(V.T, sig)
+        Xap = np.dot(Xbp, T)
+        Xa = Xap + xam[:, None]
+
+    xam_lalo = {}
+    for name in ibeg.keys():
+        xam_lalo[name] = Xa[ibeg[name]:iend[name]+1, :].T.reshape(grid.nens, grid.nlat, grid.nlon)
 
     return xam_lalo
 
@@ -1489,104 +1581,6 @@ def enkf_update_array(Xb, obvalue, Ye, ob_err, loc=None, inflate=None):
     return Xa
 
 
-def global_hemispheric_means(field, lat):
-    """ Adapted from LMR_utils.py by Greg Hakim & Robert Tardif | U. of Washington
-
-     compute global and hemispheric mean valuee for all times in the input (i.e. field) array
-     input:  field[ntime,nlat,nlon] or field[nlat,nlon]
-             lat[nlat,nlon] in degrees
-
-     output: gm : global mean of "field"
-            nhm : northern hemispheric mean of "field"
-            shm : southern hemispheric mean of "field"
-    """
-
-    # Originator: Greg Hakim
-    #             University of Washington
-    #             August 2015
-    #
-    # Modifications:
-    #           - Modified to handle presence of missing values (nan) in arrays
-    #             in calculation of spatial averages [ R. Tardif, November 2015 ]
-    #           - Enhanced flexibility in the handling of missing values
-    #             [ R. Tardif, Aug. 2017 ]
-
-    # set number of times, lats, lons; array indices for lat and lon
-    if len(np.shape(field)) == 3: # time is a dimension
-        ntime,nlat,nlon = np.shape(field)
-        lati = 1
-        loni = 2
-    else: # only spatial dims
-        ntime = 1
-        nlat,nlon = np.shape(field)
-        field = field[None,:] # add time dim of size 1 for consistent array dims
-        lati = 1
-        loni = 2
-
-    # latitude weighting
-    lat_weight = np.cos(np.deg2rad(lat))
-    tmp = np.ones([nlon,nlat])
-    W = np.multiply(lat_weight,tmp).T
-
-    # define hemispheres
-    eqind = nlat//2
-
-    if lat[0] > 0:
-        # data has NH -> SH format
-        W_NH = W[0:eqind+1]
-        field_NH = field[:,0:eqind+1,:]
-        W_SH = W[eqind+1:]
-        field_SH = field[:,eqind+1:,:]
-    else:
-        # data has SH -> NH format
-        W_NH = W[eqind:]
-        field_NH = field[:,eqind:,:]
-        W_SH = W[0:eqind]
-        field_SH = field[:,0:eqind,:]
-
-    gm  = np.zeros(ntime)
-    nhm = np.zeros(ntime)
-    shm = np.zeros(ntime)
-
-    # Check for valid (non-NAN) values & use numpy average function (includes weighted avg calculation)
-    # Get arrays indices of valid values
-    indok    = np.isfinite(field)
-    indok_nh = np.isfinite(field_NH)
-    indok_sh = np.isfinite(field_SH)
-    for t in range(ntime):
-        if lati == 0:
-            # Global
-            gm[t]  = np.average(field[indok],weights=W[indok])
-            # NH
-            nhm[t] = np.average(field_NH[indok_nh],weights=W_NH[indok_nh])
-            # SH
-            shm[t] = np.average(field_SH[indok_sh],weights=W_SH[indok_sh])
-        else:
-            # Global
-            indok_2d    = indok[t,:,:]
-            if indok_2d.any():
-                field_2d    = np.squeeze(field[t,:,:])
-                gm[t]       = np.average(field_2d[indok_2d],weights=W[indok_2d])
-            else:
-                gm[t] = np.nan
-            # NH
-            indok_nh_2d = indok_nh[t,:,:]
-            if indok_nh_2d.any():
-                field_nh_2d = np.squeeze(field_NH[t,:,:])
-                nhm[t]      = np.average(field_nh_2d[indok_nh_2d],weights=W_NH[indok_nh_2d])
-            else:
-                nhm[t] = np.nan
-            # SH
-            indok_sh_2d = indok_sh[t,:,:]
-            if indok_sh_2d.any():
-                field_sh_2d = np.squeeze(field_SH[t,:,:])
-                shm[t]      = np.average(field_sh_2d[indok_sh_2d],weights=W_SH[indok_sh_2d])
-            else:
-                shm[t] = np.nan
-
-    return gm, nhm, shm
-
-
 
 def Kalman_ESRF(cfg, vY, vR, vYe, Xb_in,
                 proxy_manager, X, Xb_one_aug, Xb_one_coords, verbose=False):
@@ -1803,6 +1797,104 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath):
 # ===============================================
 #  Post processing
 # -----------------------------------------------
+def global_hemispheric_means(field, lat):
+    """ Adapted from LMR_utils.py by Greg Hakim & Robert Tardif | U. of Washington
+
+     compute global and hemispheric mean valuee for all times in the input (i.e. field) array
+     input:  field[ntime,nlat,nlon] or field[nlat,nlon]
+             lat[nlat,nlon] in degrees
+
+     output: gm : global mean of "field"
+            nhm : northern hemispheric mean of "field"
+            shm : southern hemispheric mean of "field"
+    """
+
+    # Originator: Greg Hakim
+    #             University of Washington
+    #             August 2015
+    #
+    # Modifications:
+    #           - Modified to handle presence of missing values (nan) in arrays
+    #             in calculation of spatial averages [ R. Tardif, November 2015 ]
+    #           - Enhanced flexibility in the handling of missing values
+    #             [ R. Tardif, Aug. 2017 ]
+
+    # set number of times, lats, lons; array indices for lat and lon
+    if len(np.shape(field)) == 3: # time is a dimension
+        ntime,nlat,nlon = np.shape(field)
+        lati = 1
+        loni = 2
+    else: # only spatial dims
+        ntime = 1
+        nlat,nlon = np.shape(field)
+        field = field[None,:] # add time dim of size 1 for consistent array dims
+        lati = 1
+        loni = 2
+
+    # latitude weighting
+    lat_weight = np.cos(np.deg2rad(lat))
+    tmp = np.ones([nlon,nlat])
+    W = np.multiply(lat_weight,tmp).T
+
+    # define hemispheres
+    eqind = nlat//2
+
+    if lat[0] > 0:
+        # data has NH -> SH format
+        W_NH = W[0:eqind+1]
+        field_NH = field[:,0:eqind+1,:]
+        W_SH = W[eqind+1:]
+        field_SH = field[:,eqind+1:,:]
+    else:
+        # data has SH -> NH format
+        W_NH = W[eqind:]
+        field_NH = field[:,eqind:,:]
+        W_SH = W[0:eqind]
+        field_SH = field[:,0:eqind,:]
+
+    gm  = np.zeros(ntime)
+    nhm = np.zeros(ntime)
+    shm = np.zeros(ntime)
+
+    # Check for valid (non-NAN) values & use numpy average function (includes weighted avg calculation)
+    # Get arrays indices of valid values
+    indok    = np.isfinite(field)
+    indok_nh = np.isfinite(field_NH)
+    indok_sh = np.isfinite(field_SH)
+    for t in range(ntime):
+        if lati == 0:
+            # Global
+            gm[t]  = np.average(field[indok],weights=W[indok])
+            # NH
+            nhm[t] = np.average(field_NH[indok_nh],weights=W_NH[indok_nh])
+            # SH
+            shm[t] = np.average(field_SH[indok_sh],weights=W_SH[indok_sh])
+        else:
+            # Global
+            indok_2d    = indok[t,:,:]
+            if indok_2d.any():
+                field_2d    = np.squeeze(field[t,:,:])
+                gm[t]       = np.average(field_2d[indok_2d],weights=W[indok_2d])
+            else:
+                gm[t] = np.nan
+            # NH
+            indok_nh_2d = indok_nh[t,:,:]
+            if indok_nh_2d.any():
+                field_nh_2d = np.squeeze(field_NH[t,:,:])
+                nhm[t]      = np.average(field_nh_2d[indok_nh_2d],weights=W_NH[indok_nh_2d])
+            else:
+                nhm[t] = np.nan
+            # SH
+            indok_sh_2d = indok_sh[t,:,:]
+            if indok_sh_2d.any():
+                field_sh_2d = np.squeeze(field_SH[t,:,:])
+                shm[t]      = np.average(field_sh_2d[indok_sh_2d],weights=W_SH[indok_sh_2d])
+            else:
+                shm[t] = np.nan
+
+    return gm, nhm, shm
+
+
 def nino_indices(sst, lats, lons):
     ''' Calculate Nino indices
 
