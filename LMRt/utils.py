@@ -2016,12 +2016,25 @@ def load_field_from_jobs(exp_dir, var='tas_sfc_Amon', average_iter=True):
 
 
 def rotate_lon(field, lon):
+    ''' Make lon to be sorted with range (0, 360)
+
+    Args:
+        field (ndarray): the last axis is assumed to be lon
+        lon (1d array): the longitude axis
+
+    Returns:
+        field (ndarray): the field with longitude rotated
+        lon (1d array): the sorted longitude axis with range (0, 360)
+    '''
+    if np.min(lon) < 0:
+        lon = np.mod(lon, 360)
+
     sorted_lon = sorted(lon)
     idx = []
     for lon_gs in sorted_lon:
         idx.append(list(lon).index(lon_gs))
     lon = lon[idx]
-    field = field[:, :, idx]
+    field = field[..., idx]
 
     return field, lon
 
