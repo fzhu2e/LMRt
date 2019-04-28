@@ -465,6 +465,7 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
     picked_proxy_ids = []
     start, finish = cfg.core.recon_period
 
+    first_print = True
     for site in all_proxy_ids:
         site_meta = db_metadata[db_metadata['Proxy ID'] == site]
         start_yr = site_meta['Youngest (C.E.)'].iloc[0]
@@ -512,7 +513,11 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
                     print(err_msg)
         else:
             # TODO: calibrate
-            psm_obj = PSM(psm_key, None)
+            if first_print:
+                print(f'\npid={os.getpid()} >>> preset_R = {cfg.proxies.preset_R}')
+                first_print = False
+
+            psm_obj = PSM(psm_key, cfg.proxies.preset_R)
             pobj = Proxy(site, proxy_type, start_yr, end_yr, lat, lon, elev, seasonality, values, time, psm_obj)
             picked_proxies.append(pobj)
             picked_proxy_ids.append(site)
