@@ -2008,6 +2008,17 @@ def load_field_from_jobs(exp_dir, var='tas_sfc_Amon', average_iter=True):
     return field_em, year, lat, lon
 
 
+def rotate_lon(field, lon):
+    sorted_lon = sorted(lon)
+    idx = []
+    for lon_gs in sorted_lon:
+        idx.append(list(lon).index(lon_gs))
+    lon = lon[idx]
+    field = field[:, :, idx]
+
+    return field, lon
+
+
 def load_inst_analyses(ana_pathdict, var='gmt', verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980],
                        sort_lon=True):
     load_func = {
@@ -2060,12 +2071,7 @@ def load_inst_analyses(ana_pathdict, var='gmt', verif_yrs=np.arange(1880, 2000),
                 ref_period=ref_period,
             )
             if sort_lon:
-                sorted_lon_grid = sorted(lon_grid)
-                idx = []
-                for lon_gs in sorted_lon_grid:
-                    idx.append(list(lon_grid).index(lon_gs))
-                lon_grid = lon_grid[idx]
-                anomaly_grid = anomaly_grid[:, :, idx]
+                anomaly_grid, lon_grid = rotate_lon(anomaly_grid, lon_grid)
 
         gmt, nhmt, shmt = global_hemispheric_means(anomaly_grid, lat_grid)
         year = np.array([d.year for d in time_grid])
