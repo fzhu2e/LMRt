@@ -19,7 +19,8 @@ from scipy import signal
 import statsmodels.api as sm
 import glob
 from scipy.stats.mstats import mquantiles
-from IPython import embed
+from scipy import spatial
+#  from IPython import embed
 
 from . import load_gridded_data  # original file from LMR
 
@@ -431,35 +432,39 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
     }
     db_name = cfg.proxies.use_from[0]
 
-    all_proxy_ids = []
-    for name in proxy_db_cfg[db_name].proxy_order:
-        archive = name.split('_', 1)[0]
-        archive_mask = db_metadata['Archive type'] == archive
+    if cfg.proxies.target_sites:
+        # if target sites are given, then just use them regardeless of other filters
+        all_proxy_ids = cfg.proxies.target_sites
+    else:
+        all_proxy_ids = []
+        for name in proxy_db_cfg[db_name].proxy_order:
+            archive = name.split('_', 1)[0]
+            archive_mask = db_metadata['Archive type'] == archive
 
-        measure_mask = db_metadata['Proxy measurement'] == 0
-        measure_mask &= False
+            measure_mask = db_metadata['Proxy measurement'] == 0
+            measure_mask &= False
 
-        for measure in proxy_db_cfg[db_name].proxy_assim2[name]:
-            measure_mask |= db_metadata['Proxy measurement'] == measure
+            for measure in proxy_db_cfg[db_name].proxy_assim2[name]:
+                measure_mask |= db_metadata['Proxy measurement'] == measure
 
-        resolution_mask = db_metadata['Resolution (yr)'] == 0
-        resolution_mask &= False
-        for proxy_resolution in proxy_db_cfg[db_name].proxy_resolution:
-            resolution_mask |= db_metadata['Resolution (yr)'] == proxy_resolution
+            resolution_mask = db_metadata['Resolution (yr)'] == 0
+            resolution_mask &= False
+            for proxy_resolution in proxy_db_cfg[db_name].proxy_resolution:
+                resolution_mask |= db_metadata['Resolution (yr)'] == proxy_resolution
 
-        dbase_mask = db_metadata['Databases'] == 0
-        dbase_mask &= False
-        for proxy_database in proxy_db_cfg[db_name].database_filter:
-            sub_mask = []
-            for p in db_metadata['Databases']:
-                sub_mask.append(proxy_database in p)
+            dbase_mask = db_metadata['Databases'] == 0
+            dbase_mask &= False
+            for proxy_database in proxy_db_cfg[db_name].database_filter:
+                sub_mask = []
+                for p in db_metadata['Databases']:
+                    sub_mask.append(proxy_database in p)
 
-            dbase_mask |= sub_mask
+                dbase_mask |= sub_mask
 
-        proxies = db_metadata['Proxy ID'][archive_mask & measure_mask & resolution_mask & dbase_mask]
-        proxies_list = proxies.tolist()
+            proxies = db_metadata['Proxy ID'][archive_mask & measure_mask & resolution_mask & dbase_mask]
+            proxies_list = proxies.tolist()
 
-        all_proxy_ids += proxies_list
+            all_proxy_ids += proxies_list
 
     picked_proxies = []
     picked_proxy_ids = []
@@ -526,7 +531,7 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
 
 
 def get_env_vars(prior_filesdict, rename_vars={'d18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
-                 useLib='netCDF4', verbose=False):
+                 useLib='xarray', verbose=False):
     prior_vars = {}
 
     first_item = True
