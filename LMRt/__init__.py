@@ -276,11 +276,13 @@ class ReconJob:
 
     def run(self, prior_filepath, prior_datatype, db_proxies_filepath, db_metadata_filepath,
             recon_years=None, seed=0, precalib_filesdict=None, ye_filesdict=None,
-            verbose=False, print_assim_proxy_count=False, save_dirpath=None, mode='normal'):
+            verbose=False, print_proxy_type_list=False, print_assim_proxy_count=False, save_dirpath=None, mode='normal'):
 
         self.load_prior(prior_filepath, prior_datatype, verbose=verbose, seed=seed)
         self.load_proxies(db_proxies_filepath, db_metadata_filepath, precalib_filesdict=precalib_filesdict,
-                          verbose=verbose, seed=seed, print_assim_proxy_count=print_assim_proxy_count)
+                          print_proxy_type_list=print_proxy_type_list,
+                          print_assim_proxy_count=print_assim_proxy_count,
+                          verbose=verbose, seed=seed)
         self.load_ye_files(ye_filesdict=ye_filesdict, verbose=verbose)
 
         self.run_da(recon_years=recon_years, mode=mode, verbose=verbose)
