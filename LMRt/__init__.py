@@ -136,7 +136,7 @@ class ReconJob:
             self.prior = Prior(prior_dict, ens, prior_sample_indices, coords, full_state_info, trunc_state_info)
             print(f'pid={os.getpid()} >>> job.prior regridded')
 
-    def build_ye_files(self, ptype, psm_name, prior_filesdict, ye_savepath,
+    def build_ye_files(self, ptypes, psm_name, prior_filesdict, ye_savepath,
                        rename_vars={'d18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
                        verbose=False, useLib='netCDF4', **psm_params):
         ''' Build precalculated Ye files from priors
@@ -154,7 +154,10 @@ class ReconJob:
         lat_model, lon_model, time_model, prior_vars = utils.get_env_vars(
             prior_filesdict, rename_vars=rename_vars, useLib=useLib, verbose=verbose)
 
-        pid_map, ye_out = utils.calc_ye(self.proxy_manager, ptype, psm_name,
+        if type(ptypes) is not list:
+            ptypes = [ptypes]
+
+        pid_map, ye_out = utils.calc_ye(self.proxy_manager, ptypes, psm_name,
                                         lat_model, lon_model, time_model, prior_vars,
                                         verbose=verbose, **psm_params)
 

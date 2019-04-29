@@ -554,7 +554,7 @@ def get_env_vars(prior_filesdict, rename_vars={'d18O': 'd18Opr', 'tos': 'sst', '
     return lat_model, lon_model, time_model, prior_vars
 
 
-def calc_ye(proxy_manager, ptype, psm_name,
+def calc_ye(proxy_manager, ptypes, psm_name,
             lat_model, lon_model, time_model,
             prior_vars, verbose=False, **psm_params):
     pid_map = {}
@@ -595,7 +595,7 @@ def calc_ye(proxy_manager, ptype, psm_name,
 
     # generate pseudoproxy values
     for idx, pobj in enumerate(proxy_manager.all_proxies):
-        if pobj.type == ptype:
+        if pobj.type in ptypes:
             count += 1
             if verbose:
                 print(f'\nProcessing #{count} - {pobj.id} ...')
