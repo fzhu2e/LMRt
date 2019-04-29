@@ -624,6 +624,10 @@ def calc_ye(proxy_manager, ptype, psm_name,
                 lat_model, lon_model, time_model,
                 prior_vars, verbose=verbose, **psm_params,
             )
+
+            bias = np.nanmean(ye_tmp) - np.nanmean(pobj.values)  # estimated bias: the difference between the mean values
+            ye_tmp = ye_tmp - bias  # remove the estimated bias from Ye
+
             ye_out.append(ye_tmp)
             pid_map[pobj.id] = idx
         else:
