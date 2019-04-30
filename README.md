@@ -1,4 +1,7 @@
 [![PyPI](https://img.shields.io/pypi/v/LMRt.svg)]()
+[![](https://img.shields.io/badge/platform-Mac_Linux-green.svg)]()
+[![](https://img.shields.io/badge/language-Python3-red.svg)]()
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2655097.svg)](https://doi.org/10.5281/zenodo.2655097)
 
 # LMR Turbo (LMRt)
 
@@ -52,3 +55,9 @@ in python.
 
 ## License
 BSD License (see the details [here](LICENSE))
+
+## How to cite
+If you find this package useful, please cite it with DOI: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2655097.svg)](https://doi.org/10.5281/zenodo.2655097)
+
+... and welcome to Star and Fork!
+
