@@ -20,6 +20,7 @@ import statsmodels.api as sm
 import glob
 from scipy.stats.mstats import mquantiles
 from scipy import spatial
+import pandas as pd
 #  from IPython import embed
 
 from . import load_gridded_data  # original file from LMR
@@ -530,6 +531,69 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
     return picked_proxy_ids, picked_proxies
 
 
+def get_precalib_data(psm_name, precalib_filepath):
+    psm_data = pd.read_pickle(precalib_filepath)
+
+    def get_linear_precalib_data(psm_data):
+        pid_list = []
+        slope_list = []
+        intercept_list = []
+        seasonality_list = []
+        for i, v in psm_data.items():
+            ptype, pid = i
+            slope = v['PSMslope']
+            intercept = v['PSMintercept']
+            seasonality = np.unique(v['Seasonality'])
+
+            pid_list.append(pid)
+            slope_list.append(slope)
+            intercept_list.append(intercept)
+            seasonality_list.append(seasonality)
+
+        precalib_data_dict = {
+            'pid': pid_list,
+            'slope': slope_list,
+            'intercept': intercept_list,
+            'seasonality': seasonality_list,
+        }
+        return precalib_data_dict
+
+    def get_bilinear_precalib_data(psm_data):
+        pid_list = []
+        slope_temperature_list = []
+        slope_moisture_list = []
+        intercept_list = []
+        seasonality_list = []
+        for i, v in psm_data.items():
+            ptype, pid = i
+            slope_temperature = v['PSMslope_temperature']
+            slope_moisture = v['PSMslope_moisture']
+            intercept = v['PSMintercept']
+            seasonality = np.unique(v['Seasonality'])
+
+            pid_list.append(pid)
+            slope_temperature_list.append(slope_temperature)
+            slope_moisture_list.append(slope_moisture)
+            intercept_list.append(intercept)
+            seasonality_list.append(seasonality)
+
+        precalib_data_dict = {
+            'pid': pid_list,
+            'slope_temperature': slope_temperature_list,
+            'slope_moisture': slope_moisture_list,
+            'intercept': intercept_list,
+            'seasonality': seasonality_list,
+        }
+        return precalib_data_dict
+
+    get_precalib_data_func = {
+        'linear': get_linear_precalib_data,
+        'bilinear': get_bilinear_precalib_data,
+    }
+
+    return get_precalib_data_func[psm_name](psm_data)
+
+
 def get_env_vars(prior_filesdict, rename_vars={'d18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
                  useLib='xarray', verbose=False):
     prior_vars = {}
@@ -579,19 +643,17 @@ def calc_ye(proxy_manager, ptypes, psm_name,
             pid_obs = res['pid_obs']
             species_obs = res['species_obs']
 
-    if 'linear_psm_data_path' in psm_params:
-        # load paramters for linear PSM
-        with open(psm_params['linear_psm_data_path'], 'rb') as f:
-            psm_data = pickle.load(f)
-
-            pid_obs = []
-            slope = []
-            intercept = []
-            for k, v in psm_data.items():
-                _, pid = k
-                pid_obs.append(pid)
-                slope.append(v['PSMslope'])
-                intercept.append(v['PSMintercept'])
+    if 'precalib_data_dict' in psm_params:
+        # load paramters for linear/bilinear PSM
+        precalib_data_dict = psm_params['precalib_data_dict']
+        pid_obs = precalib_data_dict['pid']
+        intercept = precalib_data_dict['intercept']
+        seasonality = precalib_data_dict['seasonality']
+        if psm_name == 'linear':
+            slope = precalib_data_dict['slope']
+        elif psm_name == 'bilinear':
+            slope_temperature = precalib_data_dict['slope_temperature']
+            slope_moisture = precalib_data_dict['slope_moisture']
 
     # generate pseudoproxy values
     for idx, pobj in enumerate(proxy_manager.all_proxies):
@@ -608,11 +670,16 @@ def calc_ye(proxy_manager, ptypes, psm_name,
                 psm_params['M1'] = M1[ind]
                 psm_params['M2'] = M2[ind]
 
-            if 'linear_psm_data_path' in psm_params and pobj.id in pid_obs:
-                # load parameters for VS-Lite
+            if 'precalib_data_dict' in psm_params and pobj.id in pid_obs:
+                # load parameters for linear PSM
                 ind = pid_obs.index(pobj.id)
-                psm_params['slope'] = slope[ind]
                 psm_params['intercept'] = intercept[ind]
+                psm_params['seasonality'] = seasonality[ind]
+                if psm_name == 'linear':
+                    psm_params['slope'] = slope[ind]
+                elif psm_name == 'bilinear':
+                    psm_params['slope_temperature'] = slope_temperature[ind]
+                    psm_params['slope_moisture'] = slope_moisture[ind]
 
             if 'coral_species_info' in psm_params:
                 # load parameters for coral d18O
