@@ -1,6 +1,7 @@
-[![PyPI](https://img.shields.io/pypi/v/LMRt.svg)]()
-[![](https://img.shields.io/badge/platform-Mac_Linux-green.svg)]()
-[![](https://img.shields.io/badge/language-Python3-red.svg)]()
+[![PyPI](https://img.shields.io/pypi/v/LMRt.svg)](https://pypi.org/project/LMRt/)
+[![](https://img.shields.io/badge/platform-Mac_Linux-red.svg)]()
+[![](https://img.shields.io/badge/language-Python3-success.svg)](https://www.python.org/)
+[![](https://img.shields.io/badge/license-BSD-brown.svg)](https://github.com/fzhu2e/LMRt/blob/master/LICENSE)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2655097.svg)](https://doi.org/10.5281/zenodo.2655097)
 
 # LMR Turbo (LMRt)
