@@ -14,6 +14,15 @@ Ultimately, it aims to provide following features:
 + Faster speed
     + Easy parallel computing with multiprocessing and other techniques
 
+## Results
+
+### Mean temperature
+![Mean temperature](notebooks/figs/gmt.png)
+
+### Niño 3.4 index
+![Niño 3.4](notebooks/figs/nino34.png)
+
+
 ## Package dependencies
 + [tqdm](https://github.com/tqdm/tqdm): A fast, extensible progress bar for Python and CLI (`pip install tqdm`)
 + [prysm-api](https://github.com/fzhu2e/prysm-api): The API for PRoxY System Modeling (PRYSM) (`pip install prysm-api`)
