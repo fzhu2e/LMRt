@@ -518,14 +518,17 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
                     print(err_msg)
         else:
             # TODO: calibrate
-            p_value_std = np.nanstd(values)
-            psm_obj = PSM(psm_key, cfg.proxies.R_factor*p_value_std)
+            proxy_var = np.nanvar(values)
+            SNR = proxy_db_cfg[db_name].SNR[proxy_type]
+            ob_err_var = proxy_var / SNR
+
+            psm_obj = PSM(psm_key, ob_err_var)
             pobj = Proxy(site, proxy_type, start_yr, end_yr, lat, lon, elev, seasonality, values, time, psm_obj)
             picked_proxies.append(pobj)
             picked_proxy_ids.append(site)
 
             if verbose:
-                print(f'\npid={os.getpid()} >>> R_factor = {cfg.proxies.R_factor}, p_value_std = {p_value_std}')
+                print(f'\npid={os.getpid()} >>> SNR = {SNR}, proxy_var = {proxy_var:.5f}, ob_err_var = {ob_err_var:.5f}')
 
     return picked_proxy_ids, picked_proxies
 

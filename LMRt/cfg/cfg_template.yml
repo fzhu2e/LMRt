@@ -44,7 +44,6 @@ proxies:
   use_from: [LMRdb]
 #  use_from: [NCDCdtda]
   proxy_frac: 0.75
-  R_factor: 0.1
   proxy_timeseries_kind: asis
   proxy_availability_filter: False
   proxy_availability_fraction: 1.0
@@ -139,6 +138,25 @@ proxies:
 #     'Breits'
       ]
     proxy_blacklist: []
+
+    SNR:
+        'Tree Rings_WidthPages2': 1
+        'Tree Rings_WidthBreit': 1
+        'Tree Rings_WoodDensity': 1
+        'Tree Rings_Isotopes': 1
+        'Corals and Sclerosponges_d18O': 1
+        'Corals and Sclerosponges_SrCa': 1
+        'Corals and Sclerosponges_Rates': 1
+        'Ice Cores_d18O': 1
+        'Ice Cores_dD': 1
+        'Ice Cores_Accumulation': 1
+        'Ice Cores_MeltFeature': 1
+        'Lake Cores_Varve': 1
+        'Lake Cores_BioMarkers': 1
+        'Lake Cores_GeoChem': 1
+        'Lake Cores_Misc': 1
+        'Marine Cores_d18O': 1
+        'Bivalve_d18O': 1
 
     proxy_order: [
       'Tree Rings_WidthPages2',
