@@ -26,7 +26,7 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                    projection=ccrs.Robinson(), transform=ccrs.PlateCarree(),
                    clim=None, cmap='RdBu_r', extend='both', mode='mesh',
                    cbar_labels=None, cbar_pad=0.05, cbar_orientation='vertical', cbar_aspect=10,
-                   cbar_fraction=0.15, cbar_shrink=0.5, cbar_title='[K]', font_scale=1.5):
+                   cbar_fraction=0.15, cbar_shrink=0.5, cbar_title=None, font_scale=1.5):
 
     if add_cyclic_point:
         if mode == 'latlon':
