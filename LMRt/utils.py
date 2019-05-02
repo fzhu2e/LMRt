@@ -597,7 +597,7 @@ def get_precalib_data(psm_name, precalib_filepath):
 
 
 def get_env_vars(prior_filesdict, rename_vars={'d18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
-                 useLib='xarray', verbose=False):
+                 useLib='xarray', lat_str='lat', lon_str='lon', verbose=False):
     prior_vars = {}
 
     first_item = True
@@ -606,7 +606,7 @@ def get_env_vars(prior_filesdict, rename_vars={'d18O': 'd18Opr', 'tos': 'sst', '
             print(f'Loading [{prior_varname}] from {prior_filepath} ...')
         if first_item:
             lat_model, lon_model, time_model, prior_vars[prior_varname] = get_nc_vars(
-                prior_filepath, ['lat', 'lon', 'year_float', prior_varname], useLib=useLib,
+                prior_filepath, [lat_str, lon_str, 'year_float', prior_varname], useLib=useLib,
             )
             first_item = False
         else:

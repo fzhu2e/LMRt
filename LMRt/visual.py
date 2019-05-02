@@ -3,6 +3,8 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
+from matplotlib.colors import BoundaryNorm
+from matplotlib.ticker import MaxNLocator
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib as mpl
@@ -22,14 +24,34 @@ def plot_proxy_sites(proxy_manager):
 def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                    title=None, title_size=20, title_weight='normal', figsize=[10, 8],
                    projection=ccrs.Robinson(), transform=ccrs.PlateCarree(),
-                   clim=None, cmap='RdBu_r', extend='both',
+                   clim=None, cmap='RdBu_r', extend='both', mode='mesh',
                    cbar_labels=None, cbar_pad=0.05, cbar_orientation='vertical', cbar_aspect=10,
                    cbar_fraction=0.15, cbar_shrink=0.5, cbar_title='[K]', font_scale=1.5):
 
     if add_cyclic_point:
-        field_var_c, lon_c = cutil.add_cyclic_point(field_var, lon)
+        if mode == 'latlon':
+            field_var_c, lon_c = cutil.add_cyclic_point(field_var, lon)
+            lat_c = lat
+        elif mode == 'mesh':
+            if len(np.shape(lat)) == 1:
+                lon, lat = np.meshgrid(lon, lat, sparse=False, indexing='xy')
+
+            nx, ny = np.shape(field_var)
+
+            lon_c = np.ndarray((nx, ny+1))
+            lat_c = np.ndarray((nx, ny+1))
+            field_var_c = np.ndarray((nx, ny+1))
+
+            lon_c[:, :-1] = lon
+            lon_c[:, -1] = lon[:, 0]
+
+            lat_c[:, :-1] = lat
+            lat_c[:, -1] = lat[:, 0]
+
+            field_var_c[:, :-1] = field_var
+            field_var_c[:, -1] = field_var[:, 0]
     else:
-        field_var_c, lon_c = field_var, lon
+        field_var_c, lat_c, lon_c = field_var, lat, lon
 
     sns.set(style='white', font_scale=font_scale)
     fig = plt.figure(figsize=figsize)
@@ -43,13 +65,22 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
     ax.add_feature(cfeature.OCEAN, facecolor='gray', alpha=0.3)
     ax.coastlines()
 
-    im = ax.contourf(lon_c, lat, field_var_c, levels, extend=extend,
-                     transform=transform, cmap=cmap)
+    cmap = plt.get_cmap(cmap)
+
+    if mode == 'latlon':
+        im = ax.contourf(lon_c, lat_c, field_var_c, levels, transform=transform, cmap=cmap, extend=extend)
+
+    elif mode == 'mesh':
+        if type(levels) is int:
+            levels = MaxNLocator(nbins=levels).tick_values(np.nanmax(field_var_c), np.nanmin(field_var_c))
+        norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
+
+        im = ax.pcolormesh(lon_c, lat_c, field_var_c, transform=transform, cmap=cmap, norm=norm)
 
     if clim:
         im.set_clim(clim)
 
-    cbar = fig.colorbar(im, ax=ax, orientation=cbar_orientation, pad=cbar_pad, aspect=cbar_aspect,
+    cbar = fig.colorbar(im, ax=ax, orientation=cbar_orientation, pad=cbar_pad, aspect=cbar_aspect, extend=extend,
                         fraction=cbar_fraction, shrink=cbar_shrink)
 
     if cbar_labels is not None:

@@ -137,7 +137,8 @@ class ReconJob:
 
     def build_ye_files(self, ptypes, psm_name, prior_filesdict, ye_savepath,
                        rename_vars={'d18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
-                       precalib_filesdict=None, verbose=False, useLib='netCDF4', **psm_params):
+                       precalib_filesdict=None, verbose=False, useLib='netCDF4',
+                       lat_str='lat', lon_str='lon', **psm_params):
         ''' Build precalculated Ye files from priors
 
         Args:
@@ -151,7 +152,8 @@ class ReconJob:
 
         '''
         lat_model, lon_model, time_model, prior_vars = utils.get_env_vars(
-            prior_filesdict, rename_vars=rename_vars, useLib=useLib, verbose=verbose)
+            prior_filesdict, rename_vars=rename_vars, useLib=useLib,
+            lat_str=lat_str, lon_str=lon_str, verbose=verbose)
 
         if type(ptypes) is not list:
             ptypes = [ptypes]
