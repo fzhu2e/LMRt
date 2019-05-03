@@ -23,7 +23,8 @@ def plot_proxy_sites(proxy_manager):
 
 def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                    title=None, title_size=20, title_weight='normal', figsize=[10, 8],
-                   projection=ccrs.Robinson(), transform=ccrs.PlateCarree(),
+                   projection=ccrs.Robinson, transform=ccrs.PlateCarree(),
+                   central_longitude=0,
                    clim=None, cmap='RdBu_r', extend='both', mode='mesh',
                    cbar_labels=None, cbar_pad=0.05, cbar_orientation='vertical', cbar_aspect=10,
                    cbar_fraction=0.15, cbar_shrink=0.5, cbar_title=None, font_scale=1.5):
@@ -55,6 +56,8 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
 
     sns.set(style='white', font_scale=font_scale)
     fig = plt.figure(figsize=figsize)
+
+    projection = projection(central_longitude=central_longitude)
     ax = plt.subplot(projection=projection)
 
     if title:
