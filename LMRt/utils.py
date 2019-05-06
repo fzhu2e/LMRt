@@ -2037,6 +2037,24 @@ def nino_indices(sst, lats, lons):
             weights=np.cos(np.deg2rad(lats[lat_mask[region]])),
         )
     return ind
+
+
+def pobjs2df(pobjs,
+             col_names=['id', 'type', 'start_yr', 'end_yr', 'lat', 'lon', 'elev', 'seasonality', 'values', 'time']):
+
+    df = pd.DataFrame(index=range(len(pobjs)), columns=col_names)
+
+    for i, pobj in enumerate(pobjs):
+        pobj_dict = pobj._asdict()
+        for name in col_names:
+            if name == 'values':
+                entry = pobj_dict[name].values
+            else:
+                entry = pobj_dict[name]
+
+            df.loc[i, name] = entry
+
+    return df
 # -----------------------------------------------
 # Correlation and coefficient Efficiency (CE)
 # -----------------------------------------------

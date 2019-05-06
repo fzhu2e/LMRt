@@ -16,8 +16,113 @@ from cartopy import util as cutil
 from . import utils
 
 
-def plot_proxy_sites(proxy_manager):
-    fig = None
+class PAGES2k(object):
+    colors_dict = {
+        'Bivalve_d18O': sns.xkcd_rgb['gold'],
+        'Corals and Sclerosponges_Rates': sns.xkcd_rgb['orange'],
+        'Corals and Sclerosponges_SrCa': sns.xkcd_rgb['yellow'],
+        'Corals and Sclerosponges_d18O': sns.xkcd_rgb['amber'],
+        'Ice Cores_MeltFeature': sns.xkcd_rgb['pale blue'],
+        'Ice Cores_d18O': sns.xkcd_rgb['light blue'],
+        'Ice Cores_dD': sns.xkcd_rgb['sky blue'],
+        'Lake Cores_Misc': sns.xkcd_rgb['blue'],
+        'Lake Cores_Varve': sns.xkcd_rgb['dark blue'],
+        'Tree Rings_WidthPages2': sns.xkcd_rgb['green'],
+        'Tree Rings_WoodDensity': sns.xkcd_rgb['forest green'],
+    }
+
+    markers_dict = {
+        'Bivalve_d18O': 'p',
+        'Corals and Sclerosponges_Rates': 'P',
+        'Corals and Sclerosponges_SrCa': 'X',
+        'Corals and Sclerosponges_d18O': 'o',
+        'Ice Cores_MeltFeature': '<',
+        'Ice Cores_d18O': 'd',
+        'Ice Cores_dD': '>',
+        'Lake Cores_Misc': 'D',
+        'Lake Cores_Varve': 's',
+        'Tree Rings_WidthPages2': '^',
+        'Tree Rings_WoodDensity': 'v',
+    }
+
+
+def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_col='type',
+                 title=None, title_weight='normal', font_scale=1.5,
+                 figsize=[8, 10], projection=ccrs.Robinson(), markersize=50,
+                 lgd_ncol=1, lgd_anchor=(1, -0.1), lgd_frameon=False):
+
+    p = PAGES2k()
+
+    sns.set(style='darkgrid', font_scale=font_scale)
+    fig = plt.figure(figsize=figsize)
+
+    gs = gridspec.GridSpec(2, 1)
+    gs.update(wspace=0, hspace=0.1)
+
+    ax_map = plt.subplot(gs[0], projection=projection)
+
+    if title:
+        ax_map.set_title(title, fontweight=title_weight)
+
+    ax_map.set_global()
+    ax_map.add_feature(cfeature.LAND, facecolor='gray', alpha=0.3)
+
+    # plot markers by archive types
+    s_plots = []
+    type_names = []
+    type_set = np.unique(df[type_col])
+    max_count = []
+    for ptype in type_set:
+        selector = df[type_col] == ptype
+        max_count.append(len(df[selector]))
+        type_names.append(f'{ptype} (n={max_count[-1]})')
+        lons = list(df[selector][lon_col])
+        lats = list(df[selector][lat_col])
+        s_plots.append(
+            ax_map.scatter(
+                lons, lats, marker=p.markers_dict[ptype],
+                c=p.colors_dict[ptype], edgecolor='k', s=markersize, transform=ccrs.Geodetic()
+            )
+        )
+
+    ax_map.legend(
+        s_plots, type_names,
+        scatterpoints=1,
+        bbox_to_anchor=lgd_anchor,
+        loc='lower left',
+        ncol=lgd_ncol,
+        frameon=lgd_frameon,
+    )
+
+    ax_count = plt.subplot(gs[1])
+    proxy_count = {}
+    for index, row in df.iterrows():
+        ptype = row['type']
+        time = row['time']
+        if ptype not in proxy_count.keys():
+            proxy_count[ptype] = np.zeros(np.size(year))
+
+        for k in time:
+            proxy_count[ptype][int(k)] += 1
+
+    cumu_count = np.zeros(np.size(year))
+    cumu_last = np.copy(cumu_count)
+    idx = np.argsort(max_count)
+    for ptype in type_set[idx]:
+        cumu_count += proxy_count[ptype]
+        ax_count.fill_between(
+            year, cumu_last, cumu_count,
+            color=p.colors_dict[ptype],
+            label=f'{ptype} (n={int(np.max(proxy_count[ptype]))})',
+            alpha=0.8,
+        )
+        cumu_last = np.copy(cumu_count)
+
+    ax_count.set_xlabel('Year (AD)')
+    ax_count.set_ylabel('number of proxies')
+    handles, labels = ax_count.get_legend_handles_labels()
+    ax_count.legend(handles[::-1], labels[::-1], frameon=lgd_frameon, bbox_to_anchor=lgd_anchor, loc='lower left')
+
     return fig
 
 
@@ -159,7 +264,14 @@ def plot_gmt_vs_inst(gmt_qs, year, ana_pathdict,
     ax.set_ylim([-0.6, 0.8])
     ax.set_ylabel('Temperature anomaly (K)')
     ax.set_xlabel('Year (AD)')
-    ax.set_title('Global mean temperature')
+
+    ax_title = {
+        'gmt': 'Global mean temperature',
+        'nhmt': 'NH mean temperature',
+        'shmt': 'SH mean temperature',
+    }
+
+    ax.set_title(ax_title[var])
     ax.legend(frameon=False)
 
     return fig, corr_vs_lmr, ce_vs_lmr
