@@ -3,8 +3,6 @@
 import numpy as np
 import pandas as pd
 from collections import namedtuple
-from time import time
-import functools
 import xarray as xr
 import netCDF4
 from datetime import datetime
@@ -20,7 +18,7 @@ import statsmodels.api as sm
 import glob
 from scipy.stats.mstats import mquantiles
 from scipy import spatial
-import pandas as pd
+import cftime
 #  from IPython import embed
 
 from . import load_gridded_data  # original file from LMR
@@ -33,18 +31,6 @@ Proxy = namedtuple(
 PSM = namedtuple('PSM', ['psm_key', 'R'])
 
 Grid = namedtuple('Grid', ['lat', 'lon', 'nlat', 'nlon', 'nens'])
-
-def timeit(func):
-    ''' Decorator: print the lapse time running a function
-    '''
-    @functools.wraps(func)
-    def decorated_func(*args, **kwargs):
-        ts = time()
-        res = func(*args, **kwargs)
-        te = time()
-        print(f'{func.__name__}: {(te-ts)*1e3:2.2f} ms')
-        return res
-    return decorated_func
 
 
 def setup_cfg(cfg):
@@ -184,6 +170,44 @@ def get_prior(filepath, datatype, cfg, anom_reference_period=(1951, 1980), verbo
     return datadict
 
 
+def ymd2year_float(year, month, day):
+    ''' Convert a set of (year, month, day) to an array of floats in unit of year
+    '''
+
+    year_float = []
+    for y, m, d in zip(year, month, day):
+        date = datetime(year=y, month=m, day=d)
+        fst_day = datetime(year=y, month=1, day=1)
+        lst_day = datetime(year=y+1, month=1, day=1)
+        year_part = date - fst_day
+        year_length = lst_day - fst_day
+        year_float.append(y + year_part/year_length)
+
+    year_float = np.asarray(year_float)
+    return year_float
+
+
+def year_float2datetime(year_float):
+    ''' Convert an array of floats in unit of year to a datetime time
+    '''
+    year = np.array([int(y) for y in year_float], dtype=int)
+    month = np.zeros(np.size(year), dtype=int)
+    day = np.zeros(np.size(year), dtype=int)
+
+    for i, y in enumerate(year):
+        fst_day = datetime(year=y, month=1, day=1)
+        lst_day = datetime(year=y+1, month=1, day=1)
+        year_length = lst_day - fst_day
+
+        year_part = (year_float[i] - y)*year_length
+        date = year_part + fst_day
+        month[i] = date.month
+        day[i] = date.day
+
+    time = [cftime.DatetimeNoLeap(y, m, d) for y, m, d in zip(year, month, day)]
+    return time
+
+
 def get_nc_vars(filepath, varnames, useLib='xarray', annualize=False):
     ''' Get variables from given ncfile
     '''
@@ -204,16 +228,8 @@ def get_nc_vars(filepath, varnames, useLib='xarray', annualize=False):
                     month = ds['time.month'].values
                     day = ds['time.day'].values
 
-                    year_float = []
-                    for y, m, d in zip(year, month, day):
-                        date = datetime(year=y, month=m, day=d)
-                        fst_day = datetime(year=y, month=1, day=1)
-                        lst_day = datetime(year=y+1, month=1, day=1)
-                        year_part = date - fst_day
-                        year_length = lst_day - fst_day
-                        year_float.append(y + year_part/year_length)
-
-                    var_list.append(np.asarray(year_float))
+                    year_float = ymd2year_float(year, month, day)
+                    var_list.append(year_float)
 
                 else:
                     var_tmp = ds[varname].values
