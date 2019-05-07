@@ -129,7 +129,7 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
 def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                    title=None, title_size=20, title_weight='normal', figsize=[10, 8],
                    projection=ccrs.Robinson, transform=ccrs.PlateCarree(),
-                   central_longitude=0,
+                   central_longitude=0, latlon_range=None,
                    clim=None, cmap='RdBu_r', extend='both', mode='mesh',
                    cbar_labels=None, cbar_pad=0.05, cbar_orientation='vertical', cbar_aspect=10,
                    cbar_fraction=0.15, cbar_shrink=0.5, cbar_title=None, font_scale=1.5):
@@ -141,6 +141,8 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
         elif mode == 'mesh':
             if len(np.shape(lat)) == 1:
                 lon, lat = np.meshgrid(lon, lat, sparse=False, indexing='xy')
+            if central_longitude == 180:
+                lon = np.mod(lon+180, 360) - 180
 
             nx, ny = np.shape(field_var)
 
@@ -168,7 +170,10 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
     if title:
         plt.title(title, fontsize=title_size, fontweight=title_weight)
 
-    ax.set_global()
+    if latlon_range:
+        ax.set_extent(latlon_range, crs=transform)
+    else:
+        ax.set_global()
     ax.add_feature(cfeature.LAND, facecolor='gray', alpha=0.3)
     ax.add_feature(cfeature.OCEAN, facecolor='gray', alpha=0.3)
     ax.coastlines()
