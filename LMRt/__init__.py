@@ -2,7 +2,7 @@
 '''
 __author__ = 'Feng Zhu'
 __email__ = 'fengzhu@usc.edu'
-__version__ = '0.3.0'
+__version__ = '0.4.0'
 
 import yaml
 import os
@@ -136,7 +136,7 @@ class ReconJob:
             print(f'pid={os.getpid()} >>> job.prior regridded')
 
     def build_ye_files(self, ptypes, psm_name, prior_filesdict, ye_savepath,
-                       rename_vars={'d18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
+                       rename_vars={'tmp': 'tas', 'd18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
                        precalib_filesdict=None, verbose=False, useLib='netCDF4',
                        lat_str='lat', lon_str='lon', **psm_params):
         ''' Build precalculated Ye files from priors

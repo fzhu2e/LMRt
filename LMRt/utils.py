@@ -632,7 +632,7 @@ def get_precalib_data(psm_name, precalib_filepath):
     return get_precalib_data_func[psm_name](psm_data)
 
 
-def get_env_vars(prior_filesdict, rename_vars={'d18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
+def get_env_vars(prior_filesdict, rename_vars={'tmp': 'tas', 'd18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
                  useLib='xarray', lat_str='lat', lon_str='lon', verbose=False):
     prior_vars = {}
 
@@ -2091,6 +2091,32 @@ def pobjs2df(pobjs,
             df.loc[i, name] = entry
 
     return df
+
+
+def compare_ts(y1, t1, y2, t2, stats=['corr', 'rmse']):
+    y1_tmp = np.copy(y1)
+    y1 = y1[~np.isnan(y1_tmp)]
+    t1 = t1[~np.isnan(y1_tmp)]
+
+    y2_tmp = np.copy(y2)
+    y2 = y2[~np.isnan(y2_tmp)]
+    t2 = t2[~np.isnan(y2_tmp)]
+
+    overlap_yrs = np.intersect1d(t1, t2)
+    ind1 = np.searchsorted(t1, overlap_yrs)
+    ind2 = np.searchsorted(t2, overlap_yrs)
+    y1_overlap = y1[ind1]
+    y2_overlap = y2[ind2]
+
+    res = {}
+    if 'corr' in stats:
+        res['corr'] = np.corrcoef(y1_overlap, y2_overlap)[1, 0]
+
+    if 'rmse' in stats:
+        res['rmse'] = np.sqrt(((y1_overlap - y2_overlap)**2).mean())
+
+    return res
+
 # -----------------------------------------------
 # Correlation and coefficient Efficiency (CE)
 # -----------------------------------------------
