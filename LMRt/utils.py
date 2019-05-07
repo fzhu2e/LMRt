@@ -208,6 +208,26 @@ def year_float2datetime(year_float):
     return time
 
 
+def annualize_var(var, year_float):
+    ''' Annualize a variable array
+
+    Args:
+        var (ndarray): the 1st dim should be year
+    '''
+    ndims = len(np.shape(var))
+    dims = ['time']
+    for i in range(ndims-1):
+        dims.append(f'dim{i+1}')
+
+    time = year_float2datetime(year_float)
+    var_da = xr.DataArray(var, dims=dims, coords={'time': time})
+    var_ann = var_da.groupby('time.year').mean('time')
+
+    year_ann = np.array(list(set([t.year for t in time])))
+
+    return var_ann, year_ann
+
+
 def get_nc_vars(filepath, varnames, useLib='xarray', annualize=False):
     ''' Get variables from given ncfile
     '''
