@@ -7,6 +7,7 @@ from matplotlib.colors import BoundaryNorm
 from matplotlib.ticker import MaxNLocator
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+
 import matplotlib as mpl
 import numpy as np
 import os
@@ -130,6 +131,9 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                    title=None, title_size=20, title_weight='normal', figsize=[10, 8],
                    projection=ccrs.Robinson, transform=ccrs.PlateCarree(),
                    central_longitude=0, latlon_range=None,
+                   land_alpha=1, ocean_alpha=1,
+                   land_color=sns.xkcd_rgb['silver'], ocean_color=sns.xkcd_rgb['silver'],
+                   land_zorder=None, ocean_zorder=None,
                    clim=None, cmap='RdBu_r', extend='both', mode='mesh',
                    cbar_labels=None, cbar_pad=0.05, cbar_orientation='vertical', cbar_aspect=10,
                    cbar_fraction=0.15, cbar_shrink=0.5, cbar_title=None, font_scale=1.5):
@@ -161,7 +165,7 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
     else:
         field_var_c, lat_c, lon_c = field_var, lat, lon
 
-    sns.set(style='white', font_scale=font_scale)
+    sns.set(style='ticks', font_scale=font_scale)
     fig = plt.figure(figsize=figsize)
 
     projection = projection(central_longitude=central_longitude)
@@ -174,9 +178,12 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
         ax.set_extent(latlon_range, crs=transform)
     else:
         ax.set_global()
-    ax.add_feature(cfeature.LAND, facecolor='gray', alpha=0.3)
-    ax.add_feature(cfeature.OCEAN, facecolor='gray', alpha=0.3)
+
+    ax.add_feature(cfeature.LAND, facecolor=land_color, edgecolor='k', alpha=land_alpha, zorder=land_zorder)
+    ax.add_feature(cfeature.OCEAN, facecolor=ocean_color, edgecolor='k', alpha=ocean_alpha, zorder=ocean_zorder)
     ax.coastlines()
+
+    ax.gridlines(edgecolor='gray', linestyle=':', crs=transform)
 
     cmap = plt.get_cmap(cmap)
 
@@ -207,7 +214,7 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
 
 def plot_gmt_vs_inst(gmt_qs, year, ana_pathdict,
                      verif_yrs=np.arange(1880, 2001), ref_period=[1951, 1980],
-                     var='gmt', lmr_label='LMR'):
+                     var='gmt', lmr_label='LMR', style='ticks', ylim=[-0.7, 0.8]):
     if np.shape(gmt_qs)[-1] == 1:
         nt = np.size(gmt_qs)
         gmt_qs_new = np.ndarray((nt, 3))
@@ -256,7 +263,7 @@ def plot_gmt_vs_inst(gmt_qs, year, ana_pathdict,
         corr_vs_lmr[name] = np.corrcoef(ts_inst, ts_lmr)[1, 0]
         ce_vs_lmr[name] = utils.coefficient_efficiency(ts_inst, ts_lmr)
 
-    sns.set(style="darkgrid", font_scale=2)
+    sns.set(style=style, font_scale=2)
     fig, ax = plt.subplots(figsize=[16, 10])
 
     ax.plot(verif_yrs, lmr_gmt[:, 1], '-', lw=3, color=sns.xkcd_rgb['black'], alpha=1, label=lmr_label)
@@ -266,7 +273,7 @@ def plot_gmt_vs_inst(gmt_qs, year, ana_pathdict,
                 label=f'{name} (corr={corr_vs_lmr[name]:.2f}; CE={ce_vs_lmr[name]:.2f})')
 
     ax.set_xlim([syear, eyear])
-    ax.set_ylim([-0.6, 0.8])
+    ax.set_ylim(ylim)
     ax.set_ylabel('Temperature anomaly (K)')
     ax.set_xlabel('Year (AD)')
 
@@ -278,6 +285,8 @@ def plot_gmt_vs_inst(gmt_qs, year, ana_pathdict,
 
     ax.set_title(ax_title[var])
     ax.legend(frameon=False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
 
     return fig, corr_vs_lmr, ce_vs_lmr
 
@@ -333,9 +342,9 @@ def plot_ts_from_jobs(exp_dir, time_span=(0, 2000), savefig_path=None,
                       plot_vars=['tas_sfc_Amon_gm_ens', 'tas_sfc_Amon_nhm_ens', 'tas_sfc_Amon_shm_ens'],
                       qs=[0.025, 0.25, 0.5, 0.75, 0.975], pannel_size=[10, 4], ylabel='T anom. (K)',
                       font_scale=1.5, hspace=0.5, ylim=[-1, 1], color=sns.xkcd_rgb['pale red'],
-                      title=None, plot_title=True,
+                      title=None, plot_title=True, title_y=1,
                       lgd_ncol=3, lgd_bbox_to_anchor=None,
-                      lgd_order=[0, 2, 3, 1],
+                      lgd_order=[0, 2, 3, 1], style='ticks',
                       ref_value=None, ref_time=None, ref_color='k', ref_label='Reference'):
     ''' Plot timeseries
 
@@ -368,7 +377,7 @@ def plot_ts_from_jobs(exp_dir, time_span=(0, 2000), savefig_path=None,
 
     nvar = len(plot_vars)
 
-    sns.set(style="darkgrid", font_scale=font_scale)
+    sns.set(style=style, font_scale=font_scale)
     fig = plt.figure(figsize=[pannel_size[0], pannel_size[1]*nvar])
 
     ax_title = {
@@ -403,7 +412,6 @@ def plot_ts_from_jobs(exp_dir, time_span=(0, 2000), savefig_path=None,
             title = ax_title[var]
 
         ax.plot(year, ts_qs[:, 2], '-', color=color, alpha=1, label=f'{label}')
-
         ax.fill_between(year, ts_qs[:, -2], ts_qs[:, 1], color=color, alpha=0.5,
                         label=f'{qs[1]*100}% to {qs[-2]*100}%')
         ax.fill_between(year, ts_qs[:, -1], ts_qs[:, 0], color=color, alpha=0.1,
@@ -437,20 +445,23 @@ def plot_ts_from_jobs(exp_dir, time_span=(0, 2000), savefig_path=None,
 
             ax.plot(ref_t, ref_v, '-', color=ref_color, alpha=1, label=f'{ref_l}')
             if plot_title[plot_i]:
-                ax.set_title(f'{title} (corr={corr:.2f}; CE={ce:.2f})')
+                ax.set_title(f'{title} (corr={corr:.2f}; CE={ce:.2f})', y=title_y)
 
             if plot_i == 0:
                 if lgd_order:
                     handles, labels = ax.get_legend_handles_labels()
                     ax.legend(
                         [handles[idx] for idx in lgd_order], [labels[idx] for idx in lgd_order],
-                        loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor
+                        loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor,
                     )
                 else:
                     ax.legend(loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor)
         else:
-            ax.set_title(title)
+            ax.set_title(title, y=title_y)
             ax.legend(loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor)
+
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
 
     if savefig_path:
         plt.savefig(savefig_path, bbox_inches='tight')
