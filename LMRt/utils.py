@@ -2093,7 +2093,7 @@ def pobjs2df(pobjs,
     return df
 
 
-def compare_ts(y1, t1, y2, t2, stats=['corr', 'rmse']):
+def compare_ts(y1, t1, y2, t2, stats=['corr', 'ce', 'rmse'], valid_frac=0.5):
     y1_tmp = np.copy(y1)
     y1 = y1[~np.isnan(y1_tmp)]
     t1 = t1[~np.isnan(y1_tmp)]
@@ -2114,6 +2114,9 @@ def compare_ts(y1, t1, y2, t2, stats=['corr', 'rmse']):
 
     if 'rmse' in stats:
         res['rmse'] = np.sqrt(((y1_overlap - y2_overlap)**2).mean())
+
+    if 'ce' in stats:
+        res['ce'] = coefficient_efficiency(y1_overlap, y2_overlap, valid_frac)
 
     return res
 

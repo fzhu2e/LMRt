@@ -441,7 +441,7 @@ def plot_ts_from_jobs(exp_dir, time_span=(0, 2000), savefig_path=None,
             ind_ref = np.searchsorted(ref_t, overlap_yrs)
             ind_ts = np.searchsorted(year, overlap_yrs)
             corr = np.corrcoef(ts_qs[ind_ts, 2], ref_v[ind_ref])[1, 0]
-            ce = utils.coefficient_efficiency(ts_qs[ind_ts, 2], ref_v[ind_ref])
+            ce = utils.coefficient_efficiency(ref_v[ind_ref], ts_qs[ind_ts, 2])
 
             ax.plot(ref_t, ref_v, '-', color=ref_color, alpha=1, label=f'{ref_l}')
             if plot_title[plot_i]:
