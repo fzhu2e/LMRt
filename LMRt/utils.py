@@ -222,6 +222,7 @@ def annualize_var(var, year_float):
     time = year_float2datetime(year_float)
     var_da = xr.DataArray(var, dims=dims, coords={'time': time})
     var_ann = var_da.groupby('time.year').mean('time')
+    var_ann = var_ann.values
 
     year_ann = np.array(list(set([t.year for t in time])))
 
@@ -724,13 +725,17 @@ def calc_ye(proxy_manager, ptypes, psm_name,
                 ind = pid_obs.index(pobj.id)
                 psm_params['species'] = species_obs[ind]
 
-            ye_tmp, _ = prysm.forward(
+            ye_tmp, ye_time = prysm.forward(
                 psm_name, pobj.lat, pobj.lon,
                 lat_model, lon_model, time_model,
                 prior_vars, verbose=verbose, **psm_params,
             )
 
-            bias = np.nanmean(ye_tmp) - np.nanmean(pobj.values)  # estimated bias: the difference between the mean values
+            t1, y1, t2, y2 = overlap_ts(pobj.time, pobj.values.values, ye_time, ye_tmp)
+
+            factor = np.std(y1) / np.std(y2)
+            ye_tmp = factor * ye_tmp  # adjust the standard deviation
+            bias = np.mean(ye_tmp) - np.mean(y1)  # estimated bias: the difference between the mean values
             ye_tmp = ye_tmp - bias  # remove the estimated bias from Ye
 
             ye_out.append(ye_tmp)
@@ -867,28 +872,26 @@ def pick_years(year_int, time_grid, var_grid):
     return time_grid[mask], var_grid[mask]
 
 
-def overlap_ts(time1, value1, time2, value2):
-    mask1 = []
-    for t1 in time1:
-        if t1 in time2:
-            mask1.append(True)
-        else:
-            mask1.append(False)
+def overlap_ts(t1, y1, t2, y2):
+    # remove NaNs
+    y1_tmp = np.copy(y1)
+    y1 = y1[~np.isnan(y1_tmp)]
+    t1 = t1[~np.isnan(y1_tmp)]
 
-    time1_overlap = time1[mask1]
-    value1_overlap = value1[mask1]
+    y2_tmp = np.copy(y2)
+    y2 = y2[~np.isnan(y2_tmp)]
+    t2 = t2[~np.isnan(y2_tmp)]
 
-    mask2 = []
-    for t2 in time2:
-        if t2 in time1_overlap:
-            mask2.append(True)
-        else:
-            mask2.append(False)
+    # get overlap range
+    overlap_yrs = np.intersect1d(t1, t2)
+    ind1 = np.searchsorted(t1, overlap_yrs)
+    ind2 = np.searchsorted(t2, overlap_yrs)
+    y1_overlap = y1[ind1]
+    y2_overlap = y2[ind2]
+    t1_overlap = t1[ind1]
+    t2_overlap = t2[ind2]
 
-    time2_overlap = time2[mask2]
-    value2_overlap = value2[mask2]
-
-    return time1_overlap, value1_overlap, time2_overlap, value2_overlap
+    return t1_overlap, y1_overlap, t2_overlap, y2_overlap
 
 
 def calibrate_psm(proxy_manager, ptype, psm_name,
@@ -2093,20 +2096,8 @@ def pobjs2df(pobjs,
     return df
 
 
-def compare_ts(y1, t1, y2, t2, stats=['corr', 'ce', 'rmse'], valid_frac=0.5):
-    y1_tmp = np.copy(y1)
-    y1 = y1[~np.isnan(y1_tmp)]
-    t1 = t1[~np.isnan(y1_tmp)]
-
-    y2_tmp = np.copy(y2)
-    y2 = y2[~np.isnan(y2_tmp)]
-    t2 = t2[~np.isnan(y2_tmp)]
-
-    overlap_yrs = np.intersect1d(t1, t2)
-    ind1 = np.searchsorted(t1, overlap_yrs)
-    ind2 = np.searchsorted(t2, overlap_yrs)
-    y1_overlap = y1[ind1]
-    y2_overlap = y2[ind2]
+def compare_ts(t1, y1, t2, y2, stats=['corr', 'ce', 'rmse'], valid_frac=0.5):
+    t1_overlap, y1_overlap, t2_overlap, y2_overlap = overlap_ts(t1, y1, t2, y2)
 
     res = {}
     if 'corr' in stats:
