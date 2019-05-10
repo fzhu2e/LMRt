@@ -134,7 +134,7 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                    land_alpha=1, ocean_alpha=1,
                    land_color=sns.xkcd_rgb['silver'], ocean_color=sns.xkcd_rgb['silver'],
                    land_zorder=None, ocean_zorder=None,
-                   clim=None, cmap='RdBu_r', extend='both', mode='mesh',
+                   clim=None, cmap='RdBu_r', extend='both', mode='mesh', add_gridlines=False,
                    cbar_labels=None, cbar_pad=0.05, cbar_orientation='vertical', cbar_aspect=10,
                    cbar_fraction=0.15, cbar_shrink=0.5, cbar_title=None, font_scale=1.5):
 
@@ -183,7 +183,8 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
     ax.add_feature(cfeature.OCEAN, facecolor=ocean_color, edgecolor='k', alpha=ocean_alpha, zorder=ocean_zorder)
     ax.coastlines()
 
-    ax.gridlines(edgecolor='gray', linestyle=':', crs=transform)
+    if add_gridlines:
+        ax.gridlines(edgecolor='gray', linestyle=':', crs=transform)
 
     cmap = plt.get_cmap(cmap)
 
