@@ -208,18 +208,40 @@ def year_float2datetime(year_float):
     return time
 
 
-def annualize_var(var, year_float):
+def annualize_var(var, year_float, weights=None):
     ''' Annualize a variable array
 
     Args:
-        var (ndarray): the 1st dim should be year
+        var (ndarray): the target variable array with 1st dim to be year
+        year_float (1-D array): the time axis of the variable array
+        weights (ndarray): the weights that shares the same shape of the target variable array
+
+    Returns:
+        var_ann (ndarray): the annualized variable array
+        year_ann (1-D array): the time axis of the annualized variable array
+
     '''
+    var = np.array(var)
+    year_float = np.array(year_float)
+
     ndims = len(np.shape(var))
     dims = ['time']
     for i in range(ndims-1):
         dims.append(f'dim{i+1}')
 
-    time = year_float2datetime(year_float)
+    time = utils.year_float2datetime(year_float)
+    weights_da = xr.DataArray(weights, dims=dims, coords={'time': time})
+
+    coeff = np.ndarray(np.shape(weights))
+    for i, gp in enumerate(list(weights_da.groupby('time.year'))):
+        year, value = gp
+        k = np.shape(value)[0]
+        coeff[k*i:k*(i+1)] = value / np.sum(value, axis=0)
+
+    del weights, weights_da  # save the memory
+
+    var = np.multiply(coeff, var)
+
     var_da = xr.DataArray(var, dims=dims, coords={'time': time})
     var_ann = var_da.groupby('time.year').mean('time')
     var_ann = var_ann.values
