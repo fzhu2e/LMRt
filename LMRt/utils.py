@@ -19,6 +19,7 @@ import glob
 from scipy.stats.mstats import mquantiles
 from scipy import spatial
 import cftime
+from pprint import pprint
 #  from IPython import embed
 
 from . import load_gridded_data  # original file from LMR
@@ -208,6 +209,122 @@ def year_float2datetime(year_float):
     return time
 
 
+def seasonal_var_xarray(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]):
+    ''' Annualize a variable array based on seasonality
+
+    Args:
+        var (ndarray): the target variable array with 1st dim to be year
+        year_float (1-D array): the time axis of the variable array
+
+    Returns:
+        var_ann (ndarray): the annualized variable array
+        year_ann (1-D array): the time axis of the annualized variable array
+    '''
+    var = np.array(var)
+    year_float = np.array(year_float)
+
+    ndims = len(np.shape(var))
+    dims = ['time']
+    for i in range(ndims-1):
+        dims.append(f'dim{i+1}')
+
+    time = year_float2datetime(year_float)
+    var_da = xr.DataArray(var, dims=dims, coords={'time': time})
+
+    m_start, m_end = seasonality[0], seasonality[-1]
+
+    if m_start > 0:
+        offset_str = 'A'
+    else:
+        offset_alias = {
+           -12: 'DEC',
+           -11: 'NOV',
+           -10: 'OCT',
+           -9: 'SEP',
+           -8: 'AUG',
+           -7: 'JUL',
+           -6: 'JUN',
+           -5: 'MAY',
+           -4: 'APR',
+           -3: 'MAR',
+           -2: 'FEB',
+           -1: 'JAN',
+        }
+        offset_str = f'AS-{offset_alias[m_start]}'
+
+    if seasonality==[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]:
+        var_ann = var_da.groupby('time.year').mean('time')
+        year_ann = np.array(list(set(var_ann['year'].values)))
+    else:
+        month = var_da.groupby('time.month').apply(lambda x: x).month
+
+        var_ann = var_da.where(
+            (month >= m_start) & (month <= m_end)
+        ).resample(time=offset_str).mean('time')
+
+        if m_start > 0:
+            year_ann = np.array(list(set(var_ann['time.year'].values)))
+        else:
+            year_ann = np.array(list(set(var_ann['time.year'].values))) + 1
+            var_ann = var_ann[:-1]
+            year_ann = year_ann[:-1]
+
+    return var_ann, year_ann
+
+
+def seasonal_var(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]):
+    ''' Annualize a variable array based on seasonality
+
+    Args:
+        var (ndarray): the target variable array with 1st dim to be year
+        year_float (1-D array): the time axis of the variable array
+
+    Returns:
+        var_ann (ndarray): the annualized variable array
+        year_ann (1-D array): the time axis of the annualized variable array
+    '''
+    var = np.array(var)
+    year_float = np.array(year_float)
+
+    ndims = len(np.shape(var))
+    dims = ['time']
+    for i in range(ndims-1):
+        dims.append(f'dim{i+1}')
+
+    time = year_float2datetime(year_float)
+
+    nbmonths = len(avgMonths)
+    cyears = np.asarray(list(set([t.year for t in time])))
+    year_ann = cyears
+    nbcyears = len(cyears)
+    var_ann = np.zeros(shape=[nbcyears])
+    var_ann[:] = np.nan # initialize with nan's
+    for i in range(nbcyears):
+        # monthly data from current year
+        indsyr = [j for j,v in enumerate(time) if v.year == cyears[i] and v.month in avgMonths]
+        # check if data from previous year is to be included
+        indsyrm1 = []
+        if any(m < 0 for m in avgMonths):
+            year_before = [abs(m) for m in avgMonths if m < 0]
+            indsyrm1 = [j for j,v in enumerate(time) if v.year == cyears[i]-1. and v.month in year_before]
+        # check if data from following year is to be included
+        indsyrp1 = []
+        if any(m > 12 for m in avgMonths):
+            year_follow = [m-12 for m in avgMonths if m > 12]
+            indsyrp1 = [j for j,v in enumerate(time) if v.year == cyears[i]+1. and v.month in year_follow]
+
+        inds = indsyrm1 + indsyr + indsyrp1
+        if len(inds) == nbmonths: # all months are in the data
+            tmp = np.nanmean(var[inds],axis=0)
+            nancount = np.isnan(var[inds]).sum(axis=0)
+            if nancount > 0: tmp = np.nan
+        else:
+            tmp = np.nan
+        var_ann[i] = tmp
+
+    return var_ann, year_ann
+
+
 def annualize_var(var, year_float, weights=None):
     ''' Annualize a variable array
 
@@ -219,7 +336,6 @@ def annualize_var(var, year_float, weights=None):
     Returns:
         var_ann (ndarray): the annualized variable array
         year_ann (1-D array): the time axis of the annualized variable array
-
     '''
     var = np.array(var)
     year_float = np.array(year_float)
@@ -247,7 +363,6 @@ def annualize_var(var, year_float, weights=None):
     var_ann = var_ann.values
 
     year_ann = np.array(list(set([t.year for t in time])))
-
     return var_ann, year_ann
 
 
@@ -916,41 +1031,316 @@ def overlap_ts(t1, y1, t2, y2):
     return t1_overlap, y1_overlap, t2_overlap, y2_overlap
 
 
-def calibrate_psm(proxy_manager, ptype, psm_name,
-                  lat_model, lon_model, time_model,
-                  inst_vars, verbose=False, **psm_params):
-    # TODO
-    precalib_dict = {}
+def get_distance(lon_pt, lat_pt, lon_ref, lat_ref):
+    """
+    Vectorized calculation the great circle distances between lat-lon points
+    on the Earth (lat/lon are specified in decimal degrees)
+
+    Input:
+    lon_pt , lat_pt  : longitude, latitude of site w.r.t. which distances
+                       are to be calculated. Both should be scalars.
+    lon_ref, lat_ref : longitudes, latitudes of reference field
+                       (e.g. calibration dataset, reconstruction grid)
+                       May be scalar, 1D arrays, or 2D arrays.
+
+    Output: Returns array containing distances between (lon_pt, lat_pt) and all other points
+            in (lon_ref,lat_ref). Array has dimensions [dim(lon_ref),dim(lat_ref)].
+
+    Originator: R. Tardif, Atmospheric sciences, U. of Washington, January 2016
+
+    """
+
+    # Convert decimal degrees to radians
+    lon_pt, lat_pt, lon_ref, lat_ref = list(map(np.radians, [lon_pt, lat_pt, lon_ref, lat_ref]))
+
+    # check dimension of lon_ref and lat_ref
+    dims_ref = len(lon_ref.shape)
+
+    if dims_ref == 0:
+        lats = lat_ref
+        lons = lon_ref
+    elif dims_ref == 1:
+        lon_dim = len(lon_ref)
+        lat_dim = len(lat_ref)
+        nbpts = lon_dim*lat_dim
+        lats = np.array([lat_ref,]*lon_dim).transpose()
+        lons = np.array([lon_ref,]*lat_dim)
+    elif dims_ref == 2:
+        lats = lat_ref
+        lons = lon_ref
+    else:
+        print('ERROR in get_distance!')
+        raise SystemExit()
+
+    # Haversine formula using arrays as input
+    dlon = lons - lon_pt
+    dlat = lats - lat_pt
+
+    a = np.sin(dlat/2.)**2 + np.cos(lat_pt) * np.cos(lats) * np.sin(dlon/2.)**2
+    c = 2. * np.arcsin(np.sqrt(a))
+    km = 6367.0 * c
+
+    return km
+
+
+def calibrate_psm(proxy_manager, ptypes, psm_name,
+                  calib_refsdict,
+                  ref_period=[1951, 1980],
+                  calib_period=[1850, 2015],
+                  seasonality = {
+                      'Tree Rings_WidthBreit': {
+                          'seasons_T': [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]],
+                          'seasons_M': [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]],
+                      },
+                      'Tree Rings_WidthPages2': {
+                          'seasons_T': [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]],
+                          'seasons_M': [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]],
+                      },
+                      'Tree Rings_WoodDensity': {
+                              'seasons_T': [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]],
+                              'seasons_M': [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]]},
+                      'Tree Rings_Isotopes': {
+                              'seasons_T': [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]],
+                              'seasons_M': [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]],
+                      },
+                  },
+                  verbose=False):
+    ''' Calibrate PSMs (linear/bilinear PSMs for now)
+
+    Args:
+        proxy_manager (namedtuple): the proxy_manager
+        ptypes (list of str): the list of proxy types
+        psm_name (str): 'linear' or 'bilinear'
+        calib_refsdict (dict of paths): the dict of paths of calibration references
+            e.g., {'T': ('GISTEMP', GISTEMP_filepath), 'M': ('GPCC', GPCC_filepath)}
+        seasonality (dict): the seasonality information for each proxy type
+
+    Returns:
+        precalib_dict (dict): a dict that stores the calibration information
+    '''
+
+    var_names = {
+        'linear': ['T'],
+        'bilinear': ['T', 'M'],
+    }
+
+    # load reference data
+    ref_field, ref_time, ref_lat, ref_lon = {}, {}, {}, {}
+    for var_name in var_names[psm_name]:
+        ana_name, ana_path = calib_refsdict[var_name]
+        inst_field, inst_time, inst_lat, inst_lon = load_inst_analyses(
+                {ana_name: ana_path},
+                var='field',
+                verif_yrs=None,
+                ref_period=ref_period, outfreq='monthly',
+        )
+        ref_field[var_name] = inst_field[ana_name]
+        ref_time[var_name] = inst_time[ana_name]
+        ref_lat[var_name] = inst_lat[ana_name]
+        ref_lon[var_name] = inst_lon[ana_name]
+
+    # loop over proxy records
     count = 0
-
-    start_yr = int(time_model[0])
-    end_yr = int(time_model[-1])
-
-    for idx, pobj in enumerate(proxy_manager.all_proxies):
-        if pobj.type == ptype:
+    precalib_dict = {}
+    for idx, pobj in enumerate(tqdm(proxy_manager.all_proxies, desc='Calibrating PSM against proxy records')):
+        if pobj.type not in ptypes:
+            # PSM not available; skip
+            if verbose:
+                print(f'\nThe proxy type {pobj.type} is not in specified types: {ptypes}. Skipping ...')
+            continue
+        else:
+            # PSM available
             count += 1
             if verbose:
-                print(f'\nProcessing #{count} - {pobj.id} ...')
-            ye_tmp, _ = prysm.forward(
-                psm_name, pobj.lat, pobj.lon,
-                lat_model, lon_model, time_model,
-                inst_vars, verbose=verbose, **psm_params,
-            )
+                print(f'\nProcessing #{count} - {pobj.id}, {pobj.type} ...')
 
-            #  Yvals = Y.values[(Y.values.index > start_yr) & (Y.values.index <= end_yr)]
-            proxy_value = pobj.values[(pobj.values.index >= start_yr) & (pobj.values.index <= end_yr)]
+            ref_var = {}
+            seasons = {}
+            for var_name in var_names[psm_name]:
+                # find the reference data closest to the proxy location
+                lat_ind, lon_ind = find_closest_loc(ref_lat[var_name], ref_lon[var_name], pobj.lat, pobj.lon, mode='latlon')
+                #  dist = get_distance(pobj.lon, pobj.lat, ref_lon[var_name], ref_lat[var_name])
+                #  lat_ind, lon_ind = np.unravel_index(dist.argmin(), dist.shape)
 
-            resid = ye_tmp - proxy_value
-            PSMmse = np.mean((resid) ** 2)
+                if verbose:
+                    print(f'>>> Target: ({pobj.lat}, {pobj.lon}); Found: ({ref_lat[var_name][lat_ind]:.2f}, {ref_lon[var_name][lon_ind]:.2f})')
 
-            precalib_dict[(pobj.type, pobj.id)] = {
-                'PSMmse': PSMmse,
-            }
-        else:
-            # PSM not available; skip
-            continue
+                ref_var[var_name] = ref_field[var_name][:, lat_ind, lon_ind]
+
+                # load seasons for each variable
+                try:
+                    seasons[var_name] = seasonality[pobj.type][f'seasons_{var_name}']
+                except:
+                    seasons[var_name] = [[1,2,3,4,5,6,7,8,9,10,11,12]]
+
+
+            pobj_time_int = np.array([int(t) for t in pobj.time])
+            mask = (pobj_time_int >= calib_period[0]) & (pobj_time_int <= calib_period[-1])
+            # test each season combination and find the optimal one
+            if psm_name == 'linear':
+                var_name = var_names[psm_name][0]
+                optimal_seasonality, optimal_reg = linear_regression(
+                    pobj.time[mask], pobj.values.values[mask],
+                    ref_time[var_name], ref_var[var_name], seasons[var_name],
+                    verbose=verbose
+                )
+                if optimal_reg is None:
+                    # not enough data for regression; skip
+                    continue
+                else:
+                    precalib_dict[(pobj.type, pobj.id)] = {
+                        'lat': pobj.lat,
+                        'lon': pobj.lon,
+                        'elev': pobj.elev,
+                        'Seasonality': optimal_seasonality,
+                        'calib': calib_refsdict[var_name][0],
+                        'NbCalPts': int(optimal_reg.nobs),
+                        'PSMintercept': optimal_reg.params[0],
+                        'PSMslope': optimal_reg.params[1],
+                        'PSMcorrel': np.sign(optimal_reg.params[1])*np.sqrt(optimal_reg.rsquared),
+                        'PSMmse': np.mean(optimal_reg.resid**2),
+                        'fitAIC': optimal_reg.aic,
+                        'fitBIC': optimal_reg.bic,
+                        'fitR2adj': optimal_reg.rsquared_adj,
+                    }
+
+            elif psm_name == 'bilinear':
+                var_name_1 = var_names[psm_name][0]
+                var_name_2 = var_names[psm_name][1]
+
+                optimal_seasonality_1, optimal_seasonality_2, optimal_reg = bilinear_regression(
+                    pobj.time[mask], pobj.values.values[mask],
+                    ref_time[var_name_1], ref_var[var_name_1], seasons[var_name_1],
+                    ref_time[var_name_2], ref_var[var_name_2], seasons[var_name_2],
+                    verbose=verbose
+                )
+                if optimal_reg is None:
+                    # not enough data for regression; skip
+                    continue
+                else:
+                    precalib_dict[(pobj.type, pobj.id)] = {
+                        'lat': pobj.lat,
+                        'lon': pobj.lon,
+                        'elev': pobj.elev,
+                        f'Seasonality_{var_name_1}': optimal_seasonality_1,
+                        f'Seasonality_{var_name_2}': optimal_seasonality_2,
+                        'calib': calib_refsdict[var_name][0],
+                        'NbCalPts': int(optimal_reg.nobs),
+                        'PSMintercept': optimal_reg.params[0],
+                        f'PSMslope_{var_name_1}': optimal_reg.params[1],
+                        f'PSMslope_{var_name_2}': optimal_reg.params[2],
+                        'PSMcorrel': np.sign(optimal_reg.params[1])*np.sqrt(optimal_reg.rsquared),
+                        'PSMmse': np.mean(optimal_reg.resid**2),
+                        'fitAIC': optimal_reg.aic,
+                        'fitBIC': optimal_reg.bic,
+                        'fitR2adj': optimal_reg.rsquared_adj,
+                    }
+
+            if verbose:
+                pprint(precalib_dict[(pobj.type, pobj.id)])
+
 
     return precalib_dict
+
+
+def linear_regression(proxy_time, proxy_value, ref_time, ref_value, seasons, verbose=False):
+    metric_list = []
+    reg_res_list = []
+    for i, avgMonths in enumerate(seasons):
+        ref_var_avg, yr_ann = seasonal_var(ref_value, ref_time, avgMonths=avgMonths)
+
+        if verbose:
+            print(f'Seasonality: {avgMonths}')
+            print(np.min(yr_ann), np.max(yr_ann))
+
+        t1, y1, t2, y2 = overlap_ts(proxy_time, proxy_value, yr_ann, ref_var_avg)
+        nobs = np.size(y1)
+
+        if nobs < 25:
+            print('Insufficent observation/calibration overlap to calibrate psm.\n')
+            reg_res_list.append(None)
+            metric_list.append(np.nan)
+            continue
+        else:
+            Y = y1
+            X = y2
+            X_ex = sm.add_constant(X)
+            reg_res = sm.OLS(Y, X_ex).fit()
+            R2_adj = reg_res.rsquared_adj
+            if verbose:
+                print(f'R2_adj: {R2_adj:.4f}')
+
+            metric_list.append(R2_adj)
+            reg_res_list.append(reg_res)
+
+    if np.all(np.isnan(metric_list)):
+        optimal_seasonality = None
+        optimal_reg = None
+    else:
+        indmax = np.nanargmax(metric_list)
+        optimal_seasonality = seasons[indmax]
+        optimal_reg = reg_res_list[indmax]
+
+    return optimal_seasonality, optimal_reg
+
+
+def bilinear_regression(proxy_time, proxy_value,
+                        ref_time_1, ref_value_1, seasons_1,
+                        ref_time_2, ref_value_2, seasons_2,
+                        verbose=False):
+
+    i_idx_list = []
+    j_idx_list = []
+    metric_list = []
+    reg_res_list = []
+    for i, avgMonths_1 in enumerate(seasons_1):
+        for j, avgMonths_2 in enumerate(seasons_2):
+            ref_var_avg_1, yr_ann_1 = seasonal_var(ref_value_1, ref_time_1, avgMonths=avgMonths_1)
+            ref_var_avg_2, yr_ann_2 = seasonal_var(ref_value_2, ref_time_2, avgMonths=avgMonths_2)
+
+            t_proxy_1, y_proxy_1, t_ref_1, y_ref_1 = overlap_ts(proxy_time, proxy_value, yr_ann_1, ref_var_avg_1)
+            t_proxy_2, y_proxy_2, t_ref_2, y_ref_2 = overlap_ts(proxy_time, proxy_value, yr_ann_2, ref_var_avg_2)
+            t_proxy, y_proxy, _, _ = overlap_ts(t_proxy_1, y_proxy_1, t_proxy_2, y_proxy_2)
+            _, _, t_ref_1, y_ref1 = overlap_ts(t_proxy, y_proxy, t_ref_1, y_ref_1)
+            _, _, t_ref_2, y_ref2 = overlap_ts(t_proxy, y_proxy, t_ref_2, y_ref_2)
+
+            nobs = np.size(y_proxy)
+
+            if nobs < 25:
+                print('Insufficent observation/calibration overlap to calibrate psm.\n')
+                reg_res_list.append(None)
+                metric_list.append(np.nan)
+                i_idx_list.append(None)
+                j_idx_list.append(None)
+                continue
+            else:
+                Y = y_proxy
+                X = []
+                X.append(y_ref1)
+                X.append(y_ref2)
+                X = np.array(X).T
+                X_ex = sm.add_constant(X)
+                reg_res = sm.OLS(Y, X_ex).fit()
+                R2_adj = reg_res.rsquared_adj
+                if verbose:
+                    print(f'Seasonality_1: {avgMonths_1}, Seasonality_2: {avgMonths_2}, R2_adj: {R2_adj:.4f}')
+
+                metric_list.append(R2_adj)
+                i_idx_list.append(i)
+                j_idx_list.append(j)
+                reg_res_list.append(reg_res)
+
+    if np.all(np.isnan(metric_list)):
+        optimal_seasonality_1 = None
+        optimal_seasonality_2 = None
+        optimal_reg = None
+    else:
+        indmax = np.nanargmax(metric_list)
+        optimal_seasonality_1 = seasons_1[i_idx_list[indmax]]
+        optimal_seasonality_2 = seasons_2[j_idx_list[indmax]]
+        optimal_reg = reg_res_list[indmax]
+
+    return optimal_seasonality_1, optimal_seasonality_2, optimal_reg
 
 
 def generate_proxy_ind(cfg, nsites, seed):
@@ -968,7 +1358,6 @@ def generate_proxy_ind(cfg, nsites, seed):
 
 
 def get_ye(proxy_manager, prior_sample_idxs, ye_filesdict, proxy_set, verbose=False):
-
     if verbose:
         print(f'-------------------------------------------')
         print(f'Loading Ye files for proxy set: {proxy_set}')
@@ -1744,7 +2133,6 @@ def enkf_update_array(Xb, obvalue, Ye, ob_err, loc=None, inflate=None):
     return Xa
 
 
-
 def Kalman_ESRF(cfg, vY, vR, vYe, Xb_in,
                 proxy_manager, X, Xb_one_aug, Xb_one_coords, verbose=False):
 
@@ -1955,7 +2343,6 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath):
     )
 
     ds.to_netcdf(save_path)
-
 
 # ===============================================
 #  Post processing
@@ -2213,8 +2600,8 @@ def rotate_lon(field, lon):
     return field, lon
 
 
-def load_inst_analyses(ana_pathdict, var='gmt', verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980],
-                       sort_lon=True):
+def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980],
+                       sort_lon=True, outfreq='annual'):
     load_func = {
         'GISTEMP': load_gridded_data.read_gridded_data_GISTEMP,
         'HadCRUT': load_gridded_data.read_gridded_data_HadCRUT,
@@ -2222,6 +2609,7 @@ def load_inst_analyses(ana_pathdict, var='gmt', verif_yrs=np.arange(1880, 2000),
         'MLOST': load_gridded_data.read_gridded_data_MLOST,
         'ERA20-20C': load_gridded_data.read_gridded_data_CMIP5_model,
         '20CR-V2': load_gridded_data.read_gridded_data_CMIP5_model,
+        'GPCC': load_gridded_data.read_gridded_data_GPCC,
     }
 
     calib_vars = {
@@ -2231,17 +2619,17 @@ def load_inst_analyses(ana_pathdict, var='gmt', verif_yrs=np.arange(1880, 2000),
         'MLOST': ['air'],
         'ERA20-20C': {'tas_sfc_Amon': 'anom'},
         '20CR-V2': {'tas_sfc_Amon': 'anom'},
+        'GPCC': ['precip'],
     }
-
-    syear, eyear = verif_yrs[0], verif_yrs[-1]
 
     inst_field = {}
     inst_lat = {}
     inst_lon = {}
-    inst_gmt = {}
-    inst_nhmt = {}
-    inst_shmt = {}
+    inst_gm = {}
+    inst_nhm = {}
+    inst_shm = {}
     inst_time = {}
+
     for name, path in ana_pathdict.items():
         print(f'Loading {name}: {path} ...')
         if name in ['ERA20-20C', '20CR-V2']:
@@ -2249,44 +2637,69 @@ def load_inst_analyses(ana_pathdict, var='gmt', verif_yrs=np.arange(1880, 2000),
                 os.path.dirname(path),
                 os.path.basename(path),
                 calib_vars[name],
-                outtimeavg=list(range(1, 13)),
+                outtimeavg=lsit(range(1, 13)),
                 anom_ref=ref_period,
             )
             time_grid = dd['tas_sfc_Amon']['years']
             lat_grid = dd['tas_sfc_Amon']['lat'][:, 0]
             lon_grid = dd['tas_sfc_Amon']['lon'][0, :]
             anomaly_grid = dd['tas_sfc_Amon']['value']
+        elif name == 'GPCC':
+            time_grid, lat_grid, lon_grid, anomaly_grid = load_func[name](
+                os.path.dirname(path),
+                os.path.basename(path),
+                calib_vars[name],
+                True,
+                ref_period,
+                outfreq,
+            )
+
         else:
             time_grid, lat_grid, lon_grid, anomaly_grid = load_func[name](
                 os.path.dirname(path),
                 os.path.basename(path),
                 calib_vars[name],
-                outfreq='annual',
+                outfreq=outfreq,
                 ref_period=ref_period,
             )
-            if sort_lon:
-                anomaly_grid, lon_grid = rotate_lon(anomaly_grid, lon_grid)
 
-        gmt, nhmt, shmt = global_hemispheric_means(anomaly_grid, lat_grid)
-        year = np.array([d.year for d in time_grid])
-        mask = (year >= syear) & (year <= eyear)
-        inst_gmt[name] = gmt[mask]
-        inst_nhmt[name] = nhmt[mask]
-        inst_shmt[name] = shmt[mask]
-        inst_time[name] = year[mask]
+        if sort_lon:
+            anomaly_grid, lon_grid = rotate_lon(anomaly_grid, lon_grid)
 
-        inst_field[name] = anomaly_grid[mask]
+        gm, nhm, shm = global_hemispheric_means(anomaly_grid, lat_grid)
+        year = np.array([t.year for t in time_grid])
+        month = np.array([t.month for t in time_grid])
+        day = np.array([t.day for t in time_grid])
+        year_float = ymd2year_float(year, month, day)
+
+        if verif_yrs is not None:
+            syear, eyear = verif_yrs[0], verif_yrs[-1]
+            year_int = np.array([int(y) for y in year_float])
+            mask = (year_int >= syear) & (year_int <= eyear)
+
+            inst_gm[name] = gm[mask]
+            inst_nhm[name] = nhm[mask]
+            inst_shm[name] = shm[mask]
+            inst_time[name] = year_float[mask]
+            inst_field[name] = anomaly_grid[mask]
+        else:
+            inst_gm[name] = gm
+            inst_nhm[name] = nhm
+            inst_shm[name] = shm
+            inst_time[name] = year_float
+            inst_field[name] = anomaly_grid
+
         inst_lat[name] = lat_grid
         inst_lon[name] = lon_grid
 
     if var == 'field':
         return inst_field, inst_time, inst_lat, inst_lon
-    elif var == 'gmt':
-        return inst_gmt, inst_time
-    elif var == 'nhmt':
-        return inst_nhmt, inst_time
-    elif var == 'shmt':
-        return inst_shmt, inst_time
+    elif var == 'gm':
+        return inst_gm, inst_time
+    elif var == 'nhm':
+        return inst_nhm, inst_time
+    elif var == 'shm':
+        return inst_shm, inst_time
 
 
 def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980],

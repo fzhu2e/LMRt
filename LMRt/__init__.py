@@ -170,15 +170,15 @@ class ReconJob:
         np.savez(ye_savepath, pid_index_map=pid_map, ye_vals=ye_out)
         print(f'\npid={os.getpid()} >>> Saving Ye to {ye_savepath}')
 
-    def build_precalib_files(self, ptype, psm_name, inst_filesdict, precalib_savepath, verbose=False, **psm_params):
+    def build_precalib_files(self, ptypes, psm_name, calib_refsdict, precalib_savepath,
+                             ref_period=[1951, 1980], calib_period=[1850, 2015],
+                             verbose=False):
         ''' Build precalibration files
         '''
 
-        lat_inst, lon_inst, time_inst, inst_vars = utils.get_env_vars(inst_filesdict, useLib='xarray', verbose=verbose)
-
-        precalib_dict = utils.calibrate_psm(self.proxy_manager, ptype, psm_name,
-                                            lat_inst, lon_inst, time_inst, inst_vars,
-                                            verbose=verbose, **psm_params)
+        precalib_dict = utils.calibrate_psm(self.proxy_manager, ptypes, psm_name,
+                                            calib_refsdict, ref_period=ref_period, calib_period=calib_period,
+                                            verbose=verbose)
 
         with open(precalib_savepath, 'wb') as f:
             pickle.dump(precalib_dict, f)
