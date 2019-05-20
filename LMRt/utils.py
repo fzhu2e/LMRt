@@ -797,16 +797,104 @@ def get_env_vars(prior_filesdict, rename_vars={'tmp': 'tas', 'd18O': 'd18Opr', '
     return lat_model, lon_model, time_model, prior_vars
 
 
-def calc_ye(proxy_manager, ptypes, psm_name,
-            lat_model, lon_model, time_model,
-            prior_vars, verbose=False, **psm_params):
+def calc_ye_linearPSM(proxy_manager, ptypes, psm_name,
+                      lat_model, lon_model, time_model, prior_vars,
+                      precalib_data, nproc=4, verbose=False):
     pid_map = {}
     ye_out = []
-    count = 0
+
+    pid_obs = [pid[1] for pid, v in precalib_data.items()]
+
+    def func_wrapper(pobj, idx, total_n):
+        print(f'pid={os.getpid()} >>> {idx+1}/{total_n}: {pobj.id}')
+        if pobj.type not in ptypes:
+            # PSM not available; skip
+            if verbose:
+                print(f'pid={os.getpid()} >>> The proxy type {pobj.type} is not in specified types: {ptypes}; skipping ...')
+            return None, None
+        else:
+            # PSM available
+            if pobj.id not in pid_obs:
+                print(f'pid={os.getpid()} >>> No calibration data; skipping {pobj.id}; skipping ...')
+                return None, None
+            else:
+                lat_ind, lon_ind = find_closest_loc(lat_model, lon_model, pobj.lat, pobj.lon)
+                if verbose:
+                    print(f'pid={os.getpid()} >>> Target: ({pobj.lat}, {pobj.lon}); Found: ({lat_model[lat_ind]:.2f}, {lon_model[lon_ind]:.2f})')
+
+                if psm_name == 'linear':
+                    tas = prior_vars['tas']
+                    avgMonths = precalib_data[(pobj.type, pobj.id)]['Seasonality']
+
+                    intercept = precalib_data[(pobj.type, pobj.id)]['PSMintercept']
+                    slope = precalib_data[(pobj.type, pobj.id)]['PSMslope']
+
+                    tas_sub = np.asarray(tas[:, lat_ind, lon_ind])
+                    tas_ann, pseudo_time = seasonal_var(tas_sub, time_model, avgMonths=avgMonths)
+
+                    pseudo_value = slope*tas_ann + intercept
+
+                elif psm_name == 'bilinear':
+                    tas = prior_vars['tas']
+                    pr = prior_vars['pr']
+                    avgMonths_T, avgMonths_P = precalib_data[(pobj.type, pobj.id)]['Seasonality']
+
+                    intercept = precalib_data[(pobj.type, pobj.id)]['PSMintercept']
+                    slope_temperature = precalib_data[(pobj.type, pobj.id)]['PSMslope_temperature']
+                    slope_moisture = precalib_data[(pobj.type, pobj.id)]['PSMslope_moisture']
+
+                    tas_sub = np.asarray(tas[:, lat_ind, lon_ind])
+                    tas_ann, pseudo_time = seasonal_var(tas_sub, time_model, avgMonths=avgMonths_T)
+                    pr_sub = np.asarray(pr[:, lat_ind, lon_ind])
+                    pr_ann, pseudo_time = seasonal_var(pr_sub, time_model, avgMonths=avgMonths_P)
+
+                    pseudo_value = slope_temperature*tas_ann + slope_moisture*pr_ann + intercept
+
+                if verbose:
+                    mean_value = np.nanmean(pseudo_value)
+                    std_value = np.nanstd(pseudo_value)
+                    print(f'pid={os.getpid()} >>> shape: {np.shape(pseudo_value)}')
+                    print(f'pid={os.getpid()} >>> mean: {mean_value:.2f}; std: {std_value:.2f}')
+
+                return pseudo_value, idx
+
+    if nproc >= 2:
+        with Pool(nproc) as pool:
+            nproxies = len(proxy_manager.all_proxies)
+            idx = np.arange(nproxies)
+            total_n = [int(n) for n in np.ones(nproxies)*nproxies]
+            res = pool.map(func_wrapper, proxy_manager.all_proxies, idx, total_n)
+
+        for idx, pobj in enumerate(proxy_manager.all_proxies):
+
+            if res[idx][0] is not None:
+                ye_out.append(res[idx][0])
+
+            if res[idx][1] is not None:
+                pid_map = res[idx][1]
+    else:
+        total_n = len(proxy_manager.all_proxies)
+        for idx, pobj in enumerate(proxy_manager.all_proxies):
+            res = func_wrapper(pobj, idx, total_n)
+            if res[0] is not None:
+                ye_out.append(res[0])
+
+            if res[1] is not None:
+                pid_map = res[1]
+
+    ye_out = np.array(ye_out)
+    return pid_map, ye_out
+
+
+def calc_ye(proxy_manager, ptypes, psm_name,
+            lat_model, lon_model, time_model,
+            prior_vars, match_std=True, match_mean=True,
+            verbose=False, **psm_params):
 
     # load parameters for specific PSMs from precalculated files
+
+    # load parameters for VS-Lite
     if 'vslite_params_path' in psm_params:
-        # load parameters for VS-Lite
         with open(psm_params['vslite_params_path'], 'rb') as f:
             res = pickle.load(f)
             pid_obs = res['pid_obs']
@@ -815,21 +903,27 @@ def calc_ye(proxy_manager, ptypes, psm_name,
             M1 = res['M1']
             M2 = res['M2']
 
+    # load parameters for VS-Lite
     if 'coral_species_info' in psm_params:
-        # load parameters for VS-Lite
         with open(psm_params['coral_species_info'], 'rb') as f:
             res = pickle.load(f)
             pid_obs = res['pid_obs']
             species_obs = res['species_obs']
 
+    # load paramters for linear/bilinear PSM
     if 'precalib_data_dict' in psm_params:
-        # load paramters for linear/bilinear PSM
         psm_data = psm_params['precalib_data_dict']
         pid_obs = [pid[1] for pid, v in psm_data.items()]
 
+    pid_map = {}
+    ye_out = []
+    count = 0
     # generate pseudoproxy values
-    for idx, pobj in enumerate(proxy_manager.all_proxies):
-        if pobj.type in ptypes:
+    for idx, pobj in (enumerate(tqdm(proxy_manager.all_proxies, desc='Forward modeling')) if not verbose else enumerate(proxy_manager.all_proxies)):
+        if pobj.type not in ptypes:
+            # PSM not available; skip
+            continue
+        else:
             count += 1
             if verbose:
                 print(f'\nProcessing #{count} - {pobj.id} ...')
@@ -869,21 +963,16 @@ def calc_ye(proxy_manager, ptypes, psm_name,
 
             t1, y1, t2, y2 = overlap_ts(pobj.time, pobj.values.values, ye_time, ye_tmp)
 
-            match_std = psm_params['match_std']
             if match_std is True:
                 factor = np.std(y1) / np.std(y2)
                 ye_tmp = factor * ye_tmp  # adjust the standard deviation
 
-            match_mean = psm_params['match_mean']
             if match_mean is True:
                 bias = np.mean(ye_tmp) - np.mean(y1)  # estimated bias: the difference between the mean values
                 ye_tmp = ye_tmp - bias  # remove the estimated bias from Ye
 
             ye_out.append(ye_tmp)
             pid_map[pobj.id] = idx
-        else:
-            # PSM not available; skip
-            continue
 
     ye_out = np.asarray(ye_out)
 
@@ -1148,7 +1237,7 @@ def calibrate_psm(
     precalib_dict = {}
 
     def func_wrapper(pobj, idx, total_n):
-        print(f'pid={os.getpid()} >>> {idx}/{total_n}: {pobj.id}')
+        print(f'pid={os.getpid()} >>> {idx+1}/{total_n}: {pobj.id}')
         if pobj.type not in ptypes:
             # PSM not available; skip
             if verbose:
@@ -1250,7 +1339,7 @@ def calibrate_psm(
     if nproc >= 2:
         with Pool(nproc) as pool:
             nproxies = len(proxy_manager.all_proxies)
-            idx = np.arange(nproxies)+1
+            idx = np.arange(nproxies)
             total_n = [int(n) for n in np.ones(nproxies)*nproxies]
             res = pool.map(func_wrapper, proxy_manager.all_proxies, idx, total_n)
 
@@ -1260,7 +1349,7 @@ def calibrate_psm(
     else:
         total_n = len(proxy_manager.all_proxies)
         for idx, pobj in enumerate(proxy_manager.all_proxies):
-            precalib_dict[(pobj.type, pobj.id)] = func_wrapper(pobj, idx+1, total_n)
+            precalib_dict[(pobj.type, pobj.id)] = func_wrapper(pobj, idx, total_n)
 
     return precalib_dict
 

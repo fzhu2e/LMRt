@@ -138,8 +138,9 @@ class ReconJob:
 
     def build_ye_files(self, ptypes, psm_name, prior_filesdict, ye_savepath,
                        rename_vars={'tmp': 'tas', 'd18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
-                       precalib_filesdict=None, verbose=False, useLib='netCDF4',
-                       lat_str='lat', lon_str='lon', **psm_params):
+                       precalib_filesdict=None, verbose=False, useLib='netCDF4', nproc=4,
+                       lat_str='lat', lon_str='lon', match_std=True, match_mean=True,
+                       **psm_params):
         ''' Build precalculated Ye files from priors
 
         Args:
@@ -161,13 +162,22 @@ class ReconJob:
 
         if precalib_filesdict and psm_name in precalib_filesdict.keys():
             precalib_filepath = precalib_filesdict[psm_name]
-            #  precalib_data_dict = utils.get_precalib_data(psm_name, precalib_filepath)
-            precalib_data_dict = pd.read_pickle(precalib_filepath)
-            psm_params['precalib_data_dict'] = precalib_data_dict
+            precalib_data = pd.read_pickle(precalib_filepath)
 
-        pid_map, ye_out = utils.calc_ye(self.proxy_manager, ptypes, psm_name,
-                                        lat_model, lon_model, time_model, prior_vars,
-                                        verbose=verbose, **psm_params)
+        if psm_name in ['linear', 'bilinear']:
+            pid_map, ye_out = utils.calc_ye_linearPSM(
+                self.proxy_manager, ptypes, psm_name,
+                lat_model, lon_model, time_model, prior_vars,
+                precalib_data,
+                nproc=nproc, verbose=verbose
+            )
+        else:
+            pid_map, ye_out = utils.calc_ye(
+                self.proxy_manager, ptypes, psm_name,
+                lat_model, lon_model, time_model, prior_vars,
+                match_std=match_std, match_mean=match_mean,
+                verbose=verbose, **psm_params
+            )
 
         np.savez(ye_savepath, pid_index_map=pid_map, ye_vals=ye_out)
         print(f'\npid={os.getpid()} >>> Saving Ye to {ye_savepath}')
