@@ -6,6 +6,7 @@ from collections import namedtuple
 import xarray as xr
 import netCDF4
 from datetime import datetime
+from datetime import timedelta
 import random
 from spharm import Spharmt, regrid
 import prysm
@@ -21,7 +22,7 @@ from scipy.stats.mstats import mquantiles
 from scipy import spatial
 import cftime
 from pprint import pprint
-from IPython import embed
+#  from IPython import embed
 from pathos.multiprocessing import ProcessingPool as Pool
 
 from . import load_gridded_data  # original file from LMR
@@ -191,7 +192,7 @@ def ymd2year_float(year, month, day):
 
 
 def year_float2datetime(year_float):
-    ''' Convert an array of floats in unit of year to a datetime time
+    ''' Convert an array of floats in unit of year to a datetime time; accuracy: one day
     '''
     year = np.array([int(y) for y in year_float], dtype=int)
     month = np.zeros(np.size(year), dtype=int)
@@ -202,7 +203,7 @@ def year_float2datetime(year_float):
         lst_day = datetime(year=y+1, month=1, day=1)
         year_length = lst_day - fst_day
 
-        year_part = (year_float[i] - y)*year_length
+        year_part = (year_float[i] - y)*year_length + timedelta(minutes=1)  # to fix the numerical error
         date = year_part + fst_day
         month[i] = date.month
         day[i] = date.day
@@ -317,14 +318,12 @@ def seasonal_var(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 
         if len(inds) == nbmonths: # all months are in the data
             tmp = np.nanmean(var[inds],axis=0)
             nancount = np.isnan(var[inds]).sum(axis=0)
-            if nancount > 0: tmp = np.nan
+            if nancount > 0:
+                tmp = np.nan
         else:
             tmp = np.nan
         var_ann[i] = tmp
 
-    var_tmp = np.copy(var_ann)
-    var_ann = var_ann[~np.isnan(var_tmp)]
-    year_ann = year_ann[~np.isnan(var_tmp)]
     return var_ann, year_ann
 
 
@@ -828,7 +827,7 @@ def calc_ye(proxy_manager, ptypes, psm_name,
         precalib_data_dict = psm_params['precalib_data_dict']
         pid_obs = precalib_data_dict['pid']
         intercept = precalib_data_dict['intercept']
-        seasonality = precalib_data_dict['seasonality']
+        seasonality = precalib_data_dict['Seasonality']
         if psm_name == 'linear':
             slope = precalib_data_dict['slope']
         elif psm_name == 'bilinear':
@@ -854,7 +853,7 @@ def calc_ye(proxy_manager, ptypes, psm_name,
                 # load parameters for linear PSM
                 ind = pid_obs.index(pobj.id)
                 psm_params['intercept'] = intercept[ind]
-                psm_params['seasonality'] = seasonality[ind]
+                psm_params['Seasonality'] = seasonality[ind]
                 if psm_name == 'linear':
                     psm_params['slope'] = slope[ind]
                 elif psm_name == 'bilinear':
@@ -874,10 +873,15 @@ def calc_ye(proxy_manager, ptypes, psm_name,
 
             t1, y1, t2, y2 = overlap_ts(pobj.time, pobj.values.values, ye_time, ye_tmp)
 
-            factor = np.std(y1) / np.std(y2)
-            ye_tmp = factor * ye_tmp  # adjust the standard deviation
-            bias = np.mean(ye_tmp) - np.mean(y1)  # estimated bias: the difference between the mean values
-            ye_tmp = ye_tmp - bias  # remove the estimated bias from Ye
+            match_std = psm_params['match_std']
+            if match_std:
+                factor = np.std(y1) / np.std(y2)
+                ye_tmp = factor * ye_tmp  # adjust the standard deviation
+
+            match_mean = psm_params['match_mean']
+            if match_mean:
+                bias = np.mean(ye_tmp) - np.mean(y1)  # estimated bias: the difference between the mean values
+                ye_tmp = ye_tmp - bias  # remove the estimated bias from Ye
 
             ye_out.append(ye_tmp)
             pid_map[pobj.id] = idx
@@ -1109,9 +1113,7 @@ def calibrate_psm(
             'seasons_T': [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]],
             'seasons_M': [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]],
         },
-    },
-    nproc=4,
-    verbose=False):
+    }, nproc=4, verbose=False):
     ''' Calibrate PSMs (linear/bilinear PSMs for now)
 
     Args:
@@ -1188,7 +1190,6 @@ def calibrate_psm(
                 var_name = var_names[psm_name][0]
                 optimal_seasonality, optimal_reg = linear_regression(
                     pobj.time[mask], pobj.values.values[mask],
-                    #  pobj.time[mask], pobj.values.values[mask],
                     ref_time[var_name], ref_var[var_name], seasons[var_name],
                     verbose=verbose
                 )
@@ -1196,7 +1197,6 @@ def calibrate_psm(
                     # not enough data for regression; skip
                     return None
                 else:
-                    #  precalib_dict[(pobj.type, pobj.id)] = {
                     precalib_dict_pobj = {
                         'lat': pobj.lat,
                         'lon': pobj.lon,
@@ -1212,6 +1212,8 @@ def calibrate_psm(
                         'fitBIC': optimal_reg.bic,
                         'fitR2adj': optimal_reg.rsquared_adj,
                     }
+                    if verbose:
+                        pprint(precalib_dict_pobj)
 
             elif psm_name == 'bilinear':
                 var_name_1 = var_names[psm_name][0]
@@ -1227,7 +1229,6 @@ def calibrate_psm(
                     # not enough data for regression; skip
                     return None
                 else:
-                    #  precalib_dict[(pobj.type, pobj.id)] = {
                     precalib_dict_pobj = {
                         'lat': pobj.lat,
                         'lon': pobj.lon,
@@ -1246,20 +1247,24 @@ def calibrate_psm(
                     }
 
                     if verbose:
-                        #  pprint(precalib_dict[(pobj.type, pobj.id)])
                         pprint(precalib_dict_pobj)
 
         return precalib_dict_pobj
 
-    with Pool(nproc) as pool:
-        nproxies = len(proxy_manager.all_proxies)
-        idx = np.arange(nproxies)+1
-        total_n = [int(n) for n in np.ones(nproxies)*nproxies]
-        res = pool.map(func_wrapper, proxy_manager.all_proxies, idx, total_n)
+    if nproc >= 2:
+        with Pool(nproc) as pool:
+            nproxies = len(proxy_manager.all_proxies)
+            idx = np.arange(nproxies)+1
+            total_n = [int(n) for n in np.ones(nproxies)*nproxies]
+            res = pool.map(func_wrapper, proxy_manager.all_proxies, idx, total_n)
 
-    for idx, pobj in enumerate(proxy_manager.all_proxies):
-        if res[idx] is not None:
-            precalib_dict[(pobj.type, pobj.id)] = res[idx]
+        for idx, pobj in enumerate(proxy_manager.all_proxies):
+            if res[idx] is not None:
+                precalib_dict[(pobj.type, pobj.id)] = res[idx]
+    else:
+        total_n = len(proxy_manager.all_proxies)
+        for idx, pobj in enumerate(proxy_manager.all_proxies):
+            precalib_dict[(pobj.type, pobj.id)] = func_wrapper(pobj, idx+1, total_n)
 
     return precalib_dict
 
@@ -1286,6 +1291,7 @@ def linear_regression(proxy_time, proxy_value, ref_time, ref_value, seasons, ver
             nobs = int(reg_res.nobs)
             if verbose:
                 print(f'SeasonT: {avgMonths}, nobs: {nobs}, R2_adj: {R2_adj:4f}')
+                #  print(df.to_string())
         except:
             nobs = 0
 
@@ -1308,11 +1314,6 @@ def linear_regression(proxy_time, proxy_value, ref_time, ref_value, seasons, ver
         optimal_seasonality = seasons[indmax]
         optimal_reg = reg_res_list[indmax]
 
-    if verbose:
-        print('Proxy timespan:', np.nanmin(proxy_time), np.nanmax(proxy_time))
-        print('Instrumental timespan:', np.nanmin(yr_ann), np.nanmax(yr_ann))
-        #  print(df_list[indmax].to_string())
-
     return optimal_seasonality, optimal_reg
 
 
@@ -1325,6 +1326,7 @@ def bilinear_regression(proxy_time, proxy_value,
     j_idx_list = []
     metric_list = []
     reg_res_list = []
+    df_list = []
     for i, avgMonths_1 in enumerate(seasons_1):
         for j, avgMonths_2 in enumerate(seasons_2):
             ref_var_avg_1, yr_ann_1 = seasonal_var(ref_value_1, ref_time_1, avgMonths=avgMonths_1)
@@ -1334,10 +1336,10 @@ def bilinear_regression(proxy_time, proxy_value,
             df.columns = ['variable', 'y']
             frameT = pd.DataFrame({'variable': yr_ann_1, 'Temperature': ref_var_avg_1})
             df = df.merge(frameT, how='outer', on='variable')
-            frameM = pd.DataFrame({'variable': yr_ann_2, 'Moisture': ref_var_avg_2})
-            df = df.merge(frameM, how='outer', on='variable')
+            frameP = pd.DataFrame({'variable': yr_ann_2, 'Moisture': ref_var_avg_2})
+            df = df.merge(frameP, how='outer', on='variable')
             df.set_index(df.columns[0], drop=True, inplace=True)
-            df.index.name = 'time'
+            df.index.name = 'Time'
             df.sort_index(inplace=True)
             df.astype(np.float)
             try:
@@ -1346,6 +1348,7 @@ def bilinear_regression(proxy_time, proxy_value,
                 R2_adj = reg_res.rsquared_adj
                 if verbose:
                     print(f'SeasonT: {avgMonths_1}, SeasonP: {avgMonths_2}, nobs: {nobs}, R2_adj: {R2_adj:.4f}')
+                    #  print(df.to_string())
             except:
                 nobs = 0
 
@@ -1355,12 +1358,14 @@ def bilinear_regression(proxy_time, proxy_value,
                 metric_list.append(np.nan)
                 i_idx_list.append(None)
                 j_idx_list.append(None)
+                df_list.append(None)
                 continue
             else:
                 metric_list.append(R2_adj)
                 reg_res_list.append(reg_res)
                 i_idx_list.append(i)
                 j_idx_list.append(j)
+                df_list.append(df)
 
     if np.all(np.isnan(metric_list)):
         optimal_seasonality_1 = None
@@ -1371,11 +1376,6 @@ def bilinear_regression(proxy_time, proxy_value,
         optimal_seasonality_1 = seasons_1[i_idx_list[indmax]]
         optimal_seasonality_2 = seasons_2[j_idx_list[indmax]]
         optimal_reg = reg_res_list[indmax]
-
-    if verbose:
-        print('Proxy timespan:', np.nanmin(proxy_time), np.nanmax(proxy_time))
-        print('Instrumental timespan:', np.nanmin(yr_ann), np.nanmax(yr_ann))
-        #  print(df_list[indmax].to_string())
 
     return optimal_seasonality_1, optimal_seasonality_2, optimal_reg
 
