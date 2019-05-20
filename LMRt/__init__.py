@@ -11,6 +11,7 @@ from collections import namedtuple
 import numpy as np
 import pickle
 from tqdm import tqdm
+import pandas as pd
 import xarray as xr
 
 from . import utils
@@ -160,7 +161,8 @@ class ReconJob:
 
         if precalib_filesdict and psm_name in precalib_filesdict.keys():
             precalib_filepath = precalib_filesdict[psm_name]
-            precalib_data_dict = utils.get_precalib_data(psm_name, precalib_filepath)
+            #  precalib_data_dict = utils.get_precalib_data(psm_name, precalib_filepath)
+            precalib_data_dict = pd.read_pickle(precalib_filepath)
             psm_params['precalib_data_dict'] = precalib_data_dict
 
         pid_map, ye_out = utils.calc_ye(self.proxy_manager, ptypes, psm_name,

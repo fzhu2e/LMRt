@@ -824,15 +824,8 @@ def calc_ye(proxy_manager, ptypes, psm_name,
 
     if 'precalib_data_dict' in psm_params:
         # load paramters for linear/bilinear PSM
-        precalib_data_dict = psm_params['precalib_data_dict']
-        pid_obs = precalib_data_dict['pid']
-        intercept = precalib_data_dict['intercept']
-        seasonality = precalib_data_dict['Seasonality']
-        if psm_name == 'linear':
-            slope = precalib_data_dict['slope']
-        elif psm_name == 'bilinear':
-            slope_temperature = precalib_data_dict['slope_temperature']
-            slope_moisture = precalib_data_dict['slope_moisture']
+        psm_data = psm_params['precalib_data_dict']
+        pid_obs = [pid[1] for pid, v in psm_data.items()]
 
     # generate pseudoproxy values
     for idx, pobj in enumerate(proxy_manager.all_proxies):
@@ -850,15 +843,14 @@ def calc_ye(proxy_manager, ptypes, psm_name,
                 psm_params['M2'] = M2[ind]
 
             if 'precalib_data_dict' in psm_params and pobj.id in pid_obs:
-                # load parameters for linear PSM
-                ind = pid_obs.index(pobj.id)
-                psm_params['intercept'] = intercept[ind]
-                psm_params['Seasonality'] = seasonality[ind]
+                # load parameters for linear/bilinear PSM
+                psm_params['intercept'] = psm_data[(pobj.type, pobj.id)]['PSMintercept']
+                psm_params['Seasonality'] = psm_data[(pobj.type, pobj.id)]['Seasonality']
                 if psm_name == 'linear':
-                    psm_params['slope'] = slope[ind]
+                    psm_params['slope'] = psm_data[(pobj.type, pobj.id)]['PSMslope']
                 elif psm_name == 'bilinear':
-                    psm_params['slope_temperature'] = slope_temperature[ind]
-                    psm_params['slope_moisture'] = slope_moisture[ind]
+                    psm_params['slope_temperature'] = psm_data[(pobj.type, pobj.id)]['PSMslope_temperature']
+                    psm_params['slope_moisture'] = psm_data[(pobj.type, pobj.id)]['PSMslope_moisture']
 
             if 'coral_species_info' in psm_params:
                 # load parameters for coral d18O
@@ -871,15 +863,19 @@ def calc_ye(proxy_manager, ptypes, psm_name,
                 prior_vars, verbose=verbose, **psm_params,
             )
 
+            if np.all(np.isnan(ye_tmp)):
+                print(f'Fail to forward onto {pobj.id}; skipping this record...')
+                continue
+
             t1, y1, t2, y2 = overlap_ts(pobj.time, pobj.values.values, ye_time, ye_tmp)
 
             match_std = psm_params['match_std']
-            if match_std:
+            if match_std is True:
                 factor = np.std(y1) / np.std(y2)
                 ye_tmp = factor * ye_tmp  # adjust the standard deviation
 
             match_mean = psm_params['match_mean']
-            if match_mean:
+            if match_mean is True:
                 bias = np.mean(ye_tmp) - np.mean(y1)  # estimated bias: the difference between the mean values
                 ye_tmp = ye_tmp - bias  # remove the estimated bias from Ye
 
