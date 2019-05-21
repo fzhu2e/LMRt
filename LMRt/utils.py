@@ -53,98 +53,6 @@ def setup_cfg(cfg):
     return cfg
 
 
-def load_netcdf(filepath, verbose=False):
-    ''' Load the model output in .nc
-        Timeseries will be annualized and anomaly will be calculated.
-    '''
-    def determine_vartype(spacecoords):
-        vartypes = {
-            0: '0D:time series',
-            1: '2D:horizontal',
-            2: '2D:meridional_vertical',
-        }
-        n_spacecoords = len(spacecoords)
-        if n_spacecoords == 0:
-            type_ind = 0
-        elif n_spacecoords in [2, 3]:
-            if 'lat' in spacecoords and 'lon' in spacecoords:
-                type_ind = 1
-            elif 'lat' in spacecoords and 'lev' in spacecoords:
-                type_ind = 2
-        else:
-            raise SystemExit('ERROR: Fail to handle dimensions.')
-
-        return vartypes[type_ind]
-
-    def make2D(lat, lon):
-        nd = len(np.shape(lat))
-
-        if nd == 1:
-            nlat = np.size(lat)
-            nlon = np.size(lon)
-            lat2D = np.repeat(lat, nlon).reshape(nlat, nlon)
-            lon2D = np.repeat(lon, nlat).reshape(nlon, nlat).T
-            return lat2D, lon2D
-
-        elif nd == 2:
-            print('Input lat/lon already 2-D!')
-            return lat, lon
-
-        else:
-            raise SystemExit('ERROR: Cannot handle the dimensions for lat/lon!')
-
-        pass
-
-    datadict = {}
-    if verbose:
-        print(f'Reading file: {filepath}')
-    ds = xr.open_dataset(filepath)
-    ds_ann = ds.groupby('time.year').mean('time')
-    time_yrs = np.asarray(
-        [datetime(y, 1, 1, 0, 0) for y in np.asarray(ds_ann['year'])]
-    )
-    lat = np.asarray(ds_ann['lat'])
-    lon = np.asarray(ds_ann['lon'])
-    lat2D, lon2D = make2D(lat, lon)
-
-    dim_set = set(ds_ann.dims)
-    var_set = set(ds_ann.variables)
-    var = var_set.difference(dim_set)
-
-    for v in var:
-        d = {}
-
-        dims = set(ds_ann[v].dims)
-        #  spacecoords = dims.difference(['year'])
-        spacecoords = ('lat', 'lon')
-        vartype = determine_vartype(spacecoords)
-
-        climo_xr = ds_ann[v].mean(dim='year')
-        climo = np.asarray(climo_xr)
-        value = np.asarray(ds_ann[v] - climo_xr)
-        if verbose:
-            print('Anomalies provided as the prior: Removing the temporal mean (for every gridpoint)...')
-            print(f'{v}: Global(monthly): mean={np.nanmean(value)}, std-dev={np.nanstd(value)}')
-
-        for dim in dims:
-            if dim == 'time':
-                d[dim] = time_yrs
-            elif dim == 'lat':
-                d[dim] = lat2D
-            elif dim == 'lon':
-                d[dim] = lon2D
-
-        d['vartype'] = vartype
-        d['spacecoords'] = spacecoords
-        d['years'] = time_yrs
-        d['climo'] = climo
-        d['value'] = value
-
-        datadict[f'{v}_sfc_Amon'] = d
-
-    return datadict
-
-
 def get_prior(filepath, datatype, cfg, anom_reference_period=(1951, 1980), verbose=False):
     read_func = {
         'CMIP5': load_gridded_data.read_gridded_data_CMIP5_model,
@@ -278,12 +186,13 @@ def seasonal_var_xarray(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 1
     return var_ann, year_ann
 
 
-def seasonal_var(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]):
+def seasonal_var(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], make_yr_mm_nan=True):
     ''' Annualize a variable array based on seasonality
 
     Args:
         var (ndarray): the target variable array with 1st dim to be year
         year_float (1-D array): the time axis of the variable array
+        make_yr_mm_nan (bool): make year with missing months nan or not
 
     Returns:
         var_ann (ndarray): the annualized variable array
@@ -320,22 +229,37 @@ def seasonal_var(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 
             indsyrp1 = [j for j,v in enumerate(time) if v.year == cyears[i]+1. and v.month in year_follow]
 
         inds = indsyrm1 + indsyr + indsyrp1
-        if len(inds) == nbmonths: # all months are in the data
-            if ndim == 1:
-                tmp = np.nanmean(var[inds], axis=0)
-                nancount = np.isnan(var[inds]).sum(axis=0)
-                if nancount > 0:
-                    tmp = np.nan
-            else:
-                tmp = np.nanmean(var[inds, ...], axis=0)
-                nancount = np.isnan(var[inds, ...]).sum(axis=0)
-                tmp[nancount > 0] = np.nan
+
+        if ndim == 1:
+            tmp = np.nanmean(var[inds], axis=0)
+            nancount = np.isnan(var[inds]).sum(axis=0)
+            if nancount > 0:
+                tmp = np.nan
         else:
-            tmp = np.nan
+            tmp = np.nanmean(var[inds, ...], axis=0)
+            nancount = np.isnan(var[inds, ...]).sum(axis=0)
+            tmp[nancount > 0] = np.nan
+
+        if make_yr_mm_nan and len(inds) != nbmonths:
+                tmp = np.nan
 
         var_ann[i, ...] = tmp
 
     return var_ann, year_ann
+
+
+def make_xr(var, year_float):
+    var = np.array(var)
+    year_float = np.array(year_float)
+
+    ndims = len(np.shape(var))
+    dims = ['time']
+    for i in range(ndims-1):
+        dims.append(f'dim{i+1}')
+
+    time = year_float2datetime(year_float)
+    var_da = xr.DataArray(var, dims=dims, coords={'time': time})
+    return var_da
 
 
 def annualize_var(var, year_float, weights=None):
@@ -786,8 +710,19 @@ def get_precalib_data(psm_name, precalib_filepath):
     return get_precalib_data_func[psm_name](psm_data)
 
 
-def get_env_vars(prior_filesdict, rename_vars={'tmp': 'tas', 'd18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
-                 useLib='xarray', lat_str='lat', lon_str='lon', verbose=False):
+def get_anomaly(var, year_float, ref_period=(1951, 1980)):
+    var_da = make_xr(var, year_float)
+    var_ref = var_da.loc[str(ref_period[0]):str(ref_period[-1])]
+    climatology = var_ref.groupby('time.month').mean('time')
+    var_anom = var_da.groupby('time.month') - climatology
+    return var_anom.values
+
+
+def get_env_vars(prior_filesdict,
+                 rename_vars={'tmp': 'tas', 'd18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
+                 useLib='xarray', lat_str='lat', lon_str='lon',
+                 calc_anomaly=True, ref_period=(1951, 1980), verbose=False):
+
     prior_vars = {}
 
     first_item = True
@@ -802,6 +737,10 @@ def get_env_vars(prior_filesdict, rename_vars={'tmp': 'tas', 'd18O': 'd18Opr', '
         else:
             prior_vars[prior_varname] = get_nc_vars(prior_filepath, prior_varname, useLib=useLib)
 
+        # calculate the anomaly
+        if calc_anomaly:
+            prior_vars[prior_varname] = get_anomaly(prior_vars[prior_varname], time_model, ref_period=ref_period)
+
     if rename_vars:
         for old_name, new_name in rename_vars.items():
             if old_name in prior_vars:
@@ -811,12 +750,25 @@ def get_env_vars(prior_filesdict, rename_vars={'tmp': 'tas', 'd18O': 'd18Opr', '
 
 
 def calc_ye_linearPSM(proxy_manager, ptypes, psm_name,
-                      lat_model, lon_model, time_model, prior_vars,
-                      precalib_data, nproc=4, verbose=False):
+                      precalib_data, precalc_avg, nproc=4, verbose=False):
+    ''' Calculate Ye with linear/bilinear PSMs
+    '''
     pid_map = {}
     ye_out = []
 
     pid_obs = [pid[1] for pid, v in precalib_data.items()]
+
+    var_names = {
+        'linear': ['T'],
+        'bilinear': ['T', 'M'],
+    }
+
+    env_var, env_time, env_lat, env_lon = {}, {}, {}, {}
+    for var_name in var_names[psm_name]:
+        env_var[var_name] = precalc_avg[var_name]['var_ann_dict']
+        env_time[var_name] = precalc_avg[var_name]['year_ann']
+        env_lat[var_name] = precalc_avg[var_name]['lat']
+        env_lon[var_name] = precalc_avg[var_name]['lon']
 
     def func_wrapper(pobj, idx, total_n):
         print(f'pid={os.getpid()} >>> {idx+1}/{total_n}: {pobj.id}')
@@ -824,42 +776,41 @@ def calc_ye_linearPSM(proxy_manager, ptypes, psm_name,
             # PSM not available; skip
             if verbose:
                 print(f'pid={os.getpid()} >>> The proxy type {pobj.type} is not in specified types: {ptypes}; skipping ...')
-            return None, None
+            return None
         else:
             # PSM available
             if pobj.id not in pid_obs:
                 print(f'pid={os.getpid()} >>> No calibration data; skipping {pobj.id} ...')
-                return None, None
+                return None
             else:
+                lat_model = env_lat['T']
+                lon_model = env_lon['T']
                 lat_ind, lon_ind = find_closest_loc(lat_model, lon_model, pobj.lat, pobj.lon)
                 if verbose:
                     print(f'pid={os.getpid()} >>> Target: ({pobj.lat}, {pobj.lon}); Found: ({lat_model[lat_ind]:.2f}, {lon_model[lon_ind]:.2f})')
 
                 if psm_name == 'linear':
-                    tas = prior_vars['tas']
                     avgMonths = precalib_data[(pobj.type, pobj.id)]['Seasonality']
 
                     intercept = precalib_data[(pobj.type, pobj.id)]['PSMintercept']
                     slope = precalib_data[(pobj.type, pobj.id)]['PSMslope']
 
-                    tas_sub = np.asarray(tas[:, lat_ind, lon_ind])
-                    tas_ann, pseudo_time = seasonal_var(tas_sub, time_model, avgMonths=avgMonths)
+                    season_tag = '_'.join(str(m) for m in avgMonths)
+                    tas_ann = env_var['T'][season_tag][:, lat_ind, lon_ind]
 
                     pseudo_value = slope*tas_ann + intercept
 
                 elif psm_name == 'bilinear':
-                    tas = prior_vars['tas']
-                    pr = prior_vars['pr']
-                    avgMonths_T, avgMonths_P = precalib_data[(pobj.type, pobj.id)]['Seasonality']
+                    avgMonths_T, avgMonths_M = precalib_data[(pobj.type, pobj.id)]['Seasonality']
 
                     intercept = precalib_data[(pobj.type, pobj.id)]['PSMintercept']
                     slope_temperature = precalib_data[(pobj.type, pobj.id)]['PSMslope_temperature']
                     slope_moisture = precalib_data[(pobj.type, pobj.id)]['PSMslope_moisture']
 
-                    tas_sub = np.asarray(tas[:, lat_ind, lon_ind])
-                    tas_ann, pseudo_time = seasonal_var(tas_sub, time_model, avgMonths=avgMonths_T)
-                    pr_sub = np.asarray(pr[:, lat_ind, lon_ind])
-                    pr_ann, pseudo_time = seasonal_var(pr_sub, time_model, avgMonths=avgMonths_P)
+                    season_tag_T = '_'.join(str(m) for m in avgMonths_T)
+                    season_tag_M = '_'.join(str(m) for m in avgMonths_M)
+                    tas_ann = env_var['T'][season_tag_T][:, lat_ind, lon_ind]
+                    pr_ann = env_var['M'][season_tag_M][:, lat_ind, lon_ind]
 
                     pseudo_value = slope_temperature*tas_ann + slope_moisture*pr_ann + intercept
 
@@ -869,7 +820,7 @@ def calc_ye_linearPSM(proxy_manager, ptypes, psm_name,
                     print(f'pid={os.getpid()} >>> shape: {np.shape(pseudo_value)}')
                     print(f'pid={os.getpid()} >>> mean: {mean_value:.2f}; std: {std_value:.2f}')
 
-                return pseudo_value, idx
+                return pseudo_value
 
     if nproc >= 2:
         with Pool(nproc) as pool:
@@ -878,22 +829,21 @@ def calc_ye_linearPSM(proxy_manager, ptypes, psm_name,
             total_n = [int(n) for n in np.ones(nproxies)*nproxies]
             res = pool.map(func_wrapper, proxy_manager.all_proxies, idx, total_n)
 
+        k = 0
         for idx, pobj in enumerate(proxy_manager.all_proxies):
-
-            if res[idx][0] is not None:
-                ye_out.append(res[idx][0])
-
-            if res[idx][1] is not None:
-                pid_map[(pobj.type, pobj.id)] = res[idx][1]
+            if res[idx] is not None:
+                ye_out.append(res[idx])
+                pid_map[pobj.id] = k
+                k += 1
     else:
         total_n = len(proxy_manager.all_proxies)
+        k = 0
         for idx, pobj in enumerate(proxy_manager.all_proxies):
             res = func_wrapper(pobj, idx, total_n)
-            if res[0] is not None:
-                ye_out.append(res[0])
-
-            if res[1] is not None:
-                pid_map[(pobj.type, pobj.id)] = res[1]
+            if res is not None:
+                ye_out.append(res)
+                pid_map[pobj.id] = k
+                k += 1
 
     ye_out = np.array(ye_out)
     return pid_map, ye_out
@@ -1203,6 +1153,7 @@ def calc_seasonal_avg(
     ],
     lat=None, lon=None,
     save_path=None,
+    make_yr_mm_nan=True,
     verbose=False,
 ):
     ''' Pre-calculate the seasonal average of the target variable
@@ -1212,7 +1163,7 @@ def calc_seasonal_avg(
         if verbose:
             print(f'>>> Processing {avgMonths}')
 
-        var_ann, year_ann = seasonal_var(var, year_float, avgMonths=avgMonths)
+        var_ann, year_ann = seasonal_var(var, year_float, avgMonths=avgMonths, make_yr_mm_nan=make_yr_mm_nan)
 
         season_tag = '_'.join(str(m) for m in avgMonths)
         var_ann_dict[season_tag] = var_ann
@@ -1229,7 +1180,7 @@ def calc_seasonal_avg(
 
 def calibrate_psm(
     proxy_manager, ptypes, psm_name,
-    precalc_ref,
+    precalc_avg,
     ref_period=[1951, 1980],
     calib_period=[1850, 2015],
     seasonality = {
@@ -1255,7 +1206,7 @@ def calibrate_psm(
         proxy_manager (namedtuple): the proxy_manager
         ptypes (list of str): the list of proxy types
         psm_name (str): 'linear' or 'bilinear'
-        precalc_ref (dict): the dict that stores the seasonal-averaged environmental variables
+        precalc_avg (dict): the dict that stores the seasonal-averaged environmental variables
         seasonality (dict): the seasonality information for each proxy type
 
     Returns:
@@ -1272,10 +1223,10 @@ def calibrate_psm(
 
     ref_var, ref_time, ref_lat, ref_lon = {}, {}, {}, {}
     for var_name in var_names[psm_name]:
-        ref_var[var_name] = precalc_ref[var_name]['var_ann_dict']
-        ref_time[var_name] = precalc_ref[var_name]['year_ann']
-        ref_lat[var_name] = precalc_ref[var_name]['lat']
-        ref_lon[var_name] = precalc_ref[var_name]['lon']
+        ref_var[var_name] = precalc_avg[var_name]['var_ann_dict']
+        ref_time[var_name] = precalc_avg[var_name]['year_ann']
+        ref_lat[var_name] = precalc_avg[var_name]['lat']
+        ref_lon[var_name] = precalc_avg[var_name]['lon']
 
     def func_wrapper(pobj, idx, total_n):
         print(f'pid={os.getpid()} >>> {idx+1}/{total_n}: {pobj.id}')
@@ -1389,7 +1340,9 @@ def calibrate_psm(
     else:
         total_n = len(proxy_manager.all_proxies)
         for idx, pobj in enumerate(proxy_manager.all_proxies):
-            precalib_dict[(pobj.type, pobj.id)] = func_wrapper(pobj, idx, total_n)
+            res = func_wrapper(pobj, idx, total_n)
+            if res is not None:
+                precalib_dict[(pobj.type, pobj.id)] = res
 
     return precalib_dict
 
@@ -1399,8 +1352,6 @@ def linear_regression(proxy_time, proxy_value, ref_time, ref_value, seasons, ver
     reg_res_list = []
     df_list = []
     for i, avgMonths in enumerate(seasons):
-        #  ref_var_avg, yr_ann = seasonal_var_xarray(ref_value, ref_time, avgMonths=avgMonths)
-        #  ref_var_avg, yr_ann = seasonal_var(ref_value, ref_time, avgMonths=avgMonths)
         season_tag = '_'.join(str(m) for m in avgMonths)
         ref_var_avg = ref_value[season_tag]
         yr_ann = ref_time
@@ -1457,9 +1408,6 @@ def bilinear_regression(proxy_time, proxy_value,
     df_list = []
     for i, avgMonths_1 in enumerate(seasons_1):
         for j, avgMonths_2 in enumerate(seasons_2):
-            #  ref_var_avg_1, yr_ann_1 = seasonal_var(ref_value_1, ref_time_1, avgMonths=avgMonths_1)
-            #  ref_var_avg_2, yr_ann_2 = seasonal_var(ref_value_2, ref_time_2, avgMonths=avgMonths_2)
-
             season_tag_1 = '_'.join(str(m) for m in avgMonths_1)
             season_tag_2 = '_'.join(str(m) for m in avgMonths_2)
 
