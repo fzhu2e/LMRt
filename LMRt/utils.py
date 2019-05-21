@@ -290,6 +290,7 @@ def seasonal_var(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 
         year_ann (1-D array): the time axis of the annualized variable array
     '''
     var = np.array(var)
+    var_shape = np.shape(var)
     year_float = np.array(year_float)
 
     time = year_float2datetime(year_float)
@@ -298,8 +299,11 @@ def seasonal_var(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 
     cyears = np.asarray(list(set([t.year for t in time])))
     year_ann = cyears
     nbcyears = len(cyears)
-    var_ann = np.zeros(shape=[nbcyears])
-    var_ann[:] = np.nan # initialize with nan's
+
+    var_ann_shape = np.copy(var_shape)
+    var_ann_shape[0] = nbcyears
+    var_ann = np.zeros(shape=var_ann_shape)
+    var_ann[:, ...] = np.nan # initialize with nan's
     for i in range(nbcyears):
         # monthly data from current year
         indsyr = [j for j,v in enumerate(time) if v.year == cyears[i] and v.month in avgMonths]
@@ -316,13 +320,15 @@ def seasonal_var(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 
 
         inds = indsyrm1 + indsyr + indsyrp1
         if len(inds) == nbmonths: # all months are in the data
-            tmp = np.nanmean(var[inds],axis=0)
-            nancount = np.isnan(var[inds]).sum(axis=0)
-            if nancount > 0:
-                tmp = np.nan
+            tmp = np.nanmean(var[inds, ...],axis=0)
+            nancount = np.isnan(var[inds, ...]).sum(axis=0)
+            #  if nancount > 0:
+                #  tmp = np.nan
+            tmp[nancount > 0] = np.nan
         else:
             tmp = np.nan
-        var_ann[i] = tmp
+
+        var_ann[i, ...] = tmp
 
     return var_ann, year_ann
 
@@ -348,17 +354,19 @@ def annualize_var(var, year_float, weights=None):
         dims.append(f'dim{i+1}')
 
     time = year_float2datetime(year_float)
-    weights_da = xr.DataArray(weights, dims=dims, coords={'time': time})
 
-    coeff = np.ndarray(np.shape(weights))
-    for i, gp in enumerate(list(weights_da.groupby('time.year'))):
-        year, value = gp
-        k = np.shape(value)[0]
-        coeff[k*i:k*(i+1)] = value / np.sum(value, axis=0)
+    if weights is not None:
+        weights_da = xr.DataArray(weights, dims=dims, coords={'time': time})
 
-    del weights, weights_da  # save the memory
+        coeff = np.ndarray(np.shape(weights))
+        for i, gp in enumerate(list(weights_da.groupby('time.year'))):
+            year, value = gp
+            k = np.shape(value)[0]
+            coeff[k*i:k*(i+1)] = value / np.sum(value, axis=0)
 
-    var = np.multiply(coeff, var)
+        del weights, weights_da  # save the memory
+
+        var = np.multiply(coeff, var)
 
     var_da = xr.DataArray(var, dims=dims, coords={'time': time})
     var_ann = var_da.groupby('time.year').mean('time')
@@ -815,7 +823,7 @@ def calc_ye_linearPSM(proxy_manager, ptypes, psm_name,
         else:
             # PSM available
             if pobj.id not in pid_obs:
-                print(f'pid={os.getpid()} >>> No calibration data; skipping {pobj.id}; skipping ...')
+                print(f'pid={os.getpid()} >>> No calibration data; skipping {pobj.id} ...')
                 return None, None
             else:
                 lat_ind, lon_ind = find_closest_loc(lat_model, lon_model, pobj.lat, pobj.lon)
@@ -871,7 +879,7 @@ def calc_ye_linearPSM(proxy_manager, ptypes, psm_name,
                 ye_out.append(res[idx][0])
 
             if res[idx][1] is not None:
-                pid_map = res[idx][1]
+                pid_map[(pobj.type, pobj.id)] = res[idx][1]
     else:
         total_n = len(proxy_manager.all_proxies)
         for idx, pobj in enumerate(proxy_manager.all_proxies):
@@ -880,7 +888,7 @@ def calc_ye_linearPSM(proxy_manager, ptypes, psm_name,
                 ye_out.append(res[0])
 
             if res[1] is not None:
-                pid_map = res[1]
+                pid_map[(pobj.type, pobj.id)] = res[1]
 
     ye_out = np.array(ye_out)
     return pid_map, ye_out
