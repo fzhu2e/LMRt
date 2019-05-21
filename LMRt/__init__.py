@@ -184,6 +184,7 @@ class ReconJob:
 
     def build_precalib_files(self, ptypes, psm_name, calib_refsdict, precalib_savepath,
                              ref_period=[1951, 1980], calib_period=[1850, 2015],
+                             precalc_ref_seasonal_avg_pathdict=None,
                              seasonality = {
                                  'Tree Rings_WidthBreit': {
                                      'seasons_T': [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]],
@@ -204,15 +205,69 @@ class ReconJob:
                              nproc=4,
                              verbose=False):
         ''' Build precalibration files
+
+        Args:
+            calib_refsdict (dict):
+                e.g., {'T': ('GISTEMP', GISTEMP_filepath), 'M': ('GPCC', GPCC_filepath)}
+            precalc_ref_seasonal_avg_pathdict (dict):
+                e.g., {'T': T_seasonal_avg_filepath), 'M': M_seasonal_avg_filepath)}
         '''
+        if precalc_ref_seasonal_avg_pathdict is None:
+            refsdict = {}
+            avgMonths_setdict = {}
+            for var_name, v in calib_refsdict.items():
+                seasons_list = []
+                season_tag = f'seasons_{var_name}'
+                for k, season_dict in seasonality.items():
+                    seasons_list += season_dict[season_tag]
+
+                seasons_set = set(map(tuple, seasons_list))
+                avgMonths_setdict[var_name] = list(map(list, seasons_set))
+
+            inst_field, inst_time, inst_lat, inst_lon = LMRt.utils.load_inst_analyses(
+                refsdict, var='field', verif_yrs=None,
+                ref_period=ref_period, outfreq='monthly',
+            )
+
+            precalc_ref = {}
+            for var_name, v in calib_refsdict.items():
+                dataset_name, dataset_path = v
+                print(f'>>> Processing {dataset_name} ...')
+                var_ann_dict, year_ann = LMRt.utils.calc_seasonal_avg(
+                    inst_field[dataset_name], inst_time[dataset_name],
+                    lat=inst_lat[dataset_name], lon=inst_lon[dataset_name],
+                    seasonality=avgMonths_setdict[var_name],
+                    verbose=True,
+                )
+
+                precalc_ref[var_name] = {
+                    'var_ann_dict': var_ann_dict,
+                    'year_ann': year_ann,
+                    'lat': inst_lat[dataset_name],
+                    'lon': inst_lon[dataset_name],
+                }
+
+        else:
+            precalc_ref = {}
+            for var_name, data_path in precalc_ref_seasonal_avg_pathdict.items():
+                with open(data_path, 'rb') as f:
+                    var_ann_dict, year_ann, lat, lon =  pickle.load(f)
+
+                precalc_ref[var_name] = {
+                    'var_ann_dict': var_ann_dict,
+                    'year_ann': year_ann,
+                    'lat': lat,
+                    'lon': lon,
+                }
 
         precalib_dict = utils.calibrate_psm(self.proxy_manager, ptypes, psm_name,
-                                            calib_refsdict, ref_period=ref_period, calib_period=calib_period,
+                                            precalc_ref, calib_period=calib_period,
                                             seasonality=seasonality, nproc=nproc,
                                             verbose=verbose)
 
         with open(precalib_savepath, 'wb') as f:
             pickle.dump(precalib_dict, f)
+
         print(f'\npid={os.getpid()} >>> Saving calibration results to {precalib_savepath}')
 
     def load_ye_files(self, ye_filesdict, verbose=False):

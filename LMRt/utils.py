@@ -291,6 +291,7 @@ def seasonal_var(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 
     '''
     var = np.array(var)
     var_shape = np.shape(var)
+    ndim = len(var_shape)
     year_float = np.array(year_float)
 
     time = year_float2datetime(year_float)
@@ -320,11 +321,15 @@ def seasonal_var(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 
 
         inds = indsyrm1 + indsyr + indsyrp1
         if len(inds) == nbmonths: # all months are in the data
-            tmp = np.nanmean(var[inds, ...],axis=0)
-            nancount = np.isnan(var[inds, ...]).sum(axis=0)
-            #  if nancount > 0:
-                #  tmp = np.nan
-            tmp[nancount > 0] = np.nan
+            if ndim == 1:
+                tmp = np.nanmean(var[inds], axis=0)
+                nancount = np.isnan(var[inds]).sum(axis=0)
+                if nancount > 0:
+                    tmp = np.nan
+            else:
+                tmp = np.nanmean(var[inds, ...], axis=0)
+                nancount = np.isnan(var[inds, ...]).sum(axis=0)
+                tmp[nancount > 0] = np.nan
         else:
             tmp = np.nan
 
@@ -1185,9 +1190,46 @@ def get_distance(lon_pt, lat_pt, lon_ref, lat_ref):
     return km
 
 
+def calc_seasonal_avg(
+    var, year_float,
+    seasonality=[
+        [1,2,3,4,5,6,7,8,9,10,11,12],
+        [6,7,8],
+        [3,4,5,6,7,8],
+        [6,7,8,9,10,11],
+        [-12,1,2],
+        [-9,-10,-11,-12,1,2],
+        [-12,1,2,3,4,5]
+    ],
+    lat=None, lon=None,
+    save_path=None,
+    verbose=False,
+):
+    ''' Pre-calculate the seasonal average of the target variable
+    '''
+    var_ann_dict = {}
+    for avgMonths in seasonality:
+        if verbose:
+            print(f'>>> Processing {avgMonths}')
+
+        var_ann, year_ann = seasonal_var(var, year_float, avgMonths=avgMonths)
+
+        season_tag = '_'.join(str(m) for m in avgMonths)
+        var_ann_dict[season_tag] = var_ann
+
+    if save_path:
+        with open(save_path, 'wb') as f:
+            if lat is None or lon is None:
+                pickle.dump([var_ann_dict, year_ann], f)
+            else:
+                pickle.dump([var_ann_dict, year_ann, lat, lon], f)
+
+    return var_ann_dict, year_ann
+
+
 def calibrate_psm(
     proxy_manager, ptypes, psm_name,
-    calib_refsdict,
+    precalc_ref,
     ref_period=[1951, 1980],
     calib_period=[1850, 2015],
     seasonality = {
@@ -1207,14 +1249,13 @@ def calibrate_psm(
             'seasons_M': [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]],
         },
     }, nproc=4, verbose=False):
-    ''' Calibrate PSMs (linear/bilinear PSMs for now)
+    ''' Calibrate linear/bilinear PSMs
 
     Args:
         proxy_manager (namedtuple): the proxy_manager
         ptypes (list of str): the list of proxy types
         psm_name (str): 'linear' or 'bilinear'
-        calib_refsdict (dict of paths): the dict of paths of calibration references
-            e.g., {'T': ('GISTEMP', GISTEMP_filepath), 'M': ('GPCC', GPCC_filepath)}
+        precalc_ref (dict): the dict that stores the seasonal-averaged environmental variables
         seasonality (dict): the seasonality information for each proxy type
 
     Returns:
@@ -1226,23 +1267,15 @@ def calibrate_psm(
         'bilinear': ['T', 'M'],
     }
 
-    # load reference data
-    ref_field, ref_time, ref_lat, ref_lon = {}, {}, {}, {}
-    for var_name in var_names[psm_name]:
-        ana_name, ana_path = calib_refsdict[var_name]
-        inst_field, inst_time, inst_lat, inst_lon = load_inst_analyses(
-                {ana_name: ana_path},
-                var='field',
-                verif_yrs=None,
-                ref_period=ref_period, outfreq='monthly',
-        )
-        ref_field[var_name] = inst_field[ana_name]
-        ref_time[var_name] = inst_time[ana_name]
-        ref_lat[var_name] = inst_lat[ana_name]
-        ref_lon[var_name] = inst_lon[ana_name]
-
     # loop over proxy records
     precalib_dict = {}
+
+    ref_var, ref_time, ref_lat, ref_lon = {}, {}, {}, {}
+    for var_name in var_names[psm_name]:
+        ref_var[var_name] = precalc_ref[var_name]['var_ann_dict']
+        ref_time[var_name] = precalc_ref[var_name]['year_ann']
+        ref_lat[var_name] = precalc_ref[var_name]['lat']
+        ref_lon[var_name] = precalc_ref[var_name]['lon']
 
     def func_wrapper(pobj, idx, total_n):
         print(f'pid={os.getpid()} >>> {idx+1}/{total_n}: {pobj.id}')
@@ -1256,8 +1289,8 @@ def calibrate_psm(
             if verbose:
                 print(f'\nProcessing {pobj.id}, {pobj.type} ...')
 
-            ref_var = {}
             seasons = {}
+            ref_value = {}
             for var_name in var_names[psm_name]:
                 # find the reference data closest to the proxy location
                 lat_ind, lon_ind = find_closest_loc(ref_lat[var_name], ref_lon[var_name], pobj.lat, pobj.lon, mode='latlon')
@@ -1267,14 +1300,15 @@ def calibrate_psm(
                 if verbose:
                     print(f'>>> Target: ({pobj.lat}, {pobj.lon}); Found: ({ref_lat[var_name][lat_ind]:.2f}, {ref_lon[var_name][lon_ind]:.2f})')
 
-                ref_var[var_name] = ref_field[var_name][:, lat_ind, lon_ind]
-
                 # load seasons for each variable
                 try:
                     seasons[var_name] = seasonality[pobj.type][f'seasons_{var_name}']
                 except:
                     seasons[var_name] = [[1,2,3,4,5,6,7,8,9,10,11,12]]
 
+                ref_value[var_name] = {}
+                for season, field in ref_var[var_name].items():
+                    ref_value[var_name][season] = field[:, lat_ind, lon_ind]
 
             pobj_time_int = np.array([int(t) for t in pobj.time])
             mask = (pobj_time_int >= calib_period[0]) & (pobj_time_int <= calib_period[-1])
@@ -1283,7 +1317,7 @@ def calibrate_psm(
                 var_name = var_names[psm_name][0]
                 optimal_seasonality, optimal_reg = linear_regression(
                     pobj.time[mask], pobj.values.values[mask],
-                    ref_time[var_name], ref_var[var_name], seasons[var_name],
+                    ref_time[var_name], ref_value[var_name], seasons[var_name],
                     verbose=verbose
                 )
                 if optimal_reg is None:
@@ -1295,7 +1329,6 @@ def calibrate_psm(
                         'lon': pobj.lon,
                         'elev': pobj.elev,
                         'Seasonality': optimal_seasonality,
-                        'calib': calib_refsdict[var_name][0],
                         'NbCalPts': int(optimal_reg.nobs),
                         'PSMintercept': optimal_reg.params[0],
                         'PSMslope': optimal_reg.params[1],
@@ -1314,8 +1347,8 @@ def calibrate_psm(
 
                 optimal_seasonality_1, optimal_seasonality_2, optimal_reg = bilinear_regression(
                     pobj.time[mask], pobj.values.values[mask],
-                    ref_time[var_name_1], ref_var[var_name_1], seasons[var_name_1],
-                    ref_time[var_name_2], ref_var[var_name_2], seasons[var_name_2],
+                    ref_time[var_name_1], ref_value[var_name_1], seasons[var_name_1],
+                    ref_time[var_name_2], ref_value[var_name_2], seasons[var_name_2],
                     verbose=verbose
                 )
                 if optimal_reg is None:
@@ -1327,7 +1360,6 @@ def calibrate_psm(
                         'lon': pobj.lon,
                         'elev': pobj.elev,
                         f'Seasonality': (optimal_seasonality_1, optimal_seasonality_2),
-                        'calib': (calib_refsdict[var_name_1][0], calib_refsdict[var_name_2][0]),
                         'NbCalPts': int(optimal_reg.nobs),
                         'PSMintercept': optimal_reg.params[0],
                         f'PSMslope_temperature': optimal_reg.params[1],
@@ -1368,7 +1400,10 @@ def linear_regression(proxy_time, proxy_value, ref_time, ref_value, seasons, ver
     df_list = []
     for i, avgMonths in enumerate(seasons):
         #  ref_var_avg, yr_ann = seasonal_var_xarray(ref_value, ref_time, avgMonths=avgMonths)
-        ref_var_avg, yr_ann = seasonal_var(ref_value, ref_time, avgMonths=avgMonths)
+        #  ref_var_avg, yr_ann = seasonal_var(ref_value, ref_time, avgMonths=avgMonths)
+        season_tag = '_'.join(str(m) for m in avgMonths)
+        ref_var_avg = ref_value[season_tag]
+        yr_ann = ref_time
 
         df = pd.DataFrame({'time': proxy_time, 'y': proxy_value})
         df.columns = ['variable', 'y']
@@ -1422,8 +1457,16 @@ def bilinear_regression(proxy_time, proxy_value,
     df_list = []
     for i, avgMonths_1 in enumerate(seasons_1):
         for j, avgMonths_2 in enumerate(seasons_2):
-            ref_var_avg_1, yr_ann_1 = seasonal_var(ref_value_1, ref_time_1, avgMonths=avgMonths_1)
-            ref_var_avg_2, yr_ann_2 = seasonal_var(ref_value_2, ref_time_2, avgMonths=avgMonths_2)
+            #  ref_var_avg_1, yr_ann_1 = seasonal_var(ref_value_1, ref_time_1, avgMonths=avgMonths_1)
+            #  ref_var_avg_2, yr_ann_2 = seasonal_var(ref_value_2, ref_time_2, avgMonths=avgMonths_2)
+
+            season_tag_1 = '_'.join(str(m) for m in avgMonths_1)
+            season_tag_2 = '_'.join(str(m) for m in avgMonths_2)
+
+            ref_var_avg_1 = ref_value_1[season_tag_1]
+            ref_var_avg_2 = ref_value_2[season_tag_2]
+            yr_ann_1 = ref_time_1
+            yr_ann_2 = ref_time_2
 
             df = pd.DataFrame({'time': proxy_time, 'y': proxy_value})
             df.columns = ['variable', 'y']
