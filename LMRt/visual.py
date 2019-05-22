@@ -3,10 +3,11 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
-from matplotlib.colors import BoundaryNorm
+from matplotlib.colors import BoundaryNorm, Normalize
 from matplotlib.ticker import MaxNLocator
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+from matplotlib import cm
 
 import matplotlib as mpl
 import numpy as np
@@ -54,7 +55,7 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
 
     p = PAGES2k()
 
-    sns.set(style='darkgrid', font_scale=font_scale)
+    sns.set(style='ticks', font_scale=font_scale)
     fig = plt.figure(figsize=figsize)
 
     gs = gridspec.GridSpec(2, 1)
@@ -123,6 +124,74 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
     ax_count.set_ylabel('number of proxies')
     handles, labels = ax_count.get_legend_handles_labels()
     ax_count.legend(handles[::-1], labels[::-1], frameon=lgd_frameon, bbox_to_anchor=lgd_anchor, loc='lower left')
+
+    return fig
+
+
+def plot_proxy_age_map(df, lon_col='lon', lat_col='lat', type_col='type', time_col='time',
+                       title=None, title_weight='normal', font_scale=1.5,
+                       figsize=[12, 10], projection=ccrs.Robinson, central_longitude=0, markersize=150,
+                       lgd_ncol=1, lgd_anchor=(1, -0.1), lgd_frameon=False,
+                       add_nino34_box=False, add_nino12_box=False):
+
+    p = PAGES2k()
+
+    sns.set(style='ticks', font_scale=font_scale)
+    fig = plt.figure(figsize=figsize)
+
+    projection = projection(central_longitude=central_longitude)
+    ax_map = plt.subplot(projection=projection)
+
+    if title:
+        ax_map.set_title(title, fontweight=title_weight)
+
+    ax_map.set_global()
+    ax_map.add_feature(cfeature.LAND, facecolor='gray', alpha=0.3)
+
+    if add_nino12_box:
+        x, y = [-90, -90, -80, -80, -90], [0, -10, -10, 0, 0]
+        ax_map.plot(x, y, '--', transform=ccrs.Geodetic(), color='gray')
+
+    if add_nino34_box:
+        x, y = [-170, -170, -120, -120, -170], [5, -5, -5, 5, 5]
+        ax_map.plot(x, y, '--', transform=ccrs.Geodetic(), color='gray')
+
+    color_norm = Normalize(vmin=0, vmax=1000)
+
+    cmap = cm.get_cmap('viridis_r', 10)
+    cmap.set_under(sns.xkcd_rgb['cream'])
+    cmap.set_over('black')
+
+    ages = []
+    for idx, row in df.iterrows():
+        ages.append(1950-np.min(row['time']))
+
+    df[time_col].values
+
+    # plot markers by archive types
+    s_plots = []
+    type_names = []
+    type_set = np.unique(df[type_col])
+    max_count = []
+    for ptype in type_set:
+        selector = df[type_col] == ptype
+        max_count.append(len(df[selector]))
+        type_names.append(f'{ptype} (n={max_count[-1]})')
+        lons = list(df[selector][lon_col])
+        lats = list(df[selector][lat_col])
+        s_plots.append(
+            ax_map.scatter(
+                lons, lats, marker=p.markers_dict[ptype], cmap=cmap, norm=color_norm,
+                c=ages, edgecolor='k', s=markersize, transform=ccrs.Geodetic()
+            )
+        )
+
+    cbar_lm = plt.colorbar(s_plots[0], orientation='vertical',
+                           pad=0.05, aspect=10, extend='min',
+                           ax=ax_map, fraction=0.05, shrink=0.5)
+
+    cbar_lm.ax.set_title(r'age [yrs]', y=1.05)
+    cbar_lm.set_ticks([0, 200, 400, 600, 800, 1000])
 
     return fig
 
