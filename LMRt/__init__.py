@@ -43,10 +43,9 @@ class ReconJob:
     def load_cfg(self, cfg_filepath):
         with open(cfg_filepath, 'r') as f:
             cfg_new = yaml.load(f, Loader=yaml.FullLoader)
-
-        self.cfg = DotMap(cfg_new)
-        self.cfg = utils.setup_cfg(self.cfg)
-        print(f'pid={os.getpid()} >>> job.cfg updated')
+            self.cfg = DotMap(cfg_new)
+            self.cfg = utils.setup_cfg(self.cfg)
+            print(f'pid={os.getpid()} >>> job.cfg updated')
 
     def load_proxies(self, proxies_df_filepath, metadata_df_filepath, precalib_filesdict=None,
                      seed=0, verbose=False, print_assim_proxy_count=False, print_proxy_type_list=False):

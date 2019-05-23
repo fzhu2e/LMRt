@@ -60,8 +60,8 @@ def get_prior(filepath, datatype, cfg, anom_reference_period=(1951, 1980), verbo
 
     prior_datadir = os.path.dirname(filepath)
     prior_datafile = os.path.basename(filepath)
-    statevars = dict(cfg.prior.state_variables)
-    statevars_info = dict(cfg.prior.state_variables_info)
+    statevars = cfg.prior.state_variables.toDict()
+    statevars_info = cfg.prior.state_variables_info.toDict()
 
     if cfg.core.recon_timescale == 1:
         avgInterval = {'annual': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
