@@ -873,11 +873,6 @@ def calc_ye(proxy_manager, ptypes, psm_name,
             pid_obs = res['pid_obs']
             species_obs = res['species_obs']
 
-    # load paramters for linear/bilinear PSM
-    if 'precalib_data_dict' in psm_params:
-        psm_data = psm_params['precalib_data_dict']
-        pid_obs = [pid[1] for pid, v in psm_data.items()]
-
     pid_map = {}
     ye_out = []
     count = 0
@@ -898,16 +893,6 @@ def calc_ye(proxy_manager, ptypes, psm_name,
                 psm_params['T2'] = T2[ind]
                 psm_params['M1'] = M1[ind]
                 psm_params['M2'] = M2[ind]
-
-            if 'precalib_data_dict' in psm_params and pobj.id in pid_obs:
-                # load parameters for linear/bilinear PSM
-                psm_params['intercept'] = psm_data[(pobj.type, pobj.id)]['PSMintercept']
-                psm_params['Seasonality'] = psm_data[(pobj.type, pobj.id)]['Seasonality']
-                if psm_name == 'linear':
-                    psm_params['slope'] = psm_data[(pobj.type, pobj.id)]['PSMslope']
-                elif psm_name == 'bilinear':
-                    psm_params['slope_temperature'] = psm_data[(pobj.type, pobj.id)]['PSMslope_temperature']
-                    psm_params['slope_moisture'] = psm_data[(pobj.type, pobj.id)]['PSMslope_moisture']
 
             if 'coral_species_info' in psm_params:
                 # load parameters for coral d18O
