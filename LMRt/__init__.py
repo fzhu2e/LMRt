@@ -135,7 +135,8 @@ class ReconJob:
             print(f'pid={os.getpid()} >>> job.prior regridded')
 
     def build_precalib_files(
-        self, ptypes, psm_name, calib_refsdict, precalib_savepath,
+        self, ptypes, psm_name, precalib_savepath,
+        calib_refsdict=None, 
         ref_period=[1951, 1980], calib_period=[1850, 2015],
         precalc_avg_pathdict=None, make_yr_mm_nan=True,
         seasonality = {
@@ -162,6 +163,8 @@ class ReconJob:
                 e.g., {'T': ('GISTEMP', GISTEMP_filepath), 'M': ('GPCC', GPCC_filepath)}
             precalc_avg_pathdict (dict):
                 e.g., {'T': T_seasonal_avg_filepath), 'M': M_seasonal_avg_filepath)}
+
+            NOTE: one of the above two dicts must be provided
         '''
         if precalc_avg_pathdict is None:
             refsdict = {}

@@ -50,7 +50,7 @@ class PAGES2k(object):
 
 def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_col='type',
                  title=None, title_weight='normal', font_scale=1.5,
-                 figsize=[8, 10], projection=ccrs.Robinson(), markersize=50,
+                 figsize=[8, 10], projection=ccrs.Robinson(), markersize=50, plot_count=True,
                  lgd_ncol=1, lgd_anchor_upper=(1, -0.1), lgd_anchor_lower=(1, -0.05),lgd_frameon=False):
 
     p = PAGES2k()
@@ -58,7 +58,12 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
     sns.set(style='darkgrid', font_scale=font_scale)
     fig = plt.figure(figsize=figsize)
 
-    gs = gridspec.GridSpec(2, 1)
+    if plot_count:
+        nrow = 2
+    else:
+        nrow = 1
+
+    gs = gridspec.GridSpec(nrow, 1)
     gs.update(wspace=0, hspace=0.1)
 
     ax_map = plt.subplot(gs[0], projection=projection)
@@ -96,35 +101,36 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
         frameon=lgd_frameon,
     )
 
-    ax_count = plt.subplot(gs[1])
-    proxy_count = {}
-    for index, row in df.iterrows():
-        ptype = row['type']
-        time = row['time']
-        if ptype not in proxy_count.keys():
-            proxy_count[ptype] = np.zeros(np.size(year))
+    if plot_count:
+        ax_count = plt.subplot(gs[1])
+        proxy_count = {}
+        for index, row in df.iterrows():
+            ptype = row['type']
+            time = row['time']
+            if ptype not in proxy_count.keys():
+                proxy_count[ptype] = np.zeros(np.size(year))
 
-        for k in time:
-            if k < np.max(year):
-                proxy_count[ptype][int(k)] += 1
+            for k in time:
+                if k < np.max(year):
+                    proxy_count[ptype][int(k)] += 1
 
-    cumu_count = np.zeros(np.size(year))
-    cumu_last = np.copy(cumu_count)
-    idx = np.argsort(max_count)
-    for ptype in type_set[idx]:
-        cumu_count += proxy_count[ptype]
-        ax_count.fill_between(
-            year, cumu_last, cumu_count,
-            color=p.colors_dict[ptype],
-            label=f'{ptype}',
-            alpha=0.8,
-        )
+        cumu_count = np.zeros(np.size(year))
         cumu_last = np.copy(cumu_count)
+        idx = np.argsort(max_count)
+        for ptype in type_set[idx]:
+            cumu_count += proxy_count[ptype]
+            ax_count.fill_between(
+                year, cumu_last, cumu_count,
+                color=p.colors_dict[ptype],
+                label=f'{ptype}',
+                alpha=0.8,
+            )
+            cumu_last = np.copy(cumu_count)
 
-    ax_count.set_xlabel('Year (AD)')
-    ax_count.set_ylabel('number of proxies')
-    handles, labels = ax_count.get_legend_handles_labels()
-    ax_count.legend(handles[::-1], labels[::-1], frameon=lgd_frameon, bbox_to_anchor=lgd_anchor_lower, loc='lower left')
+        ax_count.set_xlabel('Year (AD)')
+        ax_count.set_ylabel('number of proxies')
+        handles, labels = ax_count.get_legend_handles_labels()
+        ax_count.legend(handles[::-1], labels[::-1], frameon=lgd_frameon, bbox_to_anchor=lgd_anchor_lower, loc='lower left')
 
     return fig
 

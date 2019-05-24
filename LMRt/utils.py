@@ -600,6 +600,7 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
         time = values.index.values
 
         if len(values) == 0:
+            print(site_meta)
             raise ValueError('ERROR: No obs in specified time range!')
         if proxy_db_cfg[db_name].proxy_timeseries_kind == 'anom':
             values = values - np.mean(values)
