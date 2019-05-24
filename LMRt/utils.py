@@ -22,6 +22,7 @@ from scipy.stats.mstats import mquantiles
 from scipy import spatial
 import cftime
 from pprint import pprint
+from time import time as ttime
 #  from IPython import embed
 from pathos.multiprocessing import ProcessingPool as Pool
 
@@ -930,8 +931,7 @@ def calc_ye(proxy_manager, ptypes, psm_name,
 def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
                       matlab_path=None, func_path=None, restart_matlab_period=100,
                       lat_lon_idx_path=None, seed=0, verbose=False):
-    #  from pymatbridge import Matlab
-    from pymatbridge import Octave as Matlab
+    from pymatbridge import Matlab
 
     pid_obs = []
     lat_obs = []
@@ -991,7 +991,7 @@ def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
             mlab.stop()
             mlab.start()
 
-        start_time = time()
+        start_time = ttime()
         res = mlab.run_func(
             func_path,
             grid_tas.reshape(nyr, 12).T, grid_pr.reshape(nyr, 12).T, lat_obs[i], trw_value,
@@ -999,7 +999,7 @@ def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
             nargout=4,
         )
 
-        used_time = time() - start_time
+        used_time = ttime() - start_time
         if verbose:
             print(res)
             print(f'{used_time:.2f} sec')
