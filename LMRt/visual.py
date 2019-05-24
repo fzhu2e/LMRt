@@ -415,14 +415,17 @@ def plot_corr_ce(corr_dict, ce_dict, lw=3, ms=10,
     return fig
 
 
-def plot_ts_from_jobs(exp_dir, time_span=(0, 2000), savefig_path=None,
-                      plot_vars=['tas_sfc_Amon_gm_ens', 'tas_sfc_Amon_nhm_ens', 'tas_sfc_Amon_shm_ens'],
-                      qs=[0.025, 0.25, 0.5, 0.75, 0.975], pannel_size=[10, 4], ylabel='T anom. (K)',
-                      font_scale=1.5, hspace=0.5, ylim=[-1, 1], color=sns.xkcd_rgb['pale red'],
-                      title=None, plot_title=True, title_y=1,
-                      lgd_ncol=3, lgd_bbox_to_anchor=None,
-                      lgd_order=[0, 2, 3, 1], style='ticks',
-                      ref_value=None, ref_time=None, ref_color='k', ref_label='Reference'):
+def plot_ts_from_jobs(
+    exp_dir, time_span=(0, 2000), savefig_path=None,
+    plot_vars=['tas_sfc_Amon_gm_ens', 'tas_sfc_Amon_nhm_ens', 'tas_sfc_Amon_shm_ens'],
+    qs=[0.025, 0.25, 0.5, 0.75, 0.975], pannel_size=[10, 4], ylabel='T anom. (K)',
+    font_scale=1.5, hspace=0.5, ylim=[-1, 1], color=sns.xkcd_rgb['pale red'],
+    title=None, plot_title=True, title_y=1,
+    lgd_ncol=3, lgd_bbox_to_anchor=None,
+    lgd_order=[0, 2, 3, 1], style='ticks',
+    bias_correction=False,
+    ref_value=None, ref_time=None, ref_color='k', ref_label='reference'
+):
     ''' Plot timeseries
 
     Args:
@@ -486,7 +489,9 @@ def plot_ts_from_jobs(exp_dir, time_span=(0, 2000), savefig_path=None,
             label = f'{qs[2]*100}%'
 
         if title is None and var in ax_title.keys():
-            title = ax_title[var]
+            title_str = ax_title[var]
+        else:
+            title_str = title
 
         ax.plot(year, ts_qs[:, 2], '-', color=color, alpha=1, label=f'{label}')
         ax.fill_between(year, ts_qs[:, -2], ts_qs[:, 1], color=color, alpha=0.5,
@@ -513,6 +518,17 @@ def plot_ts_from_jobs(exp_dir, time_span=(0, 2000), savefig_path=None,
             ref_l = ref_label
 
         if ref_v is not None:
+            mask = (ref_t >= time_span[plot_i][0]) & (ref_t <= time_span[plot_i][-1])
+            ref_v = ref_v[mask]
+            ref_t = ref_t[mask]
+
+            if bias_correction:
+                ts_qs_mean = np.nanmean(ts_qs, axis=0)
+                ts_qs -= ts_qs_mean
+
+                ref_mean = np.nanmean(ref_v)
+                ref_v -= ref_mean
+
 
             overlap_yrs = np.intersect1d(ref_t, year)
             ind_ref = np.searchsorted(ref_t, overlap_yrs)
@@ -522,7 +538,7 @@ def plot_ts_from_jobs(exp_dir, time_span=(0, 2000), savefig_path=None,
 
             ax.plot(ref_t, ref_v, '-', color=ref_color, alpha=1, label=f'{ref_l}')
             if plot_title[plot_i]:
-                ax.set_title(f'{title} (corr={corr:.2f}; CE={ce:.2f})', y=title_y)
+                ax.set_title(f'{title_str} (corr={corr:.2f}; CE={ce:.2f})', y=title_y)
 
             if plot_i == 0:
                 if lgd_order:
@@ -534,7 +550,7 @@ def plot_ts_from_jobs(exp_dir, time_span=(0, 2000), savefig_path=None,
                 else:
                     ax.legend(loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor)
         else:
-            ax.set_title(title, y=title_y)
+            ax.set_title(title_str, y=title_y)
             ax.legend(loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor)
 
         ax.spines['right'].set_visible(False)

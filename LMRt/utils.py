@@ -1087,6 +1087,7 @@ def clean_ts(ts, ys):
 
     return ys, ts
 
+
 def overlap_ts(t1, y1, t2, y2):
     # remove NaNs
     y1_tmp = np.copy(y1)
