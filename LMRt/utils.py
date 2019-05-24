@@ -852,7 +852,10 @@ def calc_ye_linearPSM(proxy_manager, ptypes, psm_name,
 
 def calc_ye(proxy_manager, ptypes, psm_name,
             lat_model, lon_model, time_model,
-            prior_vars, match_std=True, match_mean=True,
+            prior_vars,
+            std_threshold=1e-2,
+            repeat_frac_threshold=0.5,
+            match_std=True, match_mean=True,
             verbose=False, **psm_params):
 
     # load parameters for specific PSMs from precalculated files
@@ -877,6 +880,7 @@ def calc_ye(proxy_manager, ptypes, psm_name,
     pid_map = {}
     ye_out = []
     count = 0
+    k = 0
     # generate pseudoproxy values
     for idx, pobj in (enumerate(tqdm(proxy_manager.all_proxies, desc='Forward modeling')) if not verbose else enumerate(proxy_manager.all_proxies)):
         if pobj.type not in ptypes:
@@ -906,8 +910,19 @@ def calc_ye(proxy_manager, ptypes, psm_name,
                 prior_vars, verbose=verbose, **psm_params,
             )
 
+            ct_list = [list(ye_tmp).count(i) for i in list(ye_tmp)]
+            if np.max(ct_list) > repeat_frac_threshold*np.size(ct_list):
+                # VS-Lite could yield constants
+                print(f'Too many same values; skipping {pobj.id} ...')
+                continue
+
+            if np.std(ye_tmp) < std_threshold:
+                # VS-Lite could yield constants
+                print(f'Variability too small; skipping {pobj.id} ...')
+                continue
+
             if np.all(np.isnan(ye_tmp)):
-                print(f'Fail to forward onto {pobj.id}; skipping this record...')
+                print(f'Fail to forward; skipping {pobj.id} ...')
                 continue
 
             t1, y1, t2, y2 = overlap_ts(pobj.time, pobj.values.values, ye_time, ye_tmp)
@@ -921,7 +936,8 @@ def calc_ye(proxy_manager, ptypes, psm_name,
                 ye_tmp = ye_tmp - bias  # remove the estimated bias from Ye
 
             ye_out.append(ye_tmp)
-            pid_map[pobj.id] = idx
+            pid_map[pobj.id] = k
+            k += 1
 
     ye_out = np.asarray(ye_out)
 
@@ -1050,6 +1066,25 @@ def pick_years(year_int, time_grid, var_grid):
             mask.append(False)
     return time_grid[mask], var_grid[mask]
 
+
+def clean_ts(ts, ys):
+    # delete NaNs if there is any
+    ys = np.asarray(ys, dtype=np.float)
+    ts = np.asarray(ts, dtype=np.float)
+
+    ys_tmp = np.copy(ys)
+    ys = ys[~np.isnan(ys_tmp)]
+    ts = ts[~np.isnan(ys_tmp)]
+    ts_tmp = np.copy(ts)
+    ys = ys[~np.isnan(ts_tmp)]
+    ts = ts[~np.isnan(ts_tmp)]
+
+    # sort the time series so that the time axis will be ascending
+    sort_ind = np.argsort(ts)
+    ys = ys[sort_ind]
+    ts = ts[sort_ind]
+
+    return ys, ts
 
 def overlap_ts(t1, y1, t2, y2):
     # remove NaNs

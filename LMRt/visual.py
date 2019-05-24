@@ -570,7 +570,7 @@ def plot_vslite_params(lat_obs, lon_obs, T1, T2, M1, M2,
         lon_obs, lat_obs, marker='o', norm=norm,
         c=z, cmap='Reds', s=20, transform=ccrs.Geodetic()
     )
-    cbar1 = fig.colorbar(im, ax=ax1, orientation='horizontal', pad=pad, fraction=fraction)
+    cbar1 = fig.colorbar(im, ax=ax1, orientation='horizontal', pad=pad, fraction=fraction, extend='both')
     if T1_ticks:
         cbar1.set_ticks(T1_ticks)
 
@@ -586,7 +586,7 @@ def plot_vslite_params(lat_obs, lon_obs, T1, T2, M1, M2,
         lon_obs, lat_obs, marker='o', norm=norm,
         c=z, cmap='Reds', s=20, transform=ccrs.Geodetic()
     )
-    cbar2 = fig.colorbar(im, ax=ax2, orientation='horizontal', pad=pad, fraction=fraction)
+    cbar2 = fig.colorbar(im, ax=ax2, orientation='horizontal', pad=pad, fraction=fraction, extend='both')
     if T2_ticks:
         cbar2.set_ticks(T2_ticks)
 
@@ -602,7 +602,7 @@ def plot_vslite_params(lat_obs, lon_obs, T1, T2, M1, M2,
         lon_obs, lat_obs, marker='o', norm=norm,
         c=z, cmap='Blues', s=20, transform=ccrs.Geodetic()
     )
-    cbar3 = fig.colorbar(im, ax=ax3, orientation='horizontal', pad=pad, fraction=fraction)
+    cbar3 = fig.colorbar(im, ax=ax3, orientation='horizontal', pad=pad, fraction=fraction, extend='both')
     if M1_ticks:
         cbar3.set_ticks(M1_ticks)
 
@@ -618,7 +618,7 @@ def plot_vslite_params(lat_obs, lon_obs, T1, T2, M1, M2,
         lon_obs, lat_obs, marker='o', norm=norm,
         c=z, cmap='Blues', s=20, transform=ccrs.Geodetic()
     )
-    cbar4 = fig.colorbar(im, ax=ax4, orientation='horizontal', pad=pad, fraction=fraction)
+    cbar4 = fig.colorbar(im, ax=ax4, orientation='horizontal', pad=pad, fraction=fraction, extend='both')
     if M2_ticks:
         cbar4.set_ticks(M2_ticks)
 
