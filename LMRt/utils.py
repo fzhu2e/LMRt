@@ -721,7 +721,7 @@ def get_anomaly(var, year_float, ref_period=(1951, 1980)):
 
 
 def get_env_vars(prior_filesdict,
-                 rename_vars={'tmp': 'tas', 'd18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
+                 rename_vars={'tmp': 'tas', 'pre': 'pr', 'd18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
                  useLib='xarray', lat_str='lat', lon_str='lon',
                  calc_anomaly=True, ref_period=(1951, 1980), verbose=False):
 
@@ -746,6 +746,7 @@ def get_env_vars(prior_filesdict,
     if rename_vars:
         for old_name, new_name in rename_vars.items():
             if old_name in prior_vars:
+                print(f'Renaming var: {old_name} -> {new_name}')
                 prior_vars[new_name] = prior_vars.pop(old_name)
 
     return lat_model, lon_model, time_model, prior_vars
