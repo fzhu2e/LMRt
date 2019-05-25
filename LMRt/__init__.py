@@ -13,6 +13,7 @@ import pickle
 from tqdm import tqdm
 import pandas as pd
 import xarray as xr
+import random
 
 from . import utils
 
@@ -136,7 +137,7 @@ class ReconJob:
 
     def build_precalib_files(
         self, ptypes, psm_name, precalib_savepath,
-        calib_refsdict=None, 
+        calib_refsdict=None,
         ref_period=[1951, 1980], calib_period=[1850, 2015],
         precalc_avg_pathdict=None, make_yr_mm_nan=True,
         seasonality = {
@@ -341,6 +342,80 @@ class ReconJob:
 
         np.savez(ye_savepath, pid_index_map=pid_map, ye_vals=ye_out)
         print(f'\npid={os.getpid()} >>> Saving Ye to {ye_savepath}')
+
+    def build_pseudoproxies(self, metadata_df_filepath, proxies_df_filepath,
+                            ye_filesdict, exclude_list=None,
+			    years=np.arange(850, 2006),
+                            add_noise=False, noise_type='white', SNR=1,
+                            metadata_savepath=None, proxies_savepath=None,
+                            real_time_axis=False, seed=0):
+        ''' Build pseudoproxies from Ye files with metadata of real obs.
+
+        Args:
+            noise_type (str): available options include ['white', 'AR1'],
+                              if not set, white noise will be applied
+        '''
+        random.seed(seed)
+        years = np.array(years, dtype=np.float)
+
+        df = pd.read_pickle(metadata_df_filepath)
+        df_val = pd.read_pickle(proxies_df_filepath)
+
+        df_metadata_new = pd.DataFrame()
+        df_proxies_new = pd.DataFrame(index=years)
+        i = 0
+        for ptype, filepath in ye_filesdict.items():
+            precalc_ye = np.load(ye_filesdict[ptype])
+            pid_idx_map = precalc_ye['pid_index_map'][()]
+            precalc_vals = precalc_ye['ye_vals']
+            for pid in pid_idx_map.keys():
+
+                if pid in list(df['Proxy ID']) and pid not in exclude_list:
+                    idx = pid_idx_map[pid]
+                    vals = precalc_vals[idx]
+
+                    if add_noise:
+                        sig_var = np.nanvar(vals)
+                        noise_var = sig_var / SNR
+                        if noise_type == 'AR1':
+                            noise = utils.ar1_noise(years, vals)
+                            n_std = np.nanstd(noise)
+                            noise = noise * np.sqrt(noise_var)/n_std
+
+                        else:
+                            noise = np.random.normal(0, np.sqrt(noise_var), size=np.size(vals))
+
+                        vals = vals + noise
+
+                    if real_time_axis:
+                        df_pid = df_val[pid].dropna()
+                        real_years = df_pid.index.values
+                        for y in years:
+                            if y not in real_years:
+                                idx = list(years).index(y)
+                                vals[idx] = np.nan
+
+                    df_proxies_new[pid] = vals
+
+                    series = df[df['Proxy ID']==pid]
+                    archive_str = series['Archive type'].values[0]
+                    proxy_str = series['Proxy measurement'].values[0]
+                    if proxy_str == 'thickness':
+                        proxy_str = 'Varve'
+                    elif proxy_str == 'density' or proxy_str == 'MXD':
+                        proxy_str = 'WoodDensity'
+                    elif proxy_str == 'trsgi':
+                        proxy_str = 'WidthPages2'
+                    series['type'] = f'{archive_str}_{proxy_str}'
+                    df_metadata_new = df_metadata_new.append(series, ignore_index=True)
+
+        if metadata_savepath:
+            df_metadata_new.to_pickle(metadata_savepath)
+
+        if proxies_savepath:
+            df_proxies_new.to_pickle(proxies_savepath)
+
+        return df_metadata_new, df_proxies_new
 
     def load_ye_files(self, ye_filesdict, verbose=False):
         ''' Load precalculated Ye files

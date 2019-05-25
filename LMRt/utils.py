@@ -15,6 +15,7 @@ import sys
 from tqdm import tqdm
 import pickle
 from scipy import signal
+from scipy import optimize
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import glob
@@ -1085,18 +1086,12 @@ def clean_ts(ts, ys):
     ys = ys[sort_ind]
     ts = ts[sort_ind]
 
-    return ys, ts
+    return ts, ys
 
 
 def overlap_ts(t1, y1, t2, y2):
-    # remove NaNs
-    y1_tmp = np.copy(y1)
-    y1 = y1[~np.isnan(y1_tmp)]
-    t1 = t1[~np.isnan(y1_tmp)]
-
-    y2_tmp = np.copy(y2)
-    y2 = y2[~np.isnan(y2_tmp)]
-    t2 = t2[~np.isnan(y2_tmp)]
+    t1, y1 = clean_ts(t1, y1)
+    t2, y2 = clean_ts(t2, y2)
 
     # get overlap range
     overlap_yrs = np.intersect1d(t1, t2)
@@ -1165,13 +1160,31 @@ def get_distance(lon_pt, lat_pt, lon_ref, lat_ref):
 def calc_seasonal_avg(
     var, year_float,
     seasonality=[
-        [1,2,3,4,5,6,7,8,9,10,11,12],
-        [6,7,8],
-        [3,4,5,6,7,8],
-        [6,7,8,9,10,11],
-        [-12,1,2],
-        [-9,-10,-11,-12,1,2],
-        [-12,1,2,3,4,5]
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+        [3, 4, 5, 6, 7, 8, 9, 10],
+        [3, 4, 5, 6, 7, 8],
+        [3, 4, 5],
+        [4],
+        [4, 5, 6, 7, 8, 9],
+        [4, 5, 6],
+        [6],
+        [6, 7, 8],
+        [6, 7, 8, 9, 10, 11],
+        [7, 8, 9],
+        [9, 10, 11],
+        [6, 7],
+        [7],
+        [-12, 1, 2, 3],
+        [-5, -6, -7, -8, -9, -10, -11, -12, 1, 2, 3, 4],
+        [-9, -10, -11, -12, 1, 2],
+        [-12, 1, 2],
+        [-10, -11, -12, 1, 2, 3, 4],
+        [-12, -11, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        [-12, 1, 2, 3, 4, 5],
+        [-9, -10, -11, -12, 1, 2, 3, 4],
+        [-12, -11, -10, -9, 1, 2, 3, 4, 5, 6, 7, 8],
+        [-12, -11, -10, -9, -8, -7, 1, 2, 3, 4, 5, 6]
     ],
     lat=None, lon=None,
     save_path=None,
@@ -1277,7 +1290,10 @@ def calibrate_psm(
                 try:
                     seasons[var_name] = seasonality[pobj.type][f'seasons_{var_name}']
                 except:
-                    seasons[var_name] = [[1,2,3,4,5,6,7,8,9,10,11,12]]
+                    #  seasons[var_name] = [[1,2,3,4,5,6,7,8,9,10,11,12]]
+                    # revert back to proxy metadata
+                    seasons[var_name] = [pobj.seasonality]
+
 
                 ref_value[var_name] = {}
                 for season, field in ref_var[var_name].items():
@@ -2486,6 +2502,51 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath):
     )
 
     ds.to_netcdf(save_path)
+
+# ===============================================
+#  Noise
+# -----------------------------------------------
+def ar1_noise(ts, ys, seed=0):
+    '''Returns the lag-1 autocorrelation from ar1 fit
+    '''
+    random.seed(seed)
+
+    ts, ys = clean_ts(ts, ys)
+    nt = np.size(ts)
+    dts = np.diff(ts)
+    dt_mean = np.mean(dts)
+    if any(dt == dt_mean for dt in dts):
+        evenly_spaced = True
+    else:
+        evenly_spaced = False
+
+    if evenly_spaced:
+        ar1_mod = sm.tsa.AR(ys, missing='drop').fit(maxlag=1)
+        g = ar1_mod.params[0]
+        sig = np.std(ys)
+
+        ar = np.r_[1, -g]
+        ma = np.r_[1, 0.0]
+        sig_n = sig * np.sqrt(1-g**2)
+
+        noise = sm.tsa.arma_generate_sample(
+            ar=ar, ma=ma, nsample=nt, burnin=50, sigma=sig_n)
+    else:
+        def ar1_func(a):
+            return np.sum((ys[1:] - ys[:-1]*a**dts)**2)
+
+        a_est = optimize.minimize_scalar(ar1_func, bounds=[0, 1], method='bounded').x
+        tau_est = -1 / np.log(a_est)
+
+        noise = np.ones(nt)
+        for i in range(1, nt):
+            scaled_dt =  (ts[i] - ts[i-1]) / tau_est
+            rho = np.exp(-scaled_dt)
+            err = np.random.normal(0, np.sqrt(1- rho**2), 1)
+            noise[i] = noise[i-1]*rho + err
+
+    return noise
+
 
 # ===============================================
 #  Post processing
