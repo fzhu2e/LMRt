@@ -179,6 +179,9 @@ class ReconJob:
                 for k, season_dict in seasonality.items():
                     seasons_list += season_dict[season_tag]
 
+                for pobj in self.proxy_manager.all_proxies:
+                    seasons_list.append(pobj.seasonality)
+
                 seasons_set = set(map(tuple, seasons_list))
                 avgMonths_setdict[var_name] = list(map(list, seasons_set))
 
@@ -230,7 +233,7 @@ class ReconJob:
 
     def build_ye_files(self, ptypes, psm_name, prior_filesdict, ye_savepath,
                        rename_vars={'tmp': 'tas', 'd18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
-                       precalib_filesdict=None, verbose=False, useLib='netCDF4', nproc=4,
+                       precalib_filesdict=None, verbose=False, useLib='netCDF4', nproc=1,
                        lat_str='lat', lon_str='lon',
                        std_threashold=1e-2,
                        repeat_frac_threashold=0.5,

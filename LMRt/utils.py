@@ -634,7 +634,6 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
                 if verbose:
                     print(err_msg)
         else:
-            # TODO: calibrate
             proxy_var = np.nanvar(values)
             SNR = proxy_db_cfg[db_name].SNR[proxy_type]
             ob_err_var = proxy_var / SNR
@@ -1289,6 +1288,8 @@ def calibrate_psm(
                 # load seasons for each variable
                 try:
                     seasons[var_name] = seasonality[pobj.type][f'seasons_{var_name}']
+                    if pobj.seasonality not in seasons[var_name]:
+                        seasons[var_name].append(pobj.seasonality)
                 except:
                     #  seasons[var_name] = [[1,2,3,4,5,6,7,8,9,10,11,12]]
                     # revert back to proxy metadata
