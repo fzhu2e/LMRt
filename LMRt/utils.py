@@ -2521,8 +2521,8 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath):
 # ===============================================
 #  Noise
 # -----------------------------------------------
-def ar1_noise(ts, ys, seed=0):
-    '''Returns the lag-1 autocorrelation from ar1 fit
+def ar1_noise(ts, ys, g=0.5, seed=0):
+    '''Returns the AR1 noise
     '''
     random.seed(seed)
 
@@ -2536,12 +2536,9 @@ def ar1_noise(ts, ys, seed=0):
         evenly_spaced = False
 
     if evenly_spaced:
-        ar1_mod = sm.tsa.AR(ys, missing='drop').fit(maxlag=1)
-        g = ar1_mod.params[0]
-        sig = np.std(ys)
-
         ar = np.r_[1, -g]
         ma = np.r_[1, 0.0]
+        sig = np.std(ys)
         sig_n = sig * np.sqrt(1-g**2)
 
         noise = sm.tsa.arma_generate_sample(

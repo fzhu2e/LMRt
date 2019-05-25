@@ -349,12 +349,13 @@ class ReconJob:
     def build_pseudoproxies(self, metadata_df_filepath, proxies_df_filepath,
                             ye_filesdict, exclude_list=None,
 			    years=np.arange(850, 2006),
-                            add_noise=False, noise_type='white', SNR=1,
+                            add_noise=False, noise_type='white', SNR=1, g=0.5,
                             metadata_savepath=None, proxies_savepath=None,
                             real_time_axis=False, seed=0):
         ''' Build pseudoproxies from Ye files with metadata of real obs.
 
         Args:
+            g (float): autocorrelation of the AR1 noise
             noise_type (str): available options include ['white', 'AR1'],
                               if not set, white noise will be applied
         '''
@@ -381,7 +382,7 @@ class ReconJob:
                         sig_var = np.nanvar(vals)
                         noise_var = sig_var / SNR
                         if noise_type == 'AR1':
-                            noise = utils.ar1_noise(years, vals)
+                            noise = utils.ar1_noise(years, vals, g=g, seed=seed)
                             n_std = np.nanstd(noise)
                             noise = noise * np.sqrt(noise_var)/n_std
 
