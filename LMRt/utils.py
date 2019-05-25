@@ -101,6 +101,16 @@ def ymd2year_float(year, month, day):
     return year_float
 
 
+def datetime2year_float(date):
+    year = [d.year for d in date]
+    month = [d.month for d in date]
+    day = [d.day for d in date]
+
+    year_float = ymd2year_float(year, month, day)
+
+    return year_float
+
+
 def year_float2datetime(year_float, resolution='day'):
     ''' Convert an array of floats in unit of year to a datetime time; accuracy: one day
     '''
