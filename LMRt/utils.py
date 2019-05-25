@@ -101,7 +101,7 @@ def ymd2year_float(year, month, day):
     return year_float
 
 
-def year_float2datetime(year_float):
+def year_float2datetime(year_float, resolution='day'):
     ''' Convert an array of floats in unit of year to a datetime time; accuracy: one day
     '''
     year = np.array([int(y) for y in year_float], dtype=int)
@@ -118,7 +118,10 @@ def year_float2datetime(year_float):
         month[i] = date.month
         day[i] = date.day
 
-    time = [cftime.DatetimeNoLeap(y, m, d) for y, m, d in zip(year, month, day)]
+    if resolution == 'day':
+        time = [cftime.DatetimeNoLeap(y, m, d, 0, 0, 0, 0, 0, 0) for y, m, d in zip(year, month, day)]
+    elif resolution == 'month':
+        time = [cftime.DatetimeNoLeap(y, m, 1, 0, 0, 0, 0, 0, 0) for y, m in zip(year, month)]
     return time
 
 
