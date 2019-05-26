@@ -960,6 +960,7 @@ def calc_ye(proxy_manager, ptypes, psm_name,
 
 
 def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
+                      tas_varname='tmp', pr_varname='pre',
                       matlab_path=None, func_path=None, restart_matlab_period=100,
                       lat_lon_idx_path=None, seed=0, verbose=False):
     from pymatbridge import Matlab
@@ -975,8 +976,8 @@ def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
             values_obs.append(pobj.values)
             pid_obs.append(pobj.id)
 
-    lat_grid, lon_grid, time_grid, tas = get_nc_vars(tas_filepath, ['lat', 'lon', 'year_float', 'tmp'])
-    pr = get_nc_vars(pr_filepath, ['pre'])
+    lat_grid, lon_grid, time_grid, tas = get_nc_vars(tas_filepath, ['lat', 'lon', 'year_float', tas_varname])
+    pr = get_nc_vars(pr_filepath, [pr_varname])
 
     if lat_lon_idx_path is None:
         lat_ind, lon_ind = find_closest_loc(lat_grid, lon_grid, lat_obs, lon_obs, mode='latlon')
