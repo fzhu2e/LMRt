@@ -320,7 +320,7 @@ def annualize_var(var, year_float, weights=None):
     return var_ann, year_ann
 
 
-def get_nc_vars(filepath, varnames, useLib='xarray', annualize=False):
+def get_nc_vars(filepath, varnames, useLib='xarray'):
     ''' Get variables from given ncfile
     '''
     var_list = []
@@ -328,17 +328,15 @@ def get_nc_vars(filepath, varnames, useLib='xarray', annualize=False):
     if type(varnames) is str:
         varnames = [varnames]
 
-    def load_with_xarray(annualize=annualize):
+    def load_with_xarray():
         with xr.open_dataset(filepath) as ds:
-
-            if annualize:
-                ds = ds.groupby('time.year').mean('time')
 
             for varname in varnames:
                 if varname == 'year_float':
-                    year = ds['time.year'].values
-                    month = ds['time.month'].values
-                    day = ds['time.day'].values
+                    time = ds['time'].values
+                    year = [d.year for d in time]
+                    month = [d.month for d in time]
+                    day = [d.day for d in time]
 
                     year_float = ymd2year_float(year, month, day)
                     var_list.append(year_float)
@@ -352,8 +350,7 @@ def get_nc_vars(filepath, varnames, useLib='xarray', annualize=False):
 
         return var_list
 
-    def load_with_netCDF4(annualize=False):
-        # TODO: annualize
+    def load_with_netCDF4():
         with netCDF4.Dataset(filepath, 'r') as ds:
             for varname in varnames:
                 if varname == 'year_float':
@@ -386,7 +383,7 @@ def get_nc_vars(filepath, varnames, useLib='xarray', annualize=False):
         'netCDF4': load_with_netCDF4,
     }
 
-    var_list = load_nc[useLib](annualize=annualize)
+    var_list = load_nc[useLib]()
 
     if len(var_list) == 1:
         var_list = var_list[0]
