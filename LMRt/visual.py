@@ -424,7 +424,7 @@ def plot_ts_from_jobs(
     lgd_ncol=3, lgd_bbox_to_anchor=None,
     lgd_order=[0, 2, 3, 1], style='ticks',
     bias_correction=False,
-    ref_value=None, ref_time=None, ref_color='k', ref_label='reference'
+    ref_value=None, ref_time=None, ref_color='k', ref_ls='-', ref_label='reference', ref_alpha=1,
 ):
     ''' Plot timeseries
 
@@ -536,7 +536,7 @@ def plot_ts_from_jobs(
             corr = np.corrcoef(ts_qs[ind_ts, 2], ref_v[ind_ref])[1, 0]
             ce = utils.coefficient_efficiency(ref_v[ind_ref], ts_qs[ind_ts, 2])
 
-            ax.plot(ref_t, ref_v, '-', color=ref_color, alpha=1, label=f'{ref_l}')
+            ax.plot(ref_t, ref_v, ls=ref_ls, color=ref_color, alpha=ref_alpha, label=f'{ref_l}')
             if plot_title[plot_i]:
                 ax.set_title(f'{title_str} (corr={corr:.2f}; CE={ce:.2f})', y=title_y)
 
