@@ -84,313 +84,6 @@ def get_prior(filepath, datatype, cfg, anom_reference_period=(1951, 1980), verbo
     return datadict
 
 
-def ymd2year_float(year, month, day):
-    ''' Convert a set of (year, month, day) to an array of floats in unit of year
-    '''
-
-    year_float = []
-    for y, m, d in zip(year, month, day):
-        date = datetime(year=y, month=m, day=d)
-        fst_day = datetime(year=y, month=1, day=1)
-        lst_day = datetime(year=y+1, month=1, day=1)
-        year_part = date - fst_day
-        year_length = lst_day - fst_day
-        year_float.append(y + year_part/year_length)
-
-    year_float = np.asarray(year_float)
-    return year_float
-
-
-def datetime2year_float(date):
-    year = [d.year for d in date]
-    month = [d.month for d in date]
-    day = [d.day for d in date]
-
-    year_float = ymd2year_float(year, month, day)
-
-    return year_float
-
-
-def year_float2datetime(year_float, resolution='day'):
-    ''' Convert an array of floats in unit of year to a datetime time; accuracy: one day
-    '''
-    year = np.array([int(y) for y in year_float], dtype=int)
-    month = np.zeros(np.size(year), dtype=int)
-    day = np.zeros(np.size(year), dtype=int)
-
-    for i, y in enumerate(year):
-        fst_day = datetime(year=y, month=1, day=1)
-        lst_day = datetime(year=y+1, month=1, day=1)
-        year_length = lst_day - fst_day
-
-        year_part = (year_float[i] - y)*year_length + timedelta(minutes=1)  # to fix the numerical error
-        date = year_part + fst_day
-        month[i] = date.month
-        day[i] = date.day
-
-    if resolution == 'day':
-        time = [cftime.DatetimeNoLeap(y, m, d, 0, 0, 0, 0, 0, 0) for y, m, d in zip(year, month, day)]
-    elif resolution == 'month':
-        time = [cftime.DatetimeNoLeap(y, m, 1, 0, 0, 0, 0, 0, 0) for y, m in zip(year, month)]
-    return time
-
-
-def seasonal_var_xarray(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]):
-    ''' Annualize a variable array based on seasonality
-
-    Args:
-        var (ndarray): the target variable array with 1st dim to be year
-        year_float (1-D array): the time axis of the variable array
-
-    Returns:
-        var_ann (ndarray): the annualized variable array
-        year_ann (1-D array): the time axis of the annualized variable array
-    '''
-    var = np.array(var)
-    year_float = np.array(year_float)
-
-    ndims = len(np.shape(var))
-    dims = ['time']
-    for i in range(ndims-1):
-        dims.append(f'dim{i+1}')
-
-    time = year_float2datetime(year_float)
-    var_da = xr.DataArray(var, dims=dims, coords={'time': time})
-
-    m_start, m_end = avgMonths[0], avgMonths[-1]
-
-    if m_start > 0:
-        offset_str = 'A'
-    else:
-        offset_alias = {
-           -12: 'DEC',
-           -11: 'NOV',
-           -10: 'OCT',
-           -9: 'SEP',
-           -8: 'AUG',
-           -7: 'JUL',
-           -6: 'JUN',
-           -5: 'MAY',
-           -4: 'APR',
-           -3: 'MAR',
-           -2: 'FEB',
-           -1: 'JAN',
-        }
-        offset_str = f'AS-{offset_alias[m_start]}'
-
-    if avgMonths==[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]:
-        var_ann = var_da.groupby('time.year').mean('time')
-        year_ann = np.array(list(set(var_ann['year'].values)))
-    else:
-        month = var_da.groupby('time.month').apply(lambda x: x).month
-
-        var_ann = var_da.where(
-            (month >= m_start) & (month <= m_end)
-        ).resample(time=offset_str).mean('time')
-
-        if m_start > 0:
-            year_ann = np.array(list(set(var_ann['time.year'].values)))
-        else:
-            year_ann = np.array(list(set(var_ann['time.year'].values))) + 1
-            var_ann = var_ann[:-1]
-            year_ann = year_ann[:-1]
-
-    var_tmp = np.copy(var_ann)
-    var_ann = var_ann[~np.isnan(var_tmp)]
-    year_ann = year_ann[~np.isnan(var_tmp)]
-    return var_ann, year_ann
-
-
-def seasonal_var(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], make_yr_mm_nan=True):
-    ''' Annualize a variable array based on seasonality
-
-    Args:
-        var (ndarray): the target variable array with 1st dim to be year
-        year_float (1-D array): the time axis of the variable array
-        make_yr_mm_nan (bool): make year with missing months nan or not
-
-    Returns:
-        var_ann (ndarray): the annualized variable array
-        year_ann (1-D array): the time axis of the annualized variable array
-    '''
-    var = np.array(var)
-    var_shape = np.shape(var)
-    ndim = len(var_shape)
-    year_float = np.array(year_float)
-
-    time = year_float2datetime(year_float)
-
-    nbmonths = len(avgMonths)
-    cyears = np.asarray(list(set([t.year for t in time])))
-    year_ann = cyears
-    nbcyears = len(cyears)
-
-    var_ann_shape = np.copy(var_shape)
-    var_ann_shape[0] = nbcyears
-    var_ann = np.zeros(shape=var_ann_shape)
-    var_ann[:, ...] = np.nan # initialize with nan's
-    for i in range(nbcyears):
-        # monthly data from current year
-        indsyr = [j for j,v in enumerate(time) if v.year == cyears[i] and v.month in avgMonths]
-        # check if data from previous year is to be included
-        indsyrm1 = []
-        if any(m < 0 for m in avgMonths):
-            year_before = [abs(m) for m in avgMonths if m < 0]
-            indsyrm1 = [j for j,v in enumerate(time) if v.year == cyears[i]-1. and v.month in year_before]
-        # check if data from following year is to be included
-        indsyrp1 = []
-        if any(m > 12 for m in avgMonths):
-            year_follow = [m-12 for m in avgMonths if m > 12]
-            indsyrp1 = [j for j,v in enumerate(time) if v.year == cyears[i]+1. and v.month in year_follow]
-
-        inds = indsyrm1 + indsyr + indsyrp1
-
-        if ndim == 1:
-            tmp = np.nanmean(var[inds], axis=0)
-            nancount = np.isnan(var[inds]).sum(axis=0)
-            if nancount > 0:
-                tmp = np.nan
-        else:
-            tmp = np.nanmean(var[inds, ...], axis=0)
-            nancount = np.isnan(var[inds, ...]).sum(axis=0)
-            tmp[nancount > 0] = np.nan
-
-        if make_yr_mm_nan and len(inds) != nbmonths:
-                tmp = np.nan
-
-        var_ann[i, ...] = tmp
-
-    return var_ann, year_ann
-
-
-def make_xr(var, year_float):
-    var = np.array(var)
-    year_float = np.array(year_float)
-
-    ndims = len(np.shape(var))
-    dims = ['time']
-    for i in range(ndims-1):
-        dims.append(f'dim{i+1}')
-
-    time = year_float2datetime(year_float)
-    var_da = xr.DataArray(var, dims=dims, coords={'time': time})
-    return var_da
-
-
-def annualize_var(var, year_float, weights=None):
-    ''' Annualize a variable array
-
-    Args:
-        var (ndarray): the target variable array with 1st dim to be year
-        year_float (1-D array): the time axis of the variable array
-        weights (ndarray): the weights that shares the same shape of the target variable array
-
-    Returns:
-        var_ann (ndarray): the annualized variable array
-        year_ann (1-D array): the time axis of the annualized variable array
-    '''
-    var = np.array(var)
-    year_float = np.array(year_float)
-
-    ndims = len(np.shape(var))
-    dims = ['time']
-    for i in range(ndims-1):
-        dims.append(f'dim{i+1}')
-
-    time = year_float2datetime(year_float)
-
-    if weights is not None:
-        weights_da = xr.DataArray(weights, dims=dims, coords={'time': time})
-
-        coeff = np.ndarray(np.shape(weights))
-        for i, gp in enumerate(list(weights_da.groupby('time.year'))):
-            year, value = gp
-            k = np.shape(value)[0]
-            coeff[k*i:k*(i+1)] = value / np.sum(value, axis=0)
-
-        del weights, weights_da  # save the memory
-
-        var = np.multiply(coeff, var)
-
-    var_da = xr.DataArray(var, dims=dims, coords={'time': time})
-    var_ann = var_da.groupby('time.year').mean('time')
-    var_ann = var_ann.values
-
-    year_ann = np.array(list(set([t.year for t in time])))
-    return var_ann, year_ann
-
-
-def get_nc_vars(filepath, varnames, useLib='xarray'):
-    ''' Get variables from given ncfile
-    '''
-    var_list = []
-
-    if type(varnames) is str:
-        varnames = [varnames]
-
-    def load_with_xarray():
-        with xr.open_dataset(filepath) as ds:
-
-            for varname in varnames:
-                if varname == 'year_float':
-                    time = ds['time'].values
-                    year = [d.year for d in time]
-                    month = [d.month for d in time]
-                    day = [d.day for d in time]
-
-                    year_float = ymd2year_float(year, month, day)
-                    var_list.append(year_float)
-
-                else:
-                    var_tmp = ds[varname].values
-                    if varname == 'lon':
-                        if np.min(var_tmp) < 0:
-                            var_tmp = np.mod(var_tmp, 360)  # convert from (-180, 180) to (0, 360)
-                    var_list.append(var_tmp)
-
-        return var_list
-
-    def load_with_netCDF4():
-        with netCDF4.Dataset(filepath, 'r') as ds:
-            for varname in varnames:
-                if varname == 'year_float':
-                    time = ds.variables['time']
-                    time_convert = netCDF4.num2date(time[:], time.units, time.calendar)
-
-                    year_float = []
-                    for t in time_convert:
-                        y, m, d = t.year, t.month, t.day
-                        date = datetime(year=y, month=m, day=d)
-                        fst_day = datetime(year=y, month=1, day=1)
-                        lst_day = datetime(year=y+1, month=1, day=1)
-                        year_part = date - fst_day
-                        year_length = lst_day - fst_day
-                        year_float.append(y + year_part/year_length)
-
-                    var_list.append(np.asarray(year_float))
-
-                else:
-                    var_tmp = ds.variables[varname][:]
-                    if varname == 'lon':
-                        if np.min(var_tmp) < 0:
-                            var_tmp = np.mod(var_tmp, 360)  # convert from (-180, 180) to (0, 360)
-                    var_list.append(var_tmp)
-
-        return var_list
-
-    load_nc = {
-        'xarray': load_with_xarray,
-        'netCDF4': load_with_netCDF4,
-    }
-
-    var_list = load_nc[useLib]()
-
-    if len(var_list) == 1:
-        var_list = var_list[0]
-
-    return var_list
-
-
 def populate_ensemble(datadict, cfg, seed, verbose=False):
     ''' Populate the prior ensemble from gridded model/analysis data
     '''
@@ -722,9 +415,323 @@ def get_precalib_data(psm_name, precalib_filepath):
     return get_precalib_data_func[psm_name](psm_data)
 
 
+# ===============================================
+#  Noise
+# -----------------------------------------------
+def ymd2year_float(year, month, day):
+    ''' Convert a set of (year, month, day) to an array of floats in unit of year
+    '''
+
+    year_float = []
+    for y, m, d in zip(year, month, day):
+        date = datetime(year=y, month=m, day=d)
+        fst_day = datetime(year=y, month=1, day=1)
+        lst_day = datetime(year=y+1, month=1, day=1)
+        year_part = date - fst_day
+        year_length = lst_day - fst_day
+        year_float.append(y + year_part/year_length)
+
+    year_float = np.asarray(year_float)
+    return year_float
+
+
+def datetime2year_float(date):
+    year = [d.year for d in date]
+    month = [d.month for d in date]
+    day = [d.day for d in date]
+
+    year_float = ymd2year_float(year, month, day)
+
+    return year_float
+
+
+def year_float2datetime(year_float, resolution='day'):
+    ''' Convert an array of floats in unit of year to a datetime time; accuracy: one day
+    '''
+    year = np.array([int(y) for y in year_float], dtype=int)
+    month = np.zeros(np.size(year), dtype=int)
+    day = np.zeros(np.size(year), dtype=int)
+
+    for i, y in enumerate(year):
+        fst_day = datetime(year=y, month=1, day=1)
+        lst_day = datetime(year=y+1, month=1, day=1)
+        year_length = lst_day - fst_day
+
+        year_part = (year_float[i] - y)*year_length + timedelta(minutes=1)  # to fix the numerical error
+        date = year_part + fst_day
+        month[i] = date.month
+        day[i] = date.day
+
+    if resolution == 'day':
+        time = [cftime.DatetimeNoLeap(y, m, d, 0, 0, 0, 0, 0, 0) for y, m, d in zip(year, month, day)]
+    elif resolution == 'month':
+        time = [cftime.DatetimeNoLeap(y, m, 1, 0, 0, 0, 0, 0, 0) for y, m in zip(year, month)]
+    return time
+
+
+def seasonal_var_xarray(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]):
+    ''' Annualize a variable array based on seasonality
+
+    Args:
+        var (ndarray): the target variable array with 1st dim to be year
+        year_float (1-D array): the time axis of the variable array
+
+    Returns:
+        var_ann (ndarray): the annualized variable array
+        year_ann (1-D array): the time axis of the annualized variable array
+    '''
+    var = np.array(var)
+    year_float = np.array(year_float)
+
+    ndims = len(np.shape(var))
+    dims = ['time']
+    for i in range(ndims-1):
+        dims.append(f'dim{i+1}')
+
+    time = year_float2datetime(year_float)
+    var_da = xr.DataArray(var, dims=dims, coords={'time': time})
+
+    m_start, m_end = avgMonths[0], avgMonths[-1]
+
+    if m_start > 0:
+        offset_str = 'A'
+    else:
+        offset_alias = {
+           -12: 'DEC',
+           -11: 'NOV',
+           -10: 'OCT',
+           -9: 'SEP',
+           -8: 'AUG',
+           -7: 'JUL',
+           -6: 'JUN',
+           -5: 'MAY',
+           -4: 'APR',
+           -3: 'MAR',
+           -2: 'FEB',
+           -1: 'JAN',
+        }
+        offset_str = f'AS-{offset_alias[m_start]}'
+
+    if avgMonths==[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]:
+        var_ann = var_da.groupby('time.year').mean('time')
+        year_ann = np.array(list(set(var_ann['year'].values)))
+    else:
+        month = var_da.groupby('time.month').apply(lambda x: x).month
+
+        var_ann = var_da.where(
+            (month >= m_start) & (month <= m_end)
+        ).resample(time=offset_str).mean('time')
+
+        if m_start > 0:
+            year_ann = np.array(list(set(var_ann['time.year'].values)))
+        else:
+            year_ann = np.array(list(set(var_ann['time.year'].values))) + 1
+            var_ann = var_ann[:-1]
+            year_ann = year_ann[:-1]
+
+    var_tmp = np.copy(var_ann)
+    var_ann = var_ann[~np.isnan(var_tmp)]
+    year_ann = year_ann[~np.isnan(var_tmp)]
+    return var_ann, year_ann
+
+
+def seasonal_var(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], make_yr_mm_nan=True):
+    ''' Annualize a variable array based on seasonality
+
+    Args:
+        var (ndarray): the target variable array with 1st dim to be year
+        year_float (1-D array): the time axis of the variable array
+        make_yr_mm_nan (bool): make year with missing months nan or not
+
+    Returns:
+        var_ann (ndarray): the annualized variable array
+        year_ann (1-D array): the time axis of the annualized variable array
+    '''
+    var = np.array(var)
+    var_shape = np.shape(var)
+    ndim = len(var_shape)
+    year_float = np.array(year_float)
+
+    time = year_float2datetime(year_float)
+
+    nbmonths = len(avgMonths)
+    cyears = np.asarray(list(set([t.year for t in time])))
+    year_ann = cyears
+    nbcyears = len(cyears)
+
+    var_ann_shape = np.copy(var_shape)
+    var_ann_shape[0] = nbcyears
+    var_ann = np.zeros(shape=var_ann_shape)
+    var_ann[:, ...] = np.nan # initialize with nan's
+    for i in range(nbcyears):
+        # monthly data from current year
+        indsyr = [j for j,v in enumerate(time) if v.year == cyears[i] and v.month in avgMonths]
+        # check if data from previous year is to be included
+        indsyrm1 = []
+        if any(m < 0 for m in avgMonths):
+            year_before = [abs(m) for m in avgMonths if m < 0]
+            indsyrm1 = [j for j,v in enumerate(time) if v.year == cyears[i]-1. and v.month in year_before]
+        # check if data from following year is to be included
+        indsyrp1 = []
+        if any(m > 12 for m in avgMonths):
+            year_follow = [m-12 for m in avgMonths if m > 12]
+            indsyrp1 = [j for j,v in enumerate(time) if v.year == cyears[i]+1. and v.month in year_follow]
+
+        inds = indsyrm1 + indsyr + indsyrp1
+
+        if ndim == 1:
+            tmp = np.nanmean(var[inds], axis=0)
+            nancount = np.isnan(var[inds]).sum(axis=0)
+            if nancount > 0:
+                tmp = np.nan
+        else:
+            tmp = np.nanmean(var[inds, ...], axis=0)
+            nancount = np.isnan(var[inds, ...]).sum(axis=0)
+            tmp[nancount > 0] = np.nan
+
+        if make_yr_mm_nan and len(inds) != nbmonths:
+                tmp = np.nan
+
+        var_ann[i, ...] = tmp
+
+    return var_ann, year_ann
+
+
+def make_xr(var, year_float):
+    var = np.array(var)
+    year_float = np.array(year_float)
+
+    ndims = len(np.shape(var))
+    dims = ['time']
+    for i in range(ndims-1):
+        dims.append(f'dim{i+1}')
+
+    time = year_float2datetime(year_float)
+    var_da = xr.DataArray(var, dims=dims, coords={'time': time})
+    return var_da
+
+
+def annualize_var(var, year_float, weights=None):
+    ''' Annualize a variable array
+
+    Args:
+        var (ndarray): the target variable array with 1st dim to be year
+        year_float (1-D array): the time axis of the variable array
+        weights (ndarray): the weights that shares the same shape of the target variable array
+
+    Returns:
+        var_ann (ndarray): the annualized variable array
+        year_ann (1-D array): the time axis of the annualized variable array
+    '''
+    var = np.array(var)
+    year_float = np.array(year_float)
+
+    ndims = len(np.shape(var))
+    dims = ['time']
+    for i in range(ndims-1):
+        dims.append(f'dim{i+1}')
+
+    time = year_float2datetime(year_float)
+
+    if weights is not None:
+        weights_da = xr.DataArray(weights, dims=dims, coords={'time': time})
+
+        coeff = np.ndarray(np.shape(weights))
+        for i, gp in enumerate(list(weights_da.groupby('time.year'))):
+            year, value = gp
+            k = np.shape(value)[0]
+            coeff[k*i:k*(i+1)] = value / np.sum(value, axis=0)
+
+        del weights, weights_da  # save the memory
+
+        var = np.multiply(coeff, var)
+
+    var_da = xr.DataArray(var, dims=dims, coords={'time': time})
+    var_ann = var_da.groupby('time.year').mean('time')
+    var_ann = var_ann.values
+
+    year_ann = np.array(list(set([t.year for t in time])))
+    return var_ann, year_ann
+
+
+def get_nc_vars(filepath, varnames, useLib='xarray'):
+    ''' Get variables from given ncfile
+    '''
+    var_list = []
+
+    if type(varnames) is str:
+        varnames = [varnames]
+
+    def load_with_xarray():
+        with xr.open_dataset(filepath) as ds:
+
+            for varname in varnames:
+                if varname == 'year_float':
+                    time = ds['time'].values
+                    year = [d.year for d in time]
+                    month = [d.month for d in time]
+                    day = [d.day for d in time]
+
+                    year_float = ymd2year_float(year, month, day)
+                    var_list.append(year_float)
+
+                else:
+                    var_tmp = ds[varname].values
+                    if varname == 'lon':
+                        if np.min(var_tmp) < 0:
+                            var_tmp = np.mod(var_tmp, 360)  # convert from (-180, 180) to (0, 360)
+                    var_list.append(var_tmp)
+
+        return var_list
+
+    def load_with_netCDF4():
+        with netCDF4.Dataset(filepath, 'r') as ds:
+            for varname in varnames:
+                if varname == 'year_float':
+                    time = ds.variables['time']
+                    time_convert = netCDF4.num2date(time[:], time.units, time.calendar)
+
+                    year_float = []
+                    for t in time_convert:
+                        y, m, d = t.year, t.month, t.day
+                        date = datetime(year=y, month=m, day=d)
+                        fst_day = datetime(year=y, month=1, day=1)
+                        lst_day = datetime(year=y+1, month=1, day=1)
+                        year_part = date - fst_day
+                        year_length = lst_day - fst_day
+                        year_float.append(y + year_part/year_length)
+
+                    var_list.append(np.asarray(year_float))
+
+                else:
+                    var_tmp = ds.variables[varname][:]
+                    if varname == 'lon':
+                        if np.min(var_tmp) < 0:
+                            var_tmp = np.mod(var_tmp, 360)  # convert from (-180, 180) to (0, 360)
+                    var_list.append(var_tmp)
+
+        return var_list
+
+    load_nc = {
+        'xarray': load_with_xarray,
+        'netCDF4': load_with_netCDF4,
+    }
+
+    var_list = load_nc[useLib]()
+
+    if len(var_list) == 1:
+        var_list = var_list[0]
+
+    return var_list
+
+
 def get_anomaly(var, year_float, ref_period=(1951, 1980)):
     var_da = make_xr(var, year_float)
-    var_ref = var_da.loc[str(ref_period[0]):str(ref_period[-1])]
+    if ref_period[0] > np.max(year_float):
+        print(f'Time axis not overlap with the reference period {ref_period}; use its own time period as reference {(int(np.min(year_float)), int(np.max(year_float)))}.')
+        var_ref = var_da
+    else:
+        var_ref = var_da.loc[str(ref_period[0]):str(ref_period[-1])]
     climatology = var_ref.groupby('time.month').mean('time')
     var_anom = var_da.groupby('time.month') - climatology
     return var_anom.values
