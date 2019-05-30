@@ -1890,6 +1890,41 @@ def regrid_sphere(nlat, nlon, Nens, X, ntrunc):
     return X_new,lat_new,lon_new
 
 
+def regrid_sphere_field(nlat, nlon, var_field, ntrunc):
+    ''' Regrid a field
+    '''
+    # create the spectral object on the original grid
+    specob_lmr = Spharmt(nlon,nlat,gridtype='regular',legfunc='computed')
+
+    # truncate to a lower resolution grid (triangular truncation)
+    ifix = np.remainder(ntrunc,2.0).astype(int)
+    nlat_new = ntrunc + ifix
+    nlon_new = int(nlat_new*1.5)
+
+    # create the spectral object on the new grid
+    specob_new = Spharmt(nlon_new,nlat_new,gridtype='regular',legfunc='computed')
+
+    # create new lat,lon grid arrays
+    # Note: AP - According to github.com/jswhit/pyspharm documentation the
+    #  latitudes will not include the equator or poles when nlats is even.
+    if nlat_new % 2 == 0:
+        include_poles = False
+    else:
+        include_poles = True
+
+    lat_new, lon_new, _, _ = generate_latlon(nlat_new, nlon_new,
+                                             include_endpts=include_poles)
+
+    # transform each ensemble member, one at a time
+    var_regridded = []
+    for i in range(np.shape(var_field[0])):
+        var_regridded.append(
+            regrid(specob_lmr, specob_new, var_field, ntrunc=nlat_new-1, smooth=None)
+        )
+
+    return var_regridded, lat_new, lon_new
+
+
 def find_closest_loc(lat, lon, target_lat, target_lon, mode=None, verbose=False):
     ''' Find the closet model sites (lat, lon) based on the given target (lat, lon) list
 

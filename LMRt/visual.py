@@ -703,15 +703,22 @@ def plot_volc_composites(gmt, event_yrs, start_yr=0, before=3, after=10, highpas
     '''
     # Superposed Epoch Analysis
     Xevents, Xcomp, tcomp = utils.sea(gmt, event_yrs, start_yr=start_yr, before=before, after=after, highpass=highpass)
-    Xevents_qs = mquantiles(Xcomp, qs, axis=-1)
+    ndim = len(np.shape(Xcomp))
+    if ndim > 1:
+        Xevents_qs = mquantiles(Xcomp, qs, axis=-1)
 
     sns.set(style="darkgrid", font_scale=2)
     fig, ax = plt.subplots(figsize=figsize)
 
     if title_str:
         ax.set_title(title_str)
-    ax.plot(tcomp, Xevents_qs[:, 1], '-', lw=3, color=clr)
-    ax.fill_between(tcomp, Xevents_qs[:, 0], Xevents_qs[:, -1], alpha=0.3, color=clr)
+
+    if ndim == 1:
+        ax.plot(tcomp, Xcomp, '-', lw=3, color=clr)
+    else:
+        ax.plot(tcomp, Xevents_qs[:, 1], '-', lw=3, color=clr)
+        ax.fill_between(tcomp, Xevents_qs[:, 0], Xevents_qs[:, -1], alpha=0.3, color=clr)
+
     ax.axvline(x=0, ls=':', color='grey')
     ax.axhline(y=0, ls=':', color='grey')
     ax.set_xlabel('Year')
