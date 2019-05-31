@@ -49,6 +49,7 @@ in python.
 ## Notebook tutorials
 + [a quickstart](https://nbviewer.jupyter.org/github/fzhu2e/LMRt/blob/master/notebooks/01.lmrt_quickstart.ipynb)
 + [building Ye files](https://nbviewer.jupyter.org/github/fzhu2e/LMRt/blob/master/notebooks/02.build_Ye.ipynb)
++ [multiprocessing](https://nbviewer.jupyter.org/github/fzhu2e/LMRt/blob/master/notebooks/03.multiprocessing.ipynb)
 
 ## References
 + Hakim, G. J., J. Emile‐Geay, E. J. Steig, D. Noone, D. M. Anderson, R. Tardif, N. Steiger, and W. A. Perkins, 2016: The last millennium climate reanalysis project: Framework and first results. Journal of Geophysical Research: Atmospheres, 121, 6745–6764, https://doi.org/10.1002/2016JD024751.
