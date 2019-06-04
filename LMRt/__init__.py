@@ -233,7 +233,7 @@ class ReconJob:
 
     def build_ye_files(self, ptypes, psm_name, prior_filesdict, ye_savepath,
                        rename_vars={'tmp': 'tas', 'd18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
-                       precalib_filesdict=None, verbose=False, useLib='netCDF4', nproc=1,
+                       precalib_filesdict=None, verbose=False, useLib='netCDF4', nproc=1, elev_datapath=None,
                        lat_str='lat', lon_str='lon',
                        std_threashold=1e-2,
                        repeat_frac_threashold=0.5,
@@ -335,10 +335,16 @@ class ReconJob:
                 lat_str=lat_str, lon_str=lon_str, verbose=verbose
             )
 
+            if elev_datapath:
+                with open(elev_datapath, 'rb') as f:
+                    elev_model = pickle.load(f)
+            else:
+                elev_model = None
+
             pid_map, ye_out = utils.calc_ye(
                 self.proxy_manager, ptypes, psm_name,
                 lat_model, lon_model, time_model, prior_vars,
-                std_threashold=std_threashold,
+                std_threashold=std_threashold, elev_model=elev_model,
                 match_std=match_std, match_mean=match_mean,
                 verbose=verbose, **psm_params
             )
