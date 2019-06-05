@@ -21,6 +21,7 @@ import statsmodels.formula.api as smf
 import glob
 from scipy.stats.mstats import mquantiles
 from scipy import spatial
+from scipy.misc import factorial
 import cftime
 from pprint import pprint
 from time import time as ttime
@@ -2237,7 +2238,6 @@ def get_nc_vars(filepath, varnames, useLib='xarray'):
             for varname in varnames:
                 if varname == 'year_float':
                     time = ds['time'].values
-                    time = pd.DatetimeIndex(time)
                     year = [d.year for d in time]
                     month = [d.month for d in time]
                     day = [d.day for d in time]
@@ -2780,7 +2780,8 @@ def coefficient_efficiency(ref, test, valid=None):
 # -----------------------------------------------
 # Correlation and coefficient Efficiency (CE)
 # -----------------------------------------------
-def load_ts_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='tas_sfc_Amon_gm_ens', ref_period=[1951, 1980]):
+def load_ts_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='tas_sfc_Amon_gm_ens', ref_period=[1951, 1980],
+                      return_MC_mean=False):
     if not os.path.exists(exp_dir):
         raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
 
@@ -2795,16 +2796,23 @@ def load_ts_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='tas_sfc_Amon_gm_ens', 
     nMC = len(paths)
 
     ts = np.ndarray((nt, nEN*nMC))
+    ts_MC = np.ndarray((nt, nMC))
     for i, path in enumerate(paths):
         with xr.open_dataset(path) as ds:
             ts_ens = ds[var].values
 
         ts[:, nEN*i:nEN+nEN*i] = ts_ens
+        ts_MC[:, i] = np.average(ts_ens, axis=-1)
 
-    if qs:
-        ts_qs = mquantiles(ts, qs, axis=-1)
+    if return_MC_mean:
+        ts_qs = ts_MC
+
     else:
-        ts_qs = ts
+        if qs:
+            ts_qs = mquantiles(ts, qs, axis=-1)
+        else:
+            ts_qs = ts
+
     return ts_qs, year
 
 
@@ -3030,10 +3038,10 @@ def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 200
                 ce[name][i, j] = coefficient_efficiency(ts_inst, ts_lmr, valid_frac)
 
     return corr, ce, inst_lat, inst_lon
+
 # -----------------------------------------------
 #  Superposed Epoch Analysis
 # -----------------------------------------------
-
 def tsPad(x,t,params=(2,1,2),padFrac=0.1,diag=False):
     """ tsPad: pad a timeseries based on timeseries model predictions
 
@@ -3085,6 +3093,7 @@ def tsPad(x,t,params=(2,1,2),padFrac=0.1,diag=False):
 
     return xp, tp
 
+
 def butterworth(x,fc,fs=1, filter_order=3,pad='reflect',reflect_type='odd',params=(2,1,2),padFrac=0.1):
     '''Applies a Butterworth filter with frequency fc, with padding
 
@@ -3128,6 +3137,7 @@ def butterworth(x,fc,fs=1, filter_order=3,pad='reflect',reflect_type='odd',param
     xf  = xpf[np.isin(tp,t)]
 
     return xf
+
 
 def sea(X, events, start_yr=0, before=3, after=10, highpass=False):
     '''Applies superposed Epoch Analysis to N-dim array X, at indices 'events',
@@ -3184,4 +3194,100 @@ def sea(X, events, start_yr=0, before=3, after=10, highpass=False):
 
     Xcomp = np.mean(Xevents,axis=Xevents.ndim-1) # compute composite
     return Xevents, Xcomp, tcomp
+
+
+def sea_dbl(time, value, events, preyr=5, postyr=15, seeds=None, nsample=10,
+            qs=[0.05, 0.5, 0.95], qs_signif=[0.01, 0.05, 0.10, 0.90, 0.95, 0.99],
+            nboot_event=1000, verbose=False):
+    ''' A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty
+
+    Args:
+        time (1-D array): time axis
+        value (1-D array): value axis
+        events (1-D array): event years
+
+    Returns:
+        res (dict): result dictionary
+
+    References:
+        Rao MP, Cook ER, Cook BI, et al (2019) A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty.
+            Dendrochronologia 55:119–124. doi: 10.1016/j.dendro.2019.05.001
+    '''
+    nevents = np.size(events)
+    total_draws = factorial(nevents)/factorial(nsample)/factorial(nevents-nsample)
+    nyr = preyr + postyr + 1
+
+    # avoid edges
+    time_inner = time[preyr:-postyr]
+    events_inner = events[(events>=np.min(time_inner)) & (events<=np.max(time_inner))]
+
+    if verbose:
+        print(f'SEA >>> valid events: {events_inner}')
+        print(f'SEA >>> nevents: {nevents}, nsample: {nsample}, total draws: {total_draws:g}')
+        print(f'SEA >>> nboot_event: {nboot_event}')
+        print(f'SEA >>> preyr: {preyr}, postyr: {postyr}, window length: {nyr}')
+        print(f'SEA >>> qs: {qs}, qs_signif: {qs_signif}')
+
+    # generate unique draws without replacement
+    draws = []
+    draws_signif = []
+
+    for i in range(nboot_event):
+        if seeds is not None:
+            np.random.seed(seeds[i])
+
+        draw_tmp = np.random.choice(events_inner, nsample, replace=False)
+        draws.append(np.sort(draw_tmp))
+
+        draw_tmp = np.random.choice(time_inner, nsample, replace=False)
+        draws_signif.append(np.sort(draw_tmp))
+
+    draws = np.array(draws)
+    draws_signif = np.array(draws_signif)
+
+    # generate composite ndarrays
+    composite_raw = np.ndarray((nboot_event, nsample, nyr))
+    composite_raw_signif = np.ndarray((nboot_event, nsample, nyr))
+
+    for i in range(nboot_event):
+        sample_yrs = draws[i]
+        sample_yrs_signif = draws_signif[i]
+
+        for j in range(nsample):
+            center_yr = list(time).index(sample_yrs[j])
+            composite_raw[i, j, :] = value[center_yr-preyr:center_yr+postyr+1]
+
+            center_yr_signif = list(time).index(sample_yrs_signif[j])
+            composite_raw_signif[i, j, :] = value[center_yr_signif-preyr:center_yr_signif+postyr+1]
+
+    # normalization: remove the mean of the pre-years
+    composite_norm = composite_raw - np.average(composite_raw[:, :, :preyr], axis=-1)[:, :, np.newaxis]
+    composite_norm_signif = composite_raw_signif - np.average(composite_raw_signif[:, :, :preyr], axis=-1)[:, :, np.newaxis]
+
+    composite = np.average(composite_norm, axis=1)
+    composite_qs = mquantiles(composite, qs, axis=0)
+
+    composite_signif = np.average(composite_norm_signif, axis=1)
+    composite_qs_signif = mquantiles(composite_signif, qs_signif, axis=0)
+
+    composite_yr = np.arange(-preyr, postyr+1)
+
+    res = {
+        'events': events_inner,
+        'draws': draws,
+        'composite': composite,
+        'qs': qs,
+        'composite_qs': composite_qs,
+        'draws_signif': draws_signif,
+        'composite_signif': composite_signif,
+        'qs_signif': qs_signif,
+        'composite_qs_signif': composite_qs_signif,
+        'composite_yr': composite_yr,
+    }
+
+    if verbose:
+        print(f'SEA >>> shape(composite): {np.shape(composite)}')
+        print(f'SEA >>> res.keys(): {list(res.keys())}')
+
+    return res
 # ===============================================

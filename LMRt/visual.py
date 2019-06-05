@@ -727,3 +727,34 @@ def plot_volc_composites(gmt, event_yrs, start_yr=0, before=3, after=10, highpas
     ax.set_ylabel(ylabel)
 
     return fig
+
+
+def plot_sea_res(res, style='ticks', font_scale=2, figsize=[10, 6], signif_fontsize=15, ls='-o', color='k',
+                 shade_alpha=0.3, signif_alpha=0.3, signif_color='k', signif_text_loc_fix=(0.1, -0.01),
+                 xticks=None, title=None):
+    ''' Plot SEA results
+    '''
+    sns.set(style=style, font_scale=font_scale)
+    fig, ax = plt.subplots(figsize=figsize)
+
+    ax.plot(res['composite_yr'], res['composite_qs'][1], ls, color=color)
+    ax.fill_between(res['composite_yr'], res['composite_qs'][0], res['composite_qs'][-1], color=color, alpha=shade_alpha)
+
+    for i, qs_v in enumerate(res['qs_signif']):
+        ax.plot(res['composite_yr'], res['composite_qs_signif'][i], '--', color=signif_color, alpha=signif_alpha)
+        ax.text(res['composite_yr'][-1]+signif_text_loc_fix[0], res['composite_qs_signif'][i][-1]+signif_text_loc_fix[-1],
+                f'{qs_v*100:g}%', color=signif_color, alpha=signif_alpha, fontsize=signif_fontsize)
+
+    ax.set_ylabel('T anom. (K)')
+    ax.set_xlabel('Years relative to event year')
+    ax.axvline(x=0, ls=':', color='grey')
+    ax.axhline(y=0, ls=':', color='grey')
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+
+    if xticks:
+        ax.set_xticks(xticks)
+    if title:
+        ax.set_title(title)
+
+    return fig, ax
