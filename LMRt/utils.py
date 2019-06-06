@@ -571,9 +571,11 @@ def calc_ye(proxy_manager, ptypes, psm_name,
                 psm_params['species'] = species_obs[ind]
 
             ye_tmp, ye_time = prysm.forward(
-                psm_name, pobj.lat, pobj.lon, pobj.elev,
-                lat_model, lon_model, elev_model, time_model,
-                prior_vars, verbose=verbose, **psm_params,
+                psm_name, pobj.lat, pobj.lon,
+                lat_model, lon_model, time_model,
+                prior_vars,
+                elev_obs=pobj.elev, elev_model=elev_model,
+                verbose=verbose, **psm_params,
             )
 
             ct_list = [list(ye_tmp).count(i) for i in list(ye_tmp)]
@@ -2238,6 +2240,9 @@ def get_nc_vars(filepath, varnames, useLib='xarray'):
             for varname in varnames:
                 if varname == 'year_float':
                     time = ds['time'].values
+                    if type(time[0]) is np.datetime64:
+                        time = pd.DatetimeIndex(time)
+
                     year = [d.year for d in time]
                     month = [d.month for d in time]
                     day = [d.day for d in time]
