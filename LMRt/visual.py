@@ -758,3 +758,141 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[10, 6], signif_fonts
         ax.set_title(title)
 
     return fig, ax
+
+
+def plot_vsl_dashboard(pid, vsl_res, vsl_params,
+                       tas_model, pr_model,
+                       lat_model, lon_model, time_model, elev_model):
+    ''' Plot the dashboard to check VSL results
+
+    Args:
+        pid (str): the proxy ID
+        vsl_res (dict): the detailed result from VSL, including
+            - vsl_res[pid]['trw_org']: the original TRW output without normalization
+            - vsl_res[pid]['gT']: the growth response related to temperature
+            - vsl_res[pid]['gM']: the growth response related to moisture
+            - vsl_res[pid]['gE']: the growth response related to latitude
+            - vsl_res[pid]['M']: the soil moisutre from the leaky bucket model
+        vsl_params (dict): the dict for the parameters for VSL, including
+            - vsl_params['pid_obs']:
+            - vsl_params['lat_obs']:
+            - vsl_params['lon_obs']:
+            - vsl_params['elev_obs']:
+            - vsl_params['values_obs']:
+            - vsl_params['T1']:
+            - vsl_params['T2']:
+            - vsl_params['M1']:
+            - vsl_params['M2']:
+        tas_model (3-D array): surface air temperature in (time, lat, lon) [K]
+        pr_model (3-D array): precipitation rate in (time, lat, lon) [kg/m2/s]
+
+    Returns:
+        fig (figure)
+    '''
+    #===========================================================
+    # preprocessing
+    #-----------------------------------------------------------
+    idx = list(vsl_params['pid_obs']).index(pid)
+    lat_obs = vsl_params['lat_obs'][idx]
+    lon_obs = vsl_params['lon_obs'][idx]
+    elev_obs = vsl_params['elev_obs'][idx]
+    T1 = vsl_params['T1'][idx]
+    T2 = vsl_params['T2'][idx]
+    M1 = vsl_params['M1'][idx]
+    M2 = vsl_params['M2'][idx]
+
+    gT = vsl_res[pid]['gT']
+    gM = vsl_res[pid]['gM']
+    gE = vsl_res[pid]['gE']
+    M = vsl_res[pid]['M']
+
+    lat_ind, lon_ind = utils.find_closest_loc(lat_model, lon_model, lat_obs, lon_obs)
+    tas_sub = tas_model[:, lat_ind, lon_ind] - 273.15
+    pr_sub = pr_model[:, lat_ind, lon_ind]*3600*24*30
+    tas_ann, year_ann = utils.annualize_var(tas_sub, time_model)
+    pr_ann, year_ann = utils.annualize_var(pr_sub, time_model)
+    M_ann, year_ann = utils.annualize_var(M, time_model)
+    gT_ann, year_ann = utils.annualize_var(gT, time_model)
+    gM_ann, year_ann = utils.annualize_var(gM, time_model)
+
+    #===========================================================
+    # plot
+    #-----------------------------------------------------------
+    tas_color = sns.xkcd_rgb['pale red']
+    pr_color = sns.xkcd_rgb['denim blue']
+    M_color = 'gray'
+    gM_color = M_color
+    gT_color = sns.xkcd_rgb['pale red']
+    gE_color = sns.xkcd_rgb['amber']
+    trw_color = sns.xkcd_rgb['medium green']
+
+    sns.set(style="ticks", font_scale=1.5)
+    fig = plt.figure(figsize=[20, 12])
+    gs = gridspec.GridSpec(5, 5)
+    gs.update(wspace=1.3, hspace=0.2)
+
+    #===========================================================
+    ax_tas = plt.subplot(gs[0, 0:3])
+    ax_tas.plot(year_ann, tas_ann, '-', color=tas_color)
+    ax_tas.spines['right'].set_visible(False)
+    ax_tas.spines['top'].set_visible(False)
+    ax_tas.spines['bottom'].set_visible(False)
+    ax_tas.tick_params(axis='x', which='both', bottom='off', top='off', labelbottom='off')
+    ax_tas.set_ylabel(r'tas. ($^\circ$C)', color=tas_color)
+    ax_tas.tick_params('y', colors=tas_color)
+    ax_tas.spines['left'].set_color(tas_color)
+    ax_tas.axhline(y=T1, ls='--', color=tas_color)
+    ax_tas.axhline(y=T2, ls='--', color=tas_color)
+    ax_tas.text(year_ann[-1]+60, T1, f'T1={T1:.2f}', color=tas_color, fontsize=15)
+    ax_tas.text(year_ann[-1]+60, T2, f'T2={T2:.2f}', color=tas_color, fontsize=15)
+
+    ax_pr = plt.subplot(gs[1, 0:3], sharex=ax_tas)
+    ax_pr.spines['left'].set_visible(False)
+    ax_pr.spines['top'].set_visible(False)
+    ax_pr.spines['bottom'].set_visible(False)
+    ax_pr.tick_params(axis='x', which='both', bottom='off', top='off', labelbottom='off')
+    ax_pr.plot(year_ann, pr_ann, '-', color=pr_color)
+    ax_pr.set_ylabel('acc. pr. (mm)', color=pr_color)
+    ax_pr.tick_params('y', colors=pr_color)
+    ax_pr.spines['right'].set_color(pr_color)
+    ax_pr.yaxis.tick_right()
+    ax_pr.yaxis.set_label_position('right')
+
+    ax_soil = plt.subplot(gs[2, 0:3], sharex=ax_tas)
+    ax_soil.plot(year_ann, M_ann, '-', color=M_color)
+    ax_soil.tick_params('y', colors=M_color)
+    ax_soil.spines['right'].set_color(M_color)
+    ax_soil.spines['right'].set_visible(False)
+    ax_soil.spines['top'].set_visible(False)
+    ax_soil.spines['bottom'].set_visible(False)
+    ax_soil.tick_params(axis='x', which='both', bottom='off', top='off', labelbottom='off')
+    ax_soil.set_ylabel('soil moisture (v/v)', color=M_color)
+    ax_soil.axhline(y=M1, ls='--', color=M_color)
+    ax_soil.axhline(y=M2, ls='--', color=M_color)
+    ax_soil.text(year_ann[-1]+60, M1, f'M1={M1:.2f}', color=M_color, fontsize=15)
+    ax_soil.text(year_ann[-1]+60, M2, f'M2={M2:.2f}', color=M_color, fontsize=15)
+
+    ax_map = plt.subplot(gs[0:2, 3:], projection=ccrs.Robinson())
+    ax_map.set_title(f'{pid}\nTarget: (lat: {lat_obs:.2f}, lon: {lon_obs:.2f}, elev: {elev_obs:.2f})\nFound: (lat: {lat_model[lat_ind]:.2f}, lon: {lon_model[lon_ind]:.2f}, elev: {elev_model[lat_ind, lon_ind]:.2f})')
+    ax_map.set_global()
+    ax_map.add_feature(cfeature.LAND, facecolor='gray', alpha=0.3)
+    ax_map.gridlines(edgecolor='gray', linestyle=':')
+    p = PAGES2k()
+    ax_map.scatter(
+        lon_obs, lat_obs, marker=p.markers_dict['Tree Rings_WidthPages2'],
+        c=p.colors_dict['Tree Rings_WidthPages2'], edgecolor='k', s=50, transform=ccrs.Geodetic()
+    )
+
+    ax_growth = plt.subplot(gs[3, 0:3])
+    ax_growth.plot(year_ann, gT_ann, '-', color=gT_color, label='gT')
+    ax_growth.plot(year_ann, gM_ann, '-', color=gM_color, label='gM')
+    ax_growth.spines['right'].set_visible(False)
+    ax_growth.spines['top'].set_visible(False)
+    ax_growth.spines['bottom'].set_visible(False)
+    ax_growth.tick_params(axis='x', which='both', bottom='off', top='off', labelbottom='off')
+    ax_growth.set_ylabel('growth')
+    ax_growth.legend(fontsize=15, bbox_to_anchor=(1, 1.2), loc='upper right', ncol=3, frameon=False)
+
+    #===========================================================
+
+    return fig

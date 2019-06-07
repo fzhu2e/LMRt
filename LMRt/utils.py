@@ -615,25 +615,35 @@ def calc_ye(proxy_manager, ptypes, psm_name,
 def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
                       tas_varname='tmp', pr_varname='pre',
                       matlab_path=None, func_path=None, restart_matlab_period=100,
-                      lat_lon_idx_path=None, seed=0, verbose=False):
+                      lat_lon_idx_path=None, save_lat_lon_idx_path=None,
+                      seed=0, syear=1901, eyear=2001, verbose=False):
     from pymatbridge import Matlab
 
     pid_obs = []
     lat_obs = []
     lon_obs = []
+    elev_obs = []
     values_obs = []
     for idx, pobj in enumerate(proxy_manager.all_proxies):
-        if pobj.psm_obj.psm_key == 'prysm.vslite':
+        if pobj.type == 'Tree Rings_WidthPages2':
+            pid_obs.append(pobj.id)
             lat_obs.append(pobj.lat)
             lon_obs.append(pobj.lon)
+            elev_obs.append(pobj.elev)
             values_obs.append(pobj.values)
-            pid_obs.append(pobj.id)
 
     lat_grid, lon_grid, time_grid, tas = get_nc_vars(tas_filepath, ['lat', 'lon', 'year_float', tas_varname])
     pr = get_nc_vars(pr_filepath, [pr_varname])
 
+    lon_grid = np.mod(lon_grid, 360)  # convert to range (0, 360)
+
     if lat_lon_idx_path is None:
-        lat_ind, lon_ind = find_closest_loc(lat_grid, lon_grid, lat_obs, lon_obs, mode='latlon')
+        lat_ind, lon_ind = find_closest_loc(lat_grid, lon_grid, lat_obs, lon_obs, mode='latlon', verbose=verbose)
+        if save_lat_lon_idx_path:
+            with open(save_lat_lon_idx_path, 'wb') as f:
+                pickle.dump([lat_ind, lon_ind], f)
+            if verbose:
+                print(f'Saving the found lat_ind, lon_ind to: {save_lat_lon_idx_path} ...')
     else:
         with open(lat_lon_idx_path, 'rb') as f:
             lat_ind, lon_ind = pickle.load(f)
@@ -662,7 +672,7 @@ def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
             print(f'#{i+1} - Target: ({lat_obs[i]}, {lon_obs[i]}); Found: ({lat_grid[lat_ind[i]]:.2f}, {lon_grid[lon_ind[i]]:.2f});', end=' ')
         trw_year = np.asarray(trw_data.index)
         trw_value = np.asarray(trw_data.values)
-        trw_year, trw_value = pick_range(trw_year, trw_value, 1901, 2001)
+        trw_year, trw_value = pick_range(trw_year, trw_value, syear, eyear)
         grid_year, grid_tas = pick_years(trw_year, time_grid, T[:, i])
         grid_year, grid_pr = pick_years(trw_year, time_grid, P[:, i])
         nyr = int(len(grid_year)/12)
@@ -706,6 +716,7 @@ def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
         'pid_obs': pid_obs,
         'lat_obs': lat_obs,
         'lon_obs': lon_obs,
+        'elev_obs': elev_obs,
         'values_obs': values_obs,
         'T1': T1,
         'T2': T2,
