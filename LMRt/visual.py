@@ -4,7 +4,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 from matplotlib.colors import BoundaryNorm, Normalize
-from matplotlib.ticker import MaxNLocator
+from matplotlib.ticker import MaxNLocator, ScalarFormatter, FormatStrFormatter
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from matplotlib import cm
@@ -792,10 +792,16 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
     #===========================================================
     # preprocessing
     #-----------------------------------------------------------
+    import p2k
+
     idx = list(vsl_params['pid_obs']).index(pid)
     lat_obs = vsl_params['lat_obs'][idx]
     lon_obs = vsl_params['lon_obs'][idx]
     elev_obs = vsl_params['elev_obs'][idx]
+    trw_data = vsl_params['values_obs'][idx]
+    trw_value = np.array(trw_data.values)
+    trw_time = np.array(trw_data.index)
+
     T1 = vsl_params['T1'][idx]
     T2 = vsl_params['T2'][idx]
     M1 = vsl_params['M1'][idx]
@@ -809,11 +815,42 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
     lat_ind, lon_ind = utils.find_closest_loc(lat_model, lon_model, lat_obs, lon_obs)
     tas_sub = tas_model[:, lat_ind, lon_ind] - 273.15
     pr_sub = pr_model[:, lat_ind, lon_ind]*3600*24*30
+
+    #  gM_fix = np.copy(gM)
+    #  for i, m in enumerate(M):
+        #  if m > M2:
+            #  gM_fix[i] = 1
+        #  elif m < M1:
+            #  gM_fix[i] = 0
+        #  else:
+            #  gM_fix[i] = (m - M1)/(M2 - M1)
+
+    #  gT_fix = np.copy(gT)
+    #  for i, t in enumerate(tas_sub):
+        #  if t > T2:
+            #  gT_fix[i] = 1
+        #  elif t < T1:
+            #  gT_fix[i] = 0
+        #  else:
+            #  gT_fix[i] = (t - T1)/(T2 - T1)
+
     tas_ann, year_ann = utils.annualize_var(tas_sub, time_model)
     pr_ann, year_ann = utils.annualize_var(pr_sub, time_model)
     M_ann, year_ann = utils.annualize_var(M, time_model)
     gT_ann, year_ann = utils.annualize_var(gT, time_model)
     gM_ann, year_ann = utils.annualize_var(gM, time_model)
+
+    #  gM_fix_ann, year_ann = utils.annualize_var(gM_fix, time_model)
+    #  gT_fix_ann, year_ann = utils.annualize_var(gT_fix, time_model)
+
+    # pseudo value with bias correction and vairance match
+    trw_pseudo = vsl_res[pid]['trw_org']
+    t1, y1, t2, y2 = utils.overlap_ts(year_ann, trw_pseudo, trw_time, trw_value)
+    real_mean = np.nanmean(y2)
+    real_std = np.nanstd(y2)
+    trw_pseudo = trw_pseudo/np.nanstd(trw_pseudo)*real_std
+    trw_pseudo = trw_pseudo - np.nanmean(trw_pseudo) + real_mean
+
 
     #===========================================================
     # plot
@@ -829,10 +866,10 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
     sns.set(style="ticks", font_scale=1.5)
     fig = plt.figure(figsize=[20, 12])
     gs = gridspec.GridSpec(5, 5)
-    gs.update(wspace=1.3, hspace=0.2)
+    gs.update(wspace=3, hspace=0.2)
 
-    #===========================================================
     ax_tas = plt.subplot(gs[0, 0:3])
+    ax_tas.plot(time_model, tas_sub, '-', color=tas_color, alpha=0.1)
     ax_tas.plot(year_ann, tas_ann, '-', color=tas_color)
     ax_tas.spines['right'].set_visible(False)
     ax_tas.spines['top'].set_visible(False)
@@ -843,22 +880,23 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
     ax_tas.spines['left'].set_color(tas_color)
     ax_tas.axhline(y=T1, ls='--', color=tas_color)
     ax_tas.axhline(y=T2, ls='--', color=tas_color)
-    ax_tas.text(year_ann[-1]+60, T1, f'T1={T1:.2f}', color=tas_color, fontsize=15)
-    ax_tas.text(year_ann[-1]+60, T2, f'T2={T2:.2f}', color=tas_color, fontsize=15)
+    ax_tas.text(year_ann[-1]+10, T1, f'T1={T1:.2f}', color=tas_color, fontsize=15)
+    ax_tas.text(year_ann[-1]+10, T2, f'T2={T2:.2f}', color=tas_color, fontsize=15)
+    ax_tas.set_xlim(850, 2005)
 
     ax_pr = plt.subplot(gs[1, 0:3], sharex=ax_tas)
-    ax_pr.spines['left'].set_visible(False)
+    ax_pr.spines['right'].set_visible(False)
     ax_pr.spines['top'].set_visible(False)
     ax_pr.spines['bottom'].set_visible(False)
     ax_pr.tick_params(axis='x', which='both', bottom='off', top='off', labelbottom='off')
+    ax_pr.plot(time_model, pr_sub, '-', color=pr_color, alpha=0.1)
     ax_pr.plot(year_ann, pr_ann, '-', color=pr_color)
     ax_pr.set_ylabel('acc. pr. (mm)', color=pr_color)
     ax_pr.tick_params('y', colors=pr_color)
     ax_pr.spines['right'].set_color(pr_color)
-    ax_pr.yaxis.tick_right()
-    ax_pr.yaxis.set_label_position('right')
 
     ax_soil = plt.subplot(gs[2, 0:3], sharex=ax_tas)
+    ax_soil.plot(time_model, M, '-', color=M_color, alpha=0.1)
     ax_soil.plot(year_ann, M_ann, '-', color=M_color)
     ax_soil.tick_params('y', colors=M_color)
     ax_soil.spines['right'].set_color(M_color)
@@ -869,8 +907,8 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
     ax_soil.set_ylabel('soil moisture (v/v)', color=M_color)
     ax_soil.axhline(y=M1, ls='--', color=M_color)
     ax_soil.axhline(y=M2, ls='--', color=M_color)
-    ax_soil.text(year_ann[-1]+60, M1, f'M1={M1:.2f}', color=M_color, fontsize=15)
-    ax_soil.text(year_ann[-1]+60, M2, f'M2={M2:.2f}', color=M_color, fontsize=15)
+    ax_soil.text(year_ann[-1]+10, M1, f'M1={M1:.2f}', color=M_color, fontsize=15)
+    ax_soil.text(year_ann[-1]+10, M2, f'M2={M2:.2f}', color=M_color, fontsize=15)
 
     ax_map = plt.subplot(gs[0:2, 3:], projection=ccrs.Robinson())
     ax_map.set_title(f'{pid}\nTarget: (lat: {lat_obs:.2f}, lon: {lon_obs:.2f}, elev: {elev_obs:.2f})\nFound: (lat: {lat_model[lat_ind]:.2f}, lon: {lon_model[lon_ind]:.2f}, elev: {elev_model[lat_ind, lon_ind]:.2f})')
@@ -883,15 +921,55 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
         c=p.colors_dict['Tree Rings_WidthPages2'], edgecolor='k', s=50, transform=ccrs.Geodetic()
     )
 
-    ax_growth = plt.subplot(gs[3, 0:3])
+    ax_growth = plt.subplot(gs[3, 0:3], sharex=ax_tas)
+    ax_growth.plot(time_model, gT, '-', color=gT_color, alpha=0.1)
     ax_growth.plot(year_ann, gT_ann, '-', color=gT_color, label='gT')
-    ax_growth.plot(year_ann, gM_ann, '-', color=gM_color, label='gM')
+    ax_growth.plot(time_model, gM, '-', color=gM_color, alpha=0.1)
+    ax_growth.plot(year_ann, gM_ann, '-', color=gM_color, label=f'gM')
+
+    #  ax_growth.plot(year_ann, gT_fix_ann, '--', color=gT_color, label=f'gT_fix (mean={np.mean(gT_fix):.2f})')
+    #  ax_growth.plot(year_ann, gM_fix_ann, '--', color=gM_color, label=f'gM_fix (mean={np.mean(gM_fix):.2f})')
+
     ax_growth.spines['right'].set_visible(False)
     ax_growth.spines['top'].set_visible(False)
     ax_growth.spines['bottom'].set_visible(False)
     ax_growth.tick_params(axis='x', which='both', bottom='off', top='off', labelbottom='off')
     ax_growth.set_ylabel('growth')
-    ax_growth.legend(fontsize=15, bbox_to_anchor=(1, 1.2), loc='upper right', ncol=3, frameon=False)
+    ax_growth.set_ylim(0, 1)
+    ax_growth.legend(fontsize=15, bbox_to_anchor=(1.15, 1), loc='upper right', ncol=1, frameon=False)
+
+    ax_trw = plt.subplot(gs[4, 0:3], sharex=ax_tas)
+    ax_trw.plot(year_ann, trw_pseudo, '-', color=trw_color, label='pseudoproxy')
+    ax_trw.plot(trw_time, trw_value, 'o', color='gray', ms=2, label='proxy')
+    ax_trw.spines['right'].set_visible(False)
+    ax_trw.spines['top'].set_visible(False)
+    ax_trw.set_ylabel('TRW')
+    ax_trw.set_xlabel('Year (AD)')
+    ax_trw.legend(fontsize=15, bbox_to_anchor=(1.25, 1), loc='upper right', ncol=1, frameon=False)
+    ax_trw.set_xlim([850, 2005])
+
+    period_ticks=[2, 5, 10, 20, 50, 100, 200, 500, 1000]
+
+    ax_spec = plt.subplot(gs[2:, 3:])
+    dcon = 0.01
+    ntau = 51
+    psd_pseudo, freqs_pseudo = p2k.calc_plot_psd(y1, t1, plot_fig=False, anti_alias=False, dcon=dcon, ntau=ntau)
+    psd_proxy, freqs_proxy = p2k.calc_plot_psd(y2, t2, plot_fig=False, anti_alias=False, dcon=dcon, ntau=ntau)
+
+    lw = 3
+    ax_spec.loglog(1/freqs_pseudo, psd_pseudo, lw=lw, color=trw_color, label='pseudoproxy')
+    ax_spec.loglog(1/freqs_proxy, psd_proxy, lw=lw, color='gray', label='proxy')
+    ax_spec.set_xticks(period_ticks)
+    ax_spec.get_xaxis().set_major_formatter(ScalarFormatter())
+    ax_spec.xaxis.set_major_formatter(FormatStrFormatter('%g'))
+    ax_spec.invert_xaxis()
+    ax_spec.set_ylabel('Spectral Density')
+    ax_spec.set_xlabel('Period (years)')
+    ax_spec.spines['right'].set_visible(False)
+    ax_spec.spines['top'].set_visible(False)
+    # ax_spec.set_ylim([1e-1, 1e1])
+    ax_spec.set_xlim([200, 2])
+    ax_spec.legend(fontsize=15, loc='upper right', ncol=1, frameon=False)
 
     #===========================================================
 
