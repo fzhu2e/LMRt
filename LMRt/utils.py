@@ -578,16 +578,16 @@ def calc_ye(proxy_manager, ptypes, psm_name,
                 verbose=verbose, **psm_params,
             )
 
-            ct_list = [list(ye_tmp).count(i) for i in list(ye_tmp)]
-            if np.max(ct_list) > repeat_frac_threshold*np.size(ct_list):
-                # VS-Lite could yield constants
-                print(f'Too many same values; skipping {pobj.id} ...')
-                continue
+            #  ct_list = [list(ye_tmp).count(i) for i in list(ye_tmp)]
+            #  if np.max(ct_list) > repeat_frac_threshold*np.size(ct_list):
+            #      # VS-Lite could yield constants
+            #      print(f'Too many same values; skipping {pobj.id} ...')
+            #      continue
 
-            if np.std(ye_tmp) < std_threshold:
-                # VS-Lite could yield constants
-                print(f'Variability too small; skipping {pobj.id} ...')
-                continue
+            #  if np.std(ye_tmp) < std_threshold:
+            #      # VS-Lite could yield constants
+            #      print(f'Variability too small; skipping {pobj.id} ...')
+            #      continue
 
             if np.all(np.isnan(ye_tmp)):
                 print(f'Fail to forward; skipping {pobj.id} ...')
