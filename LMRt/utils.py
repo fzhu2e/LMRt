@@ -564,6 +564,7 @@ def calc_ye(proxy_manager, ptypes, psm_name,
                 psm_params['T2'] = T2[ind]
                 psm_params['M1'] = M1[ind]
                 psm_params['M2'] = M2[ind]
+                psm_params['pid'] = pobj.id
 
             if 'coral_species_info' in psm_params:
                 # load parameters for coral d18O
