@@ -762,7 +762,8 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[10, 6], signif_fonts
 
 def plot_vsl_dashboard(pid, vsl_res, vsl_params,
                        tas_model, pr_model,
-                       lat_model, lon_model, time_model, elev_model):
+                       lat_model, lon_model, time_model, elev_model,
+                       tas_corrected=None, pr_corrected=None):
     ''' Plot the dashboard to check VSL results
 
     Args:
@@ -813,8 +814,12 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
     M = vsl_res[pid]['M']
 
     lat_ind, lon_ind = utils.find_closest_loc(lat_model, lon_model, lat_obs, lon_obs)
-    tas_sub = tas_model[:, lat_ind, lon_ind] - 273.15
-    pr_sub = pr_model[:, lat_ind, lon_ind]*3600*24*30
+    if tas_corrected is not None:
+        tas_sub = tas_corrected[pid] - 273.15
+        pr_sub = pr_corrected[pid]*3600*24*30
+    else:
+        tas_sub = tas_model[:, lat_ind, lon_ind] - 273.15
+        pr_sub = pr_model[:, lat_ind, lon_ind]*3600*24*30
 
     #  gM_fix = np.copy(gM)
     #  for i, m in enumerate(M):

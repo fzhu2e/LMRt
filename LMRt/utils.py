@@ -2518,6 +2518,62 @@ def calc_seasonal_avg(
 
     return var_ann_dict, year_ann
 
+# ===============================================
+#  Multivariate bias correction
+# -----------------------------------------------
+def mbc(tas, pr, time,
+         ref_tas, ref_pr, ref_time,
+         seed=0, Rlib_path='/Library/Frameworks/R.framework/Versions/3.6/Resources/library'):
+    ''' Perform multivariate bias correction
+
+    Args:
+        tas (1-D array): the temperature timeseries at the proxy location
+        pr (1-D array): the precipitation timeseries at the proxy location
+    '''
+
+    from rpy2.robjects.packages import importr
+    import rpy2.robjects.numpy2ri
+    import rpy2.robjects as ro
+    rpy2.robjects.numpy2ri.activate()
+
+    random.seed(seed)
+
+    if np.nanmean(ref_tas) < 200:
+        ref_tas += 273.15  # convert to [K]
+    if np.nanmean(ref_pr) > 1:
+        ref_pr = ref_pr / (3000*24*30)  # convert to precipitation rate in [kg/m2/s]
+
+    # make the resolution of the time axis be month
+    ref_date = year_float2datetime(ref_time, resolution='month')
+    ref_time_fix = datetime2year_float(ref_date)
+
+    model_date = year_float2datetime(time, resolution='month')
+    model_time_fix = datetime2year_float(model_date)
+
+    # get the overlapped timespan for calibration
+    overlap_yrs = np.intersect1d(ref_time_fix, model_time_fix)
+    ind_ref = np.searchsorted(ref_time, overlap_yrs)
+    ind_model = np.searchsorted(time, overlap_yrs)
+
+    ref_tas_c = ref_tas[ind_ref]
+    ref_pr_c = ref_pr[ind_ref]
+    ref_vars_c = np.array([ref_pr_c, ref_tas_c]).T
+
+    model_tas_c = tas[ind_model]
+    model_pr_c = pr[ind_model]
+    model_vars_c = np.array([model_pr_c, model_tas_c]).T
+    model_vars = np.array([pr, tas]).T
+    # run the multivariate bias correction function
+    ro.r('.libPaths("{}")'.format(Rlib_path))
+    MBCn_R = importr('MBC').MBCn
+
+    res = MBCn_R(o_c=ref_vars_c, m_c=model_vars_c, m_p=model_vars)
+    res_array = np.array(res[1])
+
+    pr_corrected = res_array[:, 0]
+    tas_corrected = res_array[:, 1]
+
+    return tas_corrected, pr_corrected
 
 # ===============================================
 #  Noise
