@@ -763,7 +763,8 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[10, 6], signif_fonts
 def plot_vsl_dashboard(pid, vsl_res, vsl_params,
                        tas_model, pr_model,
                        lat_model, lon_model, time_model, elev_model,
-                       tas_corrected=None, pr_corrected=None):
+                       tas_corrected=None, pr_corrected=None,
+                       fix_T=False, T1_quantile=0.7, T2_quantile=0.7):
     ''' Plot the dashboard to check VSL results
 
     Args:
@@ -821,32 +822,24 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
         tas_sub = tas_model[:, lat_ind, lon_ind] - 273.15
         pr_sub = pr_model[:, lat_ind, lon_ind]*3600*24*30
 
-    #  gM_fix = np.copy(gM)
-    #  for i, m in enumerate(M):
-        #  if m > M2:
-            #  gM_fix[i] = 1
-        #  elif m < M1:
-            #  gM_fix[i] = 0
-        #  else:
-            #  gM_fix[i] = (m - M1)/(M2 - M1)
+    if fix_T:
+        tas_qs = mquantiles(tas_sub, T1_quantile)[0]
+        if T1 > tas_qs:
+            diff = T1 - tas_qs
+            T1 -= diff
+            T2 -= diff
 
-    #  gT_fix = np.copy(gT)
-    #  for i, t in enumerate(tas_sub):
-        #  if t > T2:
-            #  gT_fix[i] = 1
-        #  elif t < T1:
-            #  gT_fix[i] = 0
-        #  else:
-            #  gT_fix[i] = (t - T1)/(T2 - T1)
+        tas_qs = mquantiles(tas_sub, T2_quantile)[0]
+        if T2 < tas_qs:
+            diff = tas_qs - T2
+            T1 += diff
+            T2 += diff
 
     tas_ann, year_ann = utils.annualize_var(tas_sub, time_model)
     pr_ann, year_ann = utils.annualize_var(pr_sub, time_model)
     M_ann, year_ann = utils.annualize_var(M, time_model)
     gT_ann, year_ann = utils.annualize_var(gT, time_model)
     gM_ann, year_ann = utils.annualize_var(gM, time_model)
-
-    #  gM_fix_ann, year_ann = utils.annualize_var(gM_fix, time_model)
-    #  gT_fix_ann, year_ann = utils.annualize_var(gT_fix, time_model)
 
     # pseudo value with bias correction and vairance match
     trw_pseudo = vsl_res[pid]['trw_org']
@@ -875,7 +868,7 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
 
     ax_tas = plt.subplot(gs[0, 0:3])
     ax_tas.plot(time_model, tas_sub, '-', color=tas_color, alpha=0.1)
-    ax_tas.plot(year_ann, tas_ann, '-', color=tas_color)
+    ax_tas.plot(year_ann, tas_ann, '-', color=tas_color, label=f'mean={np.nanmean(tas_sub):.2f}, max={np.nanmax(tas_sub):.2f}, min={np.nanmin(tas_sub):.2f}, std={np.nanstd(tas_sub):.2f}')
     ax_tas.spines['right'].set_visible(False)
     ax_tas.spines['top'].set_visible(False)
     ax_tas.spines['bottom'].set_visible(False)
@@ -888,6 +881,7 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
     ax_tas.text(year_ann[-1]+10, T1, f'T1={T1:.2f}', color=tas_color, fontsize=15)
     ax_tas.text(year_ann[-1]+10, T2, f'T2={T2:.2f}', color=tas_color, fontsize=15)
     ax_tas.set_xlim(850, 2005)
+    ax_tas.legend(loc='lower left', frameon=False, bbox_to_anchor=(0, -0.2))
 
     ax_pr = plt.subplot(gs[1, 0:3], sharex=ax_tas)
     ax_pr.spines['right'].set_visible(False)
@@ -902,7 +896,7 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
 
     ax_soil = plt.subplot(gs[2, 0:3], sharex=ax_tas)
     ax_soil.plot(time_model, M, '-', color=M_color, alpha=0.1)
-    ax_soil.plot(year_ann, M_ann, '-', color=M_color)
+    ax_soil.plot(year_ann, M_ann, '-', color=M_color, label=f'mean={np.nanmean(M):.2f}, max={np.nanmax(M):.2f}, min={np.nanmin(M):.2f}, std={np.nanstd(M):.2f}')
     ax_soil.tick_params('y', colors=M_color)
     ax_soil.spines['right'].set_color(M_color)
     ax_soil.spines['right'].set_visible(False)
@@ -914,6 +908,7 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
     ax_soil.axhline(y=M2, ls='--', color=M_color)
     ax_soil.text(year_ann[-1]+10, M1, f'M1={M1:.2f}', color=M_color, fontsize=15)
     ax_soil.text(year_ann[-1]+10, M2, f'M2={M2:.2f}', color=M_color, fontsize=15)
+    ax_soil.legend(loc='upper left', frameon=False, bbox_to_anchor=(0, 1.2))
 
     ax_map = plt.subplot(gs[0:2, 3:], projection=ccrs.Robinson())
     ax_map.set_title(f'{pid}\nTarget: (lat: {lat_obs:.2f}, lon: {lon_obs:.2f}, elev: {elev_obs:.2f})\nFound: (lat: {lat_model[lat_ind]:.2f}, lon: {lon_model[lon_ind]:.2f}, elev: {elev_model[lat_ind, lon_ind]:.2f})')
@@ -931,9 +926,6 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
     ax_growth.plot(year_ann, gT_ann, '-', color=gT_color, label='gT')
     ax_growth.plot(time_model, gM, '-', color=gM_color, alpha=0.1)
     ax_growth.plot(year_ann, gM_ann, '-', color=gM_color, label=f'gM')
-
-    #  ax_growth.plot(year_ann, gT_fix_ann, '--', color=gT_color, label=f'gT_fix (mean={np.mean(gT_fix):.2f})')
-    #  ax_growth.plot(year_ann, gM_fix_ann, '--', color=gM_color, label=f'gM_fix (mean={np.mean(gM_fix):.2f})')
 
     ax_growth.spines['right'].set_visible(False)
     ax_growth.spines['top'].set_visible(False)
@@ -958,8 +950,9 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
     ax_spec = plt.subplot(gs[2:, 3:])
     dcon = 0.01
     ntau = 51
-    psd_pseudo, freqs_pseudo = p2k.calc_plot_psd(y1, t1, plot_fig=False, anti_alias=False, dcon=dcon, ntau=ntau)
-    psd_proxy, freqs_proxy = p2k.calc_plot_psd(y2, t2, plot_fig=False, anti_alias=False, dcon=dcon, ntau=ntau)
+
+    psd_pseudo, freqs_pseudo = p2k.calc_plot_psd(trw_pseudo, year_ann, plot_fig=False, anti_alias=False, dcon=dcon, ntau=ntau)
+    psd_proxy, freqs_proxy = p2k.calc_plot_psd(trw_value, trw_time, plot_fig=False, anti_alias=False, dcon=dcon, ntau=ntau)
 
     lw = 3
     ax_spec.loglog(1/freqs_pseudo, psd_pseudo, lw=lw, color=trw_color, label='pseudoproxy')

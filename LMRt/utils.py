@@ -638,6 +638,12 @@ def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
 
     lon_grid = np.mod(lon_grid, 360)  # convert to range (0, 360)
 
+    if np.nanmean(tas) > 100:
+        tas = tas - 273.15
+    if np.nanmean(pr) < 1:
+        pr = pr*3600*24*30
+
+
     if lat_lon_idx_path is None:
         lat_ind, lon_ind = find_closest_loc(lat_grid, lon_grid, lat_obs, lon_obs, mode='latlon', verbose=verbose)
         if save_lat_lon_idx_path:
