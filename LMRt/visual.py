@@ -48,12 +48,10 @@ class PAGES2k(object):
     }
 
 
-def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_col='type',
-                 title=None, title_weight='normal', font_scale=1.5,
+def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_col='type', time_col='time',
+                 title=None, title_weight='normal', font_scale=1.5, rc=PAGES2k(),
                  figsize=[8, 10], projection=ccrs.Robinson(), markersize=50, plot_count=True,
                  lgd_ncol=1, lgd_anchor_upper=(1, -0.1), lgd_anchor_lower=(1, -0.05),lgd_frameon=False):
-
-    p = PAGES2k()
 
     sns.set(style='darkgrid', font_scale=font_scale)
     fig = plt.figure(figsize=figsize)
@@ -87,8 +85,8 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
         lats = list(df[selector][lat_col])
         s_plots.append(
             ax_map.scatter(
-                lons, lats, marker=p.markers_dict[ptype],
-                c=p.colors_dict[ptype], edgecolor='k', s=markersize, transform=ccrs.Geodetic()
+                lons, lats, marker=rc.markers_dict[ptype],
+                c=rc.colors_dict[ptype], edgecolor='k', s=markersize, transform=ccrs.Geodetic()
             )
         )
 
@@ -105,8 +103,8 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
         ax_count = plt.subplot(gs[1])
         proxy_count = {}
         for index, row in df.iterrows():
-            ptype = row['type']
-            time = row['time']
+            ptype = row[type_col]
+            time = row[time_col]
             if ptype not in proxy_count.keys():
                 proxy_count[ptype] = np.zeros(np.size(year))
 
@@ -121,7 +119,7 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
             cumu_count += proxy_count[ptype]
             ax_count.fill_between(
                 year, cumu_last, cumu_count,
-                color=p.colors_dict[ptype],
+                color=rc.colors_dict[ptype],
                 label=f'{ptype}',
                 alpha=0.8,
             )
