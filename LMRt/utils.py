@@ -618,6 +618,7 @@ def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
                       matlab_path=None, func_path=None, restart_matlab_period=100,
                       lat_lon_idx_path=None, save_lat_lon_idx_path=None,
                       nsamp=1000, errormod=0, gparpriors='fourbet',
+                      pt_ests='med',
                       beta_params=np.matrix([
                           [9, 5, 0, 9],
                           [3.5, 3.5, 10, 24],
@@ -625,6 +626,15 @@ def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
                           [1.5, 2.5, 0.1, 0.5],
                       ]),
                       seed=0, syear=1901, eyear=2001, verbose=False):
+    ''' Run the VSL parameter estimatino Matlab precedure
+
+    Args:
+        pt_ests (str): 'med' or 'mle'
+        nsamp (int): the number of MCMC iterations
+        errmod (int): 0: white noise, 1: AR(1) noise
+        gparpriors (str): 'fourbet': beta distribution, 'uniform': uniform distribution
+        beta_params (matrix): the beta distribution parameters for T1, T2, M1, M2
+    '''
     from pymatbridge import Matlab
 
     pid_obs = []
@@ -706,6 +716,7 @@ def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
             grid_tas.reshape(nyr, 12).T, grid_pr.reshape(nyr, 12).T, lat_obs[i], trw_value,
             'seed', seed, 'nsamp', nsamp, 'errormod', errormod,
             'gparpriors', gparpriors, 'fourbetparams', beta_params,
+            'pt_ests', pt_ests,
             nargout=4,
         )
 
