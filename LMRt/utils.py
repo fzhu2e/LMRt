@@ -617,6 +617,13 @@ def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
                       tas_varname='tmp', pr_varname='pre',
                       matlab_path=None, func_path=None, restart_matlab_period=100,
                       lat_lon_idx_path=None, save_lat_lon_idx_path=None,
+                      nsamp=1000, errormod=0, gparpriors='fourbet',
+                      beta_params=np.matrix([
+                          [9, 5, 0, 9],
+                          [3.5, 3.5, 10, 24],
+                          [1.5, 2.8, 0, 0.1],
+                          [1.5, 2.5, 0.1, 0.5],
+                      ]),
                       seed=0, syear=1901, eyear=2001, verbose=False):
     from pymatbridge import Matlab
 
@@ -697,7 +704,8 @@ def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
         res = mlab.run_func(
             func_path,
             grid_tas.reshape(nyr, 12).T, grid_pr.reshape(nyr, 12).T, lat_obs[i], trw_value,
-            'seed', seed,
+            'seed', seed, 'nsamp', nsamp, 'errormod', errormod,
+            'gparpriors', gparpriors, 'fourbetparams', beta_params,
             nargout=4,
         )
 

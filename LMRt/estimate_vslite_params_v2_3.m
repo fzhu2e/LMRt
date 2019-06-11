@@ -145,7 +145,6 @@ function [T1,T2,M1,M2,varargout] = estimate_vslite_params_v2_3(T,P,phi,RW,vararg
 %rng(2333);
 if nargin > 4 % read in advanced options if user-specified:
     % first fill values in with defaults:
-    seed = 0; rng(seed);
     errormod = 0;
     gparscalint = 1:length(RW);
     eparscalint = 1:length(RW);
@@ -189,6 +188,9 @@ if nargin > 4 % read in advanced options if user-specified:
                 substep = valin;
             case 'intwindow'
                 intwindow = valin;
+            case 'seed'
+                seed = valin;
+                rng(seed);
             case 'nsamp'
                 nsamp = valin;
             case 'nbi'
@@ -221,6 +223,7 @@ if nargin > 4 % read in advanced options if user-specified:
                 intM1 = valin(3,3); slpM1 = valin(3,4)-valin(3,3);
                 aM2 = valin(4,1); bM2 = valin(4,2);
                 intM2 = valin(4,3); slpM2 = valin(4,4)-valin(4,3);
+                disp(valin);
             case 'convthresh'
                 convthresh = valin;
             case 'verbose'
