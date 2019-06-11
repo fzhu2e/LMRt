@@ -760,8 +760,10 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[10, 6], signif_fonts
 
 def plot_vsl_dashboard(pid, vsl_res, vsl_params,
                        tas_model, pr_model,
-                       lat_model, lon_model, time_model, elev_model,
-                       tas_corrected=None, pr_corrected=None,
+                       lat_model, lon_model, time_model, elev_model=None,
+                       tas_corrected=None, pr_corrected=None, xlim=[850, 2005],
+                       ls_pseudoproxy='-', ls_proxy='-',
+                       calc_corr=True, text_x_fix=0, corr_loc=[1.01, 0.1],
                        fix_T=False, T1_quantile=0.7, T2_quantile=0.7):
     ''' Plot the dashboard to check VSL results
 
@@ -876,9 +878,10 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
     ax_tas.spines['left'].set_color(tas_color)
     ax_tas.axhline(y=T1, ls='--', color=tas_color)
     ax_tas.axhline(y=T2, ls='--', color=tas_color)
-    ax_tas.text(year_ann[-1]+10, T1, f'T1={T1:.2f}', color=tas_color, fontsize=15)
-    ax_tas.text(year_ann[-1]+10, T2, f'T2={T2:.2f}', color=tas_color, fontsize=15)
-    ax_tas.set_xlim(850, 2005)
+
+    ax_tas.text(year_ann[-1]+text_x_fix, T1, f'T1={T1:.2f}', color=tas_color, fontsize=15)
+    ax_tas.text(year_ann[-1]+text_x_fix, T2, f'T2={T2:.2f}', color=tas_color, fontsize=15)
+    ax_tas.set_xlim(xlim)
     ax_tas.legend(loc='lower left', frameon=False, bbox_to_anchor=(0, -0.2))
 
     ax_pr = plt.subplot(gs[1, 0:3], sharex=ax_tas)
@@ -904,12 +907,16 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
     ax_soil.set_ylabel('soil moisture (v/v)', color=M_color)
     ax_soil.axhline(y=M1, ls='--', color=M_color)
     ax_soil.axhline(y=M2, ls='--', color=M_color)
-    ax_soil.text(year_ann[-1]+10, M1, f'M1={M1:.2f}', color=M_color, fontsize=15)
-    ax_soil.text(year_ann[-1]+10, M2, f'M2={M2:.2f}', color=M_color, fontsize=15)
+    ax_soil.text(year_ann[-1]+text_x_fix, M1, f'M1={M1:.2f}', color=M_color, fontsize=15)
+    ax_soil.text(year_ann[-1]+text_x_fix, M2, f'M2={M2:.2f}', color=M_color, fontsize=15)
     ax_soil.legend(loc='upper left', frameon=False, bbox_to_anchor=(0, 1.2))
 
     ax_map = plt.subplot(gs[0:2, 3:], projection=ccrs.Robinson())
-    ax_map.set_title(f'{pid}\nTarget: (lat: {lat_obs:.2f}, lon: {lon_obs:.2f}, elev: {elev_obs:.2f})\nFound: (lat: {lat_model[lat_ind]:.2f}, lon: {lon_model[lon_ind]:.2f}, elev: {elev_model[lat_ind, lon_ind]:.2f})')
+    if elev_model is not None:
+        ax_map.set_title(f'{pid}\nTarget: (lat: {lat_obs:.2f}, lon: {lon_obs:.2f}, elev: {elev_obs:.2f})\nFound: (lat: {lat_model[lat_ind]:.2f}, lon: {lon_model[lon_ind]:.2f}, elev: {elev_model[lat_ind, lon_ind]:.2f})')
+    else:
+        ax_map.set_title(f'{pid}\nTarget: (lat: {lat_obs:.2f}, lon: {lon_obs:.2f})\nFound: (lat: {lat_model[lat_ind]:.2f}, lon: {lon_model[lon_ind]:.2f})')
+
     ax_map.set_global()
     ax_map.add_feature(cfeature.LAND, facecolor='gray', alpha=0.3)
     ax_map.gridlines(edgecolor='gray', linestyle=':')
@@ -933,15 +940,19 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
     ax_growth.set_ylim(0, 1)
     ax_growth.legend(fontsize=15, bbox_to_anchor=(1.15, 1), loc='upper right', ncol=1, frameon=False)
 
+    if calc_corr:
+        res = utils.compare_ts(year_ann, trw_pseudo, trw_time, trw_value)
+
     ax_trw = plt.subplot(gs[4, 0:3], sharex=ax_tas)
-    ax_trw.plot(year_ann, trw_pseudo, '-', color=trw_color, label='pseudoproxy')
-    ax_trw.plot(trw_time, trw_value, 'o', color='gray', ms=2, label='proxy')
+    ax_trw.plot(year_ann, trw_pseudo, ls_pseudoproxy, color=trw_color, label='pseudoproxy')
+    ax_trw.plot(trw_time, trw_value, ls_proxy, color='gray', ms=2, label='proxy')
     ax_trw.spines['right'].set_visible(False)
     ax_trw.spines['top'].set_visible(False)
     ax_trw.set_ylabel('TRW')
     ax_trw.set_xlabel('Year (AD)')
     ax_trw.legend(fontsize=15, bbox_to_anchor=(1.25, 1), loc='upper right', ncol=1, frameon=False)
-    ax_trw.set_xlim([850, 2005])
+    ax_trw.set_xlim(xlim)
+    ax_trw.text(corr_loc[0], corr_loc[-1], f'corr={res["corr"]:.2f}', transform=ax_trw.transAxes, fontsize=15)
 
     period_ticks=[2, 5, 10, 20, 50, 100, 200, 500, 1000]
 

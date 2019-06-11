@@ -2332,7 +2332,7 @@ def get_anomaly(var, year_float, ref_period=(1951, 1980)):
 
 def get_env_vars(prior_filesdict,
                  rename_vars={'tmp': 'tas', 'pre': 'pr', 'd18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
-                 useLib='xarray', lat_str='lat', lon_str='lon',
+                 useLib='xarray', lat_str='lat', lon_str='lon', std_units=True,
                  calc_anomaly=True, ref_period=(1951, 1980), verbose=False):
 
     prior_vars = {}
@@ -2358,6 +2358,17 @@ def get_env_vars(prior_filesdict,
             if old_name in prior_vars:
                 print(f'Renaming var: {old_name} -> {new_name}')
                 prior_vars[new_name] = prior_vars.pop(old_name)
+
+    if std_units:
+        for prior_varname, prior_var in prior_vars.items():
+            if prior_varname == 'tas' and np.nanmean(prior_var) < 100:
+                prior_vars[prior_varname] += 273.15  # convert from [degC] to [K]
+                print(f'Converting unit: [degC] -> [K]')
+            elif prior_varname == 'pr' and np.nanmean(prior_var) > 1:
+                prior_vars[prior_varname] = prior_var/3600/24/30  # convert from monthly accumulated [mm] to [kg/m2/s]
+                print(f'Converting unit: monthly accumulated [mm] -> [kg/m2/s]')
+            else:
+                continue
 
     return lat_model, lon_model, time_model, prior_vars
 

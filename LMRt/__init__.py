@@ -232,12 +232,12 @@ class ReconJob:
         print(f'\npid={os.getpid()} >>> Saving calibration results to {precalib_savepath}')
 
     def build_ye_files(self, ptypes, psm_name, prior_filesdict, ye_savepath,
-                       rename_vars={'tmp': 'tas', 'd18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
+                       rename_vars={'tmp': 'tas', 'pre': 'pr', 'd18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
                        precalib_filesdict=None, verbose=False, useLib='netCDF4', nproc=1, elev_datapath=None,
                        lat_str='lat', lon_str='lon',
                        std_threashold=1e-2,
                        repeat_frac_threashold=0.5,
-                       match_std=True, match_mean=True,
+                       match_std=True, match_mean=True, std_units=True,
                        calc_anomaly=True, ref_period=(1951, 1980), precalc_avg_pathdict=None, **psm_params):
         ''' Build precalculated Ye files from priors
 
@@ -266,7 +266,7 @@ class ReconJob:
                 lat_model, lon_model, time_model, prior_vars = utils.get_env_vars(
                     prior_filesdict, rename_vars=rename_vars,
                     useLib=useLib, calc_anomaly=calc_anomaly, ref_period=ref_period,
-                    lat_str=lat_str, lon_str=lon_str, verbose=verbose
+                    lat_str=lat_str, lon_str=lon_str, std_units=std_units, verbose=verbose
                 )
 
                 seasons_list = {}
@@ -332,7 +332,7 @@ class ReconJob:
             lat_model, lon_model, time_model, prior_vars = utils.get_env_vars(
                 prior_filesdict, rename_vars=rename_vars,
                 useLib=useLib, calc_anomaly=calc_anomaly, ref_period=ref_period,
-                lat_str=lat_str, lon_str=lon_str, verbose=verbose
+                lat_str=lat_str, lon_str=lon_str, std_units=std_units, verbose=verbose
             )
 
             if elev_datapath:
