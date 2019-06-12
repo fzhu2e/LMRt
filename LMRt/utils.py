@@ -2351,8 +2351,11 @@ def get_anomaly(var, year_float, ref_period=(1951, 1980)):
 
 def get_env_vars(prior_filesdict,
                  rename_vars={'tmp': 'tas', 'pre': 'pr', 'd18O': 'd18Opr', 'tos': 'sst', 'sos': 'sss'},
-                 useLib='xarray', lat_str='lat', lon_str='lon', std_units=True,
-                 calc_anomaly=True, ref_period=(1951, 1980), verbose=False):
+                 useLib='xarray', lat_str='lat', lon_str='lon',
+                 calc_anomaly=False, ref_period=(1951, 1980),
+                 factor_vars={'tas': None, 'pr': None, 'dNone8Opr': None, 'sst': None, 'sss': None},
+                 bias_vars={'tas': None, 'pr': None, 'd18Opr': None, 'sst': None, 'sss': None},
+                 verbose=False):
 
     prior_vars = {}
 
@@ -2378,16 +2381,20 @@ def get_env_vars(prior_filesdict,
                 print(f'Renaming var: {old_name} -> {new_name}')
                 prior_vars[new_name] = prior_vars.pop(old_name)
 
-    if std_units:
-        for prior_varname, prior_var in prior_vars.items():
-            if prior_varname == 'tas' and np.nanmean(prior_var) < 100:
-                prior_vars[prior_varname] += 273.15  # convert from [degC] to [K]
-                print(f'Converting unit: [degC] -> [K]')
-            elif prior_varname == 'pr' and np.nanmean(prior_var) > 1:
-                prior_vars[prior_varname] = prior_var/3600/24/30  # convert from monthly accumulated [mm] to [kg/m2/s]
-                print(f'Converting unit: monthly accumulated [mm] -> [kg/m2/s]')
-            else:
-                continue
+    for prior_varname, prior_var in prior_vars.items():
+        if prior_varname in factor_vars and factor_vars[prior_varname] is not None:
+            factor = factor_vars[prior_varname]
+        else:
+            factor = 1
+
+        if prior_varname in bias_vars and bias_vars[prior_varname] is not None:
+            bias = bias_vars[prior_varname]
+        else:
+            bias = 0
+
+        if factor != 1 or bias != 0:
+            prior_vars[prior_varname] = prior_var * factor + bias
+            print(f'Converting {prior_varname}: {prior_varname} = {prior_varname} * ({factor}) + ({bias})')
 
     return lat_model, lon_model, time_model, prior_vars
 

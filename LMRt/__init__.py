@@ -237,7 +237,7 @@ class ReconJob:
                        lat_str='lat', lon_str='lon',
                        std_threashold=1e-2,
                        repeat_frac_threashold=0.5,
-                       match_std=True, match_mean=True, std_units=True,
+                       match_std=True, match_mean=True, tas_bias=None, pr_factor=None,
                        calc_anomaly=True, ref_period=(1951, 1980), precalc_avg_pathdict=None, **psm_params):
         ''' Build precalculated Ye files from priors
 
@@ -266,7 +266,9 @@ class ReconJob:
                 lat_model, lon_model, time_model, prior_vars = utils.get_env_vars(
                     prior_filesdict, rename_vars=rename_vars,
                     useLib=useLib, calc_anomaly=calc_anomaly, ref_period=ref_period,
-                    lat_str=lat_str, lon_str=lon_str, std_units=std_units, verbose=verbose
+                    lat_str=lat_str, lon_str=lon_str,
+                    tas_bias=tas_bias, pr_factor=pr_factor,
+                    verbose=verbose
                 )
 
                 seasons_list = {}
