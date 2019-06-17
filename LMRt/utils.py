@@ -618,7 +618,7 @@ def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
                       matlab_path=None, func_path=None, restart_matlab_period=100,
                       lat_lon_idx_path=None, save_lat_lon_idx_path=None,
                       nsamp=1000, errormod=0, gparpriors='fourbet',
-                      pt_ests='med',
+                      pt_ests='med', nargout=4,
                       beta_params=np.matrix([
                           [9, 5, 0, 9],
                           [3.5, 3.5, 10, 24],
@@ -690,6 +690,7 @@ def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
     T2 = []
     M1 = []
     M2 = []
+    params_est = []
 
     for i, trw_data in enumerate(tqdm(values_obs)):
         if verbose:
@@ -717,7 +718,7 @@ def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
             'seed', seed, 'nsamp', nsamp, 'errormod', errormod,
             'gparpriors', gparpriors, 'fourbetparams', beta_params,
             'pt_ests', pt_ests,
-            nargout=4,
+            nargout=nargout,
         )
 
         used_time = ttime() - start_time
@@ -737,6 +738,7 @@ def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
         T2.append(T2_tmp)
         M1.append(M1_tmp)
         M2.append(M2_tmp)
+        params_est.append(res['result'])
 
     res_dict = {
         'pid_obs': pid_obs,
@@ -748,6 +750,7 @@ def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
         'T2': T2,
         'M1': M1,
         'M2': M2,
+        'params_est': params_est,
     }
 
     return res_dict
