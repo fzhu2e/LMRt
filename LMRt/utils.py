@@ -618,7 +618,7 @@ def est_vslite_params(proxy_manager, tas, pr, lat_grid, lon_grid, time_grid,
                       restart_matlab_period=100,
                       lat_lon_idx_path=None, save_lat_lon_idx_path=None,
                       nsamp=1000, errormod=0, gparpriors='fourbet',
-                      pt_ests='med', nargout=4,
+                      pt_ests='med', nargout=10,
                       beta_params=np.matrix([
                           [9, 5, 0, 9],
                           [3.5, 3.5, 10, 24],
@@ -702,20 +702,28 @@ def est_vslite_params(proxy_manager, tas, pr, lat_grid, lon_grid, time_grid,
             mlab.stop()
             mlab.start()
 
-        start_time = ttime()
-        res = mlab.run_func(
-            func_path,
-            grid_tas.reshape(nyr, 12).T, grid_pr.reshape(nyr, 12).T, lat_obs[i], trw_value,
-            'seed', seed, 'nsamp', nsamp, 'errormod', errormod,
-            'gparpriors', gparpriors, 'fourbetparams', beta_params,
-            'pt_ests', pt_ests,
-            nargout=nargout,
-        )
+        add_samps = 0
+        converge_flag = 1
+        while (converge_flag == 1):
+            start_time = ttime()
+            res = mlab.run_func(
+                func_path,
+                grid_tas.reshape(nyr, 12).T, grid_pr.reshape(nyr, 12).T, lat_obs[i], trw_value,
+                'seed', seed, 'nsamp', nsamp+add_samps, 'errormod', errormod,
+                'gparpriors', gparpriors, 'fourbetparams', beta_params,
+                'pt_ests', pt_ests,
+                nargout=nargout,
+            )
 
-        used_time = ttime() - start_time
-        if verbose:
-            print(res)
-            print(f'{used_time:.2f} sec')
+            used_time = ttime() - start_time
+            if verbose:
+                print(res)
+                print(f'{used_time:.2f} sec')
+
+            converge_flag = res['result'][9]
+            if converge_flag == 1:
+                add_samps += 1000
+                print(f'Inference not converged. Re-running with nsamp={nsamp+add_samps} ...')
 
         T1_tmp = res['result'][0]
         T2_tmp = res['result'][1]
