@@ -613,9 +613,9 @@ def calc_ye(proxy_manager, ptypes, psm_name,
     return pid_map, ye_out
 
 
-def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
-                      tas_varname='tmp', pr_varname='pre',
-                      matlab_path=None, func_path=None, restart_matlab_period=100,
+def est_vslite_params(proxy_manager, tas, pr, lat_grid, lon_grid, time_grid,
+                      matlab_path=None, func_path=None,
+                      restart_matlab_period=100,
                       lat_lon_idx_path=None, save_lat_lon_idx_path=None,
                       nsamp=1000, errormod=0, gparpriors='fourbet',
                       pt_ests='med', nargout=4,
@@ -650,16 +650,7 @@ def est_vslite_params(proxy_manager, tas_filepath, pr_filepath,
             elev_obs.append(pobj.elev)
             values_obs.append(pobj.values)
 
-    lat_grid, lon_grid, time_grid, tas = get_nc_vars(tas_filepath, ['lat', 'lon', 'year_float', tas_varname])
-    pr = get_nc_vars(pr_filepath, [pr_varname])
-
     lon_grid = np.mod(lon_grid, 360)  # convert to range (0, 360)
-
-    if np.nanmean(tas) > 100:
-        tas = tas - 273.15
-    if np.nanmean(pr) < 1:
-        pr = pr*3600*24*30
-
 
     if lat_lon_idx_path is None:
         lat_ind, lon_ind = find_closest_loc(lat_grid, lon_grid, lat_obs, lon_obs, mode='latlon', verbose=verbose)
