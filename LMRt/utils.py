@@ -725,6 +725,10 @@ def est_vslite_params(proxy_manager, tas, pr, lat_grid, lon_grid, time_grid,
                 add_samps += 1000
                 print(f'Inference not converged. Re-running with nsamp={nsamp+add_samps} ...')
 
+        if add_samps > 1000:
+            mlab.stop()
+            mlab.start()
+
         T1_tmp = res['result'][0]
         T2_tmp = res['result'][1]
         M1_tmp = res['result'][2]
