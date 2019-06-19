@@ -759,7 +759,7 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[10, 6], signif_fonts
     return fig, ax
 
 
-def plot_sea_field_map(field_var, field_signif, lat, lon, signif_method='lower',
+def plot_sea_field_map(field_var, field_signif, lat, lon,
                        levels=50, add_cyclic_point=True,
                        title=None, title_size=20, title_weight='normal', figsize=[10, 8],
                        projection=ccrs.Robinson, transform=ccrs.PlateCarree(),
