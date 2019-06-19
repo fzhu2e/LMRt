@@ -759,6 +759,100 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[10, 6], signif_fonts
     return fig, ax
 
 
+def plot_sea_field_map(field_var, field_signif, lat, lon, signif_method='lower',
+                       levels=50, add_cyclic_point=True,
+                       title=None, title_size=20, title_weight='normal', figsize=[10, 8],
+                       projection=ccrs.Robinson, transform=ccrs.PlateCarree(),
+                       central_longitude=0, latlon_range=None,
+                       land_alpha=1, ocean_alpha=1,
+                       land_color=sns.xkcd_rgb['silver'], ocean_color=sns.xkcd_rgb['silver'],
+                       land_zorder=None, ocean_zorder=None,
+                       clim=None, cmap='RdBu_r', extend='both', mode='mesh', add_gridlines=False,
+                       cbar_labels=None, cbar_pad=0.05, cbar_orientation='vertical', cbar_aspect=10,
+                       cbar_fraction=0.15, cbar_shrink=0.5, cbar_title=None, font_scale=1.5):
+
+    if add_cyclic_point:
+        if mode == 'latlon':
+            field_var_c, lon_c = cutil.add_cyclic_point(field_var, lon)
+            field_signif_c, lon_c = cutil.add_cyclic_point(field_signif, lon)
+            lat_c = lat
+        elif mode == 'mesh':
+            if len(np.shape(lat)) == 1:
+                lon, lat = np.meshgrid(lon, lat, sparse=False, indexing='xy')
+            if central_longitude == 180:
+                lon = np.mod(lon+180, 360) - 180
+
+            nx, ny = np.shape(field_var)
+
+            lon_c = np.ndarray((nx, ny+1))
+            lat_c = np.ndarray((nx, ny+1))
+            field_var_c = np.ndarray((nx, ny+1))
+            field_signif_c = np.ndarray((nx, ny+1))
+
+            lon_c[:, :-1] = lon
+            lon_c[:, -1] = lon[:, 0]
+
+            lat_c[:, :-1] = lat
+            lat_c[:, -1] = lat[:, 0]
+
+            field_var_c[:, :-1] = field_var
+            field_var_c[:, -1] = field_var[:, 0]
+
+            field_signif_c[:, :-1] = field_signif
+            field_signif_c[:, -1] = field_signif[:, 0]
+    else:
+        field_var_c, lat_c, lon_c = field_var, lat, lon
+        field_signif_c, lat_c, lon_c = field_signif, lat, lon
+
+    sns.set(style='ticks', font_scale=font_scale)
+    fig = plt.figure(figsize=figsize)
+
+    projection = projection(central_longitude=central_longitude)
+    ax = plt.subplot(projection=projection)
+
+    if title:
+        plt.title(title, fontsize=title_size, fontweight=title_weight)
+
+    if latlon_range:
+        ax.set_extent(latlon_range, crs=transform)
+    else:
+        ax.set_global()
+
+    ax.add_feature(cfeature.LAND, facecolor=land_color, edgecolor='k', alpha=land_alpha, zorder=land_zorder)
+    ax.add_feature(cfeature.OCEAN, facecolor=ocean_color, edgecolor='k', alpha=ocean_alpha, zorder=ocean_zorder)
+    ax.coastlines()
+
+    if add_gridlines:
+        ax.gridlines(edgecolor='gray', linestyle=':', crs=transform)
+
+    cmap = plt.get_cmap(cmap)
+
+    if mode == 'latlon':
+        im = ax.contourf(lon_c, lat_c, field_var_c, levels, transform=transform, cmap=cmap, extend=extend)
+        ax.contourf(lon_c, lat_c, field_var_c-field_signif_c, [0, 99], transform=transform, hatches=['.'], colors='none')
+
+    elif mode == 'mesh':
+        if type(levels) is int:
+            levels = MaxNLocator(nbins=levels).tick_values(np.nanmax(field_var_c), np.nanmin(field_var_c))
+        norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
+
+        im = ax.pcolormesh(lon_c, lat_c, field_var_c, transform=transform, cmap=cmap, norm=norm)
+
+    if clim:
+        im.set_clim(clim)
+
+    cbar = fig.colorbar(im, ax=ax, orientation=cbar_orientation, pad=cbar_pad, aspect=cbar_aspect, extend=extend,
+                        fraction=cbar_fraction, shrink=cbar_shrink)
+
+    if cbar_labels is not None:
+        cbar.set_ticks(cbar_labels)
+
+    if cbar_title:
+        cbar.ax.set_title(cbar_title)
+
+    return fig
+
+
 def plot_vsl_dashboard(pid, vsl_res, vsl_params,
                        tas_model, pr_model,
                        lat_model, lon_model, time_model, elev_model=None,
