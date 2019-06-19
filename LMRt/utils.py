@@ -3412,4 +3412,123 @@ def sea_dbl(time, value, events, preyr=5, postyr=15, seeds=None, nsample=10,
         print(f'SEA >>> res.keys(): {list(res.keys())}')
 
     return res
+
+
+def sea_field(time, field, events, preyr=5, post_avg_range=[0]):
+    ''' Perform a simple SEA on a 3-D field
+
+    Args:
+        post_avg_range (list): e.g. [0] refers to the event year; [1, 5] refers to the 1-5 yrs after the event
+
+    '''
+    def post_avg_func(field, i, post_avg_range):
+        if len(post_avg_range) == 1:
+            return field[i+post_avg_range[0]]
+        else:
+            return np.average(field[i+post_avg_range[0]:i+post_avg_range[-1]+1], axis=0)
+
+    idx = np.array([list(time).index(t) for t in events])
+    field_anom = []
+    for i in idx:
+        pre_avg = np.average(field[i-preyr:i], axis=0)
+        post_avg = post_avg_func(field, i, post_avg_range)
+        field_anom_tmp = post_avg - pre_avg
+        field_anom.append(field_anom_tmp)
+
+    composite = np.average(np.array(field_anom), axis=0)
+
+    return composite
+
+
+def sea_dbl_field(time, field, events, preyr=5, post_avg_range=[0], seeds=None, nsample=10,
+            qs=[5, 50, 95], qs_signif=[1, 5, 10, 90, 95, 99],
+            nboot_event=1000, verbose=False):
+    ''' A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty
+
+    Args:
+        time (1-D array): time axis
+        field (3-D array): filed with 1st dim be time
+        events (1-D array): event years
+
+    Returns:
+        res (dict): result dictionary
+
+    References:
+        Rao MP, Cook ER, Cook BI, et al (2019) A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty.
+            Dendrochronologia 55:119–124. doi: 10.1016/j.dendro.2019.05.001
+    '''
+    nevents = np.size(events)
+    total_draws = factorial(nevents)/factorial(nsample)/factorial(nevents-nsample)
+
+    # avoid edges
+    if post_avg_range[-1] == 0:
+        time_inner = time[preyr:]
+    else:
+        time_inner = time[preyr:-post_avg_range[-1]]
+
+    events_inner = events[(events>=np.min(time_inner)) & (events<=np.max(time_inner))]
+
+    if verbose:
+        print(f'SEA >>> valid events: {events_inner}')
+        print(f'SEA >>> nevents: {nevents}, nsample: {nsample}, total draws: {total_draws:g}')
+        print(f'SEA >>> nboot_event: {nboot_event}')
+        print(f'SEA >>> preyr: {preyr}, post_avg_range: {post_avg_range}')
+        print(f'SEA >>> qs: {qs}, qs_signif: {qs_signif}')
+
+    # generate unique draws without replacement
+    draws = []
+    draws_signif = []
+
+    for i in range(nboot_event):
+        if seeds is not None:
+            np.random.seed(seeds[i])
+
+        draw_tmp = np.random.choice(events_inner, nsample, replace=False)
+        draws.append(np.sort(draw_tmp))
+
+        draw_tmp = np.random.choice(time_inner, nsample, replace=False)
+        draws_signif.append(np.sort(draw_tmp))
+
+    draws = np.array(draws)
+    draws_signif = np.array(draws_signif)
+
+    # calculate composites
+    composite = []
+    composite_signif = []
+
+    for i in range(nboot_event):
+        sample_yrs = draws[i]
+        sample_yrs_signif = draws_signif[i]
+
+        composite.append(
+            sea_field(time, field, sample_yrs, preyr=preyr, post_avg_range=post_avg_range)
+        )
+        composite_signif.append(
+            sea_field(time, field, sample_yrs_signif, preyr=preyr, post_avg_range=post_avg_range)
+        )
+
+    composite = np.array(composite)
+    composite_qs = np.percentile(composite, qs, axis=0)
+
+    composite_signif = np.array(composite_signif)
+    composite_qs_signif = np.percentile(composite_signif, qs_signif, axis=0)
+
+    # return results
+    res = {
+        'events': events_inner,
+        'draws': draws,
+        'composite': composite,
+        'qs': qs,
+        'composite_qs': composite_qs,
+        'draws_signif': draws_signif,
+        'composite_signif': composite_signif,
+        'qs_signif': qs_signif,
+        'composite_qs_signif': composite_qs_signif,
+    }
+
+    if verbose:
+        print(f'SEA >>> shape(composite): {np.shape(composite)}')
+        print(f'SEA >>> res.keys(): {list(res.keys())}')
+
+    return res
 # ===============================================
