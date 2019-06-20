@@ -759,50 +759,27 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[10, 6], signif_fonts
     return fig, ax
 
 
-def plot_sea_field_map(field_var, field_signif, lat, lon,
+def plot_sea_field_map(field_var, field_signif_lb, field_signif_ub, lat, lon,
                        levels=50, add_cyclic_point=True,
                        title=None, title_size=20, title_weight='normal', figsize=[10, 8],
                        projection=ccrs.Robinson, transform=ccrs.PlateCarree(),
                        central_longitude=0, latlon_range=None,
                        land_alpha=1, ocean_alpha=1,
                        land_color=sns.xkcd_rgb['silver'], ocean_color=sns.xkcd_rgb['silver'],
-                       land_zorder=None, ocean_zorder=None,
-                       clim=None, cmap='RdBu_r', extend='both', mode='mesh', add_gridlines=False,
+                       land_zorder=None, ocean_zorder=None, hatch_lb='..', hatch_ub='///',
+                       clim=None, cmap='RdBu_r', extend='both', add_gridlines=False,
                        cbar_labels=None, cbar_pad=0.05, cbar_orientation='vertical', cbar_aspect=10,
                        cbar_fraction=0.15, cbar_shrink=0.5, cbar_title=None, font_scale=1.5):
 
     if add_cyclic_point:
-        if mode == 'latlon':
-            field_var_c, lon_c = cutil.add_cyclic_point(field_var, lon)
-            field_signif_c, lon_c = cutil.add_cyclic_point(field_signif, lon)
-            lat_c = lat
-        elif mode == 'mesh':
-            if len(np.shape(lat)) == 1:
-                lon, lat = np.meshgrid(lon, lat, sparse=False, indexing='xy')
-            if central_longitude == 180:
-                lon = np.mod(lon+180, 360) - 180
-
-            nx, ny = np.shape(field_var)
-
-            lon_c = np.ndarray((nx, ny+1))
-            lat_c = np.ndarray((nx, ny+1))
-            field_var_c = np.ndarray((nx, ny+1))
-            field_signif_c = np.ndarray((nx, ny+1))
-
-            lon_c[:, :-1] = lon
-            lon_c[:, -1] = lon[:, 0]
-
-            lat_c[:, :-1] = lat
-            lat_c[:, -1] = lat[:, 0]
-
-            field_var_c[:, :-1] = field_var
-            field_var_c[:, -1] = field_var[:, 0]
-
-            field_signif_c[:, :-1] = field_signif
-            field_signif_c[:, -1] = field_signif[:, 0]
+        field_var_c, lon_c = cutil.add_cyclic_point(field_var, lon)
+        field_signif_lb_c, lon_c = cutil.add_cyclic_point(field_signif_lb, lon)
+        field_signif_ub_c, lon_c = cutil.add_cyclic_point(field_signif_ub, lon)
+        lat_c = lat
     else:
         field_var_c, lat_c, lon_c = field_var, lat, lon
-        field_signif_c, lat_c, lon_c = field_signif, lat, lon
+        field_signif_lb_c, lat_c, lon_c = field_signif_lb, lat, lon
+        field_signif_ub_c, lat_c, lon_c = field_signif_ub, lat, lon
 
     sns.set(style='ticks', font_scale=font_scale)
     fig = plt.figure(figsize=figsize)
@@ -827,16 +804,17 @@ def plot_sea_field_map(field_var, field_signif, lat, lon,
 
     cmap = plt.get_cmap(cmap)
 
-    if mode == 'latlon':
-        im = ax.contourf(lon_c, lat_c, field_var_c, levels, transform=transform, cmap=cmap, extend=extend)
-        ax.contourf(lon_c, lat_c, field_var_c-field_signif_c, [0, 99], transform=transform, hatches=['.'], colors='none')
+    im = ax.contourf(lon_c, lat_c, field_var_c, levels, transform=transform, cmap=cmap, extend=extend)
 
-    elif mode == 'mesh':
-        if type(levels) is int:
-            levels = MaxNLocator(nbins=levels).tick_values(np.nanmax(field_var_c), np.nanmin(field_var_c))
-        norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
+    field_tmp = np.copy(field_var_c)
+    field_tmp[field_tmp>0] = np.nan
+    diff = field_tmp-field_signif_lb_c
+    ax.contourf(lon_c, lat_c, diff, [0, 9999], transform=transform, hatches=[hatch_lb], colors='none')
 
-        im = ax.pcolormesh(lon_c, lat_c, field_var_c, transform=transform, cmap=cmap, norm=norm)
+    field_tmp = np.copy(field_var_c)
+    field_tmp[field_tmp<0] = np.nan
+    diff = field_tmp-field_signif_ub_c
+    ax.contourf(lon_c, lat_c, diff, [-9999, 0], transform=transform, hatches=[hatch_ub], colors='none')
 
     if clim:
         im.set_clim(clim)
