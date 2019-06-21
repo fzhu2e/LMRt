@@ -838,6 +838,7 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
                        ls_pseudoproxy='-', ls_proxy='-',
                        calc_corr=True, text_x_fix=0, corr_loc=[1.01, 0.1],
                        fix_T=False, T1_quantile=0.7, T2_quantile=0.7,
+                       lat_ind_dict=None, lon_ind_dict=None,
                        beta_params=np.array([
                             [9, 5, 0, 9],
                             [3.5, 3.5, 10, 24],
@@ -898,7 +899,11 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
     gE = vsl_res[pid]['gE']
     M = vsl_res[pid]['M']
 
-    lat_ind, lon_ind = utils.find_closest_loc(lat_model, lon_model, lat_obs, lon_obs)
+    if lat_ind_dict is None:
+        lat_ind, lon_ind = utils.find_closest_loc(lat_model, lon_model, lat_obs, lon_obs)
+    else:
+        lat_ind, lon_ind = lat_ind_dict[pid], lon_ind_dict[pid]
+
     if tas_corrected is not None:
         tas_sub = tas_corrected[pid]
         pr_sub = pr_corrected[pid]
