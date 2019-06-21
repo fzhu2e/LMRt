@@ -1516,7 +1516,10 @@ def find_closest_loc(lat, lon, target_lat, target_lon, mode=None, verbose=False)
         closest = Y[index]
         nlon = np.shape(lon)[-1]
 
-        lat_ind[i] = index // nlon
+        if mode == 'list':
+            lat_ind[i] = index % nlon
+        else:
+            lat_ind[i] = index // nlon
         lon_ind[i] = index % nlon
 
         #  if np.size(target_lat) > 1:
