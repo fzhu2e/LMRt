@@ -1001,7 +1001,7 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
     #-----------------------------------------------------------
     ax_map = plt.subplot(gs[0:2, 3:], projection=ccrs.Robinson())
     if elev_model is not None:
-        ax_map.set_title(f'{pid}\nTarget: (lat: {lat_obs:.2f}, lon: {lon_obs:.2f}, elev: {elev_obs:.2f})\nFound: (lat: {lat_model[lat_ind]:.2f}, lon: {lon_model[lon_ind]:.2f}, elev: {elev_model[lat_ind, lon_ind]:.2f})')
+        ax_map.set_title(f'{pid}\nTarget: (lat: {lat_obs:.2f}, lon: {lon_obs:.2f}, elev: {elev_obs:.2f})\nFound: (lat: {lat_model[lat_ind]:.2f}, lon: {lon_model[lon_ind]:.2f}, elev: {elev_model:.2f})')
     else:
         ax_map.set_title(f'{pid}\nTarget: (lat: {lat_obs:.2f}, lon: {lon_obs:.2f})\nFound: (lat: {lat_model[lat_ind]:.2f}, lon: {lon_model[lon_ind]:.2f})')
 
