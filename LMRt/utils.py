@@ -759,6 +759,137 @@ def est_vslite_params(proxy_manager, tas, pr, lat_grid, lon_grid, time_grid,
     return res_dict
 
 
+def est_vslite_params_from_df(df_TRW, tas_env, pr_env, lat_env, lon_env, time_env, latlon_ind_dict_path=None,
+                              matlab_path=None, func_path=None,
+                              restart_matlab_period=100,
+                              nsamp=1000, errormod=0, gparpriors='fourbet',
+                              pt_ests='med', nargout=10,
+                              beta_params=np.matrix([
+                                  [9, 5, 0, 9],
+                                  [3.5, 3.5, 10, 24],
+                                  [1.5, 2.8, 0, 0.1],
+                                  [1.5, 2.5, 0.1, 0.5],
+                              ]),
+                              seed=0, syear=1901, eyear=2001, verbose=False):
+    ''' Run the VSL parameter estimatino Matlab precedure
+
+    Args:
+        tas_env (3-D array): monthly surface air temperature [degC]
+        pr_env (3-D array): monthly accumulated precipitation [mm]
+        lat_env (1-D array): latitude dim of tas/pr
+        lon_env (1-D array): longitude dim of tas/pr
+        time_env (1-D array): temporal dim of tas/pr
+        pt_ests (str): 'med' or 'mle'
+        nsamp (int): the number of MCMC iterations
+        errmod (int): 0: white noise, 1: AR(1) noise
+        gparpriors (str): 'fourbet': beta distribution, 'uniform': uniform distribution
+        beta_params (matrix): the beta distribution parameters for T1, T2, M1, M2
+    '''
+    from pymatbridge import Matlab
+
+    if matlab_path is None:
+        raise ValueError('ERROR: matlab_path must be set!')
+    if func_path is None:
+        root_path = os.path.dirname(__file__)
+        func_path = os.path.join(root_path, 'estimate_vslite_params_v2_3.m')
+        if verbose:
+            print(func_path)
+
+    if latlon_ind_dict_path is not None:
+        with open(latlon_ind_dict_path, 'rb') as f:
+            ind_dict = pickle.load(f)
+
+    T1 = {}
+    T2 = {}
+    M1 = {}
+    M2 = {}
+    params_est = {}
+
+    # run Matlab
+    mlab = Matlab(matlab_path)
+    mlab.start()
+    i = 0
+
+    lon_env = np.mod(lon_env, 360)
+    for idx, row in df_TRW.iterrows():
+        i += 1
+        p2k_id = row['paleoData_pages2kID']
+        lat_obs = row['geo_meanLat']
+        lon_obs = row['geo_meanLon']
+        lon_obs = np.mod(lon_obs, 360)
+        elev_obs = row['geo_meanElev']
+        trw_obs = row['paleoData_values']
+        time_obs = row['year']
+        time_obs, trw_obs = clean_ts(time_obs, trw_obs)
+        try:
+            lat_ind, lon_ind = ind_dict[(lat_obs, lon_obs)]
+        except:
+            lat_ind, lon_ind = find_closest_loc(lat_env, lon_env, lat_obs, lon_obs)
+        print(f'#{i} {p2k_id} - Target: ({lat_obs}, {lon_obs}); Found: ({lat_env[lat_ind]:.2f}, {lon_env[lon_ind]:.2f});')
+
+        T = tas_env[:, lat_ind, lon_ind]
+        P = pr_env[:, lat_ind, lon_ind]
+
+        trw_year, trw_value = pick_range(time_obs, trw_obs, syear, eyear)
+        env_year, env_tas = pick_years(trw_year, time_env, T)
+        env_year, env_pr = pick_years(trw_year, time_env, P)
+        nyr = int(len(env_year)/12)
+
+        if verbose:
+            print(f'{nyr} available years')
+            print(f'Running estimate_vslite_params_v2_3.m ...', end=' ')
+
+        # restart Matlab kernel
+        if np.mod(i, restart_matlab_period) == 0:
+            mlab.stop()
+            mlab.start()
+
+        add_samps = 0
+        converge_flag = 1
+        while (converge_flag == 1):
+            res = mlab.run_func(
+                func_path,
+                env_tas.reshape(nyr, 12).T, env_pr.reshape(nyr, 12).T, lat_obs, trw_value,
+                'seed', seed, 'nsamp', nsamp+add_samps, 'errormod', errormod,
+                'gparpriors', gparpriors, 'fourbetparams', beta_params,
+                'pt_ests', pt_ests,
+                nargout=nargout,
+            )
+
+            converge_flag = res['result'][9]
+            if converge_flag == 1:
+                add_samps += 1000
+                print(f'Inference not converged. Re-running with nsamp={nsamp+add_samps} ...')
+
+        if add_samps > 1000:
+            mlab.stop()
+            mlab.start()
+
+        T1_tmp = res['result'][0]
+        T2_tmp = res['result'][1]
+        M1_tmp = res['result'][2]
+        M2_tmp = res['result'][3]
+
+        if verbose:
+            print(f'T1={T1_tmp}, T2={T2_tmp}, M1={M1_tmp}, M2={M2_tmp}\n')
+
+        T1[p2k_id] = T1_tmp
+        T2[p2k_id] = T2_tmp
+        M1[p2k_id] = M1_tmp
+        M2[p2k_id] = M2_tmp
+        params_est[p2k_id] = res['result']
+
+    res_dict = {
+        'T1': T1,
+        'T2': T2,
+        'M1': M1,
+        'M2': M2,
+        'params_est': params_est,
+    }
+
+    return res_dict
+
+
 def calibrate_psm(
     proxy_manager, ptypes, psm_name,
     precalc_avg,
