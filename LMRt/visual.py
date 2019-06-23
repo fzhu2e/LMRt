@@ -1130,3 +1130,264 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
         return fig, corr
     else:
         return fig
+
+
+def plot_vsl_dashboard_p2k(p2k_id, vsl_res, vsl_params, meta_dict, xlim=[850, 2005],
+                           ls_pseudoproxy='-', ls_proxy='-',
+                           calc_corr=False, text_x_fix=0, corr_loc=[1.01, 0.1],
+                           beta_params=np.array([
+                               [9, 5, 0, 9],
+                               [3.5, 3.5, 10, 24],
+                               [1.5, 2.8, 0, 0.1],
+                               [1.5, 2.5, 0.1, 0.5],
+                           ]), seed=0):
+    ''' Plot the dashboard to check VSL results
+
+    Args:
+        p2k_id (str): the proxy ID
+        vsl_res (dict): the detailed result from VSL, including
+            - vsl_res[p2k_id]['trw_org']: the original TRW output without normalization
+            - vsl_res[p2k_id]['gT']: the growth response related to temperature
+            - vsl_res[p2k_id]['gM']: the growth response related to moisture
+            - vsl_res[p2k_id]['gE']: the growth response related to latitude
+            - vsl_res[p2k_id]['M']: the soil moisutre from the leaky bucket model
+        vsl_params (dict): the dict for the parameters for VSL, including
+        tas_model (3-D array): surface air temperature in (time, lat, lon) [K]
+        pr_model (3-D array): precipitation rate in (time, lat, lon) [kg/m2/s]
+
+    Returns:
+        fig (figure)
+    '''
+    #===========================================================
+    # preprocessing
+    #-----------------------------------------------------------
+    import p2k
+
+    T1 = vsl_params[p2k_id]['T1']
+    T2 = vsl_params[p2k_id]['T2']
+    M1 = vsl_params[p2k_id]['M1']
+    M2 = vsl_params[p2k_id]['M2']
+
+    T1_dist = vsl_params[p2k_id]['params_est'][4]
+    T2_dist = vsl_params[p2k_id]['params_est'][5]
+    M1_dist = vsl_params[p2k_id]['params_est'][6]
+    M2_dist = vsl_params[p2k_id]['params_est'][7]
+
+    trw_obs = meta_dict[p2k_id]['trw_obs']
+    time_obs = meta_dict[p2k_id]['time_obs']
+    lat_obs = meta_dict[p2k_id]['lat_obs']
+    lon_obs = meta_dict[p2k_id]['lon_obs']
+
+    tas_model = meta_dict[p2k_id]['tas_model'] - 273.15
+    pr_model = meta_dict[p2k_id]['pr_model'] * 3600*24*30
+    time_model = meta_dict[p2k_id]['time_model']
+    lat_model = meta_dict[p2k_id]['lat_model']
+    lon_model = meta_dict[p2k_id]['lon_model']
+
+    gT = vsl_res[p2k_id]['gT']
+    gM = vsl_res[p2k_id]['gM']
+    gE = vsl_res[p2k_id]['gE']
+    M = vsl_res[p2k_id]['M']
+
+    tas_ann, year_ann = utils.annualize_var(tas_model, time_model)
+    pr_ann, year_ann = utils.annualize_var(pr_model, time_model)
+    M_ann, year_ann = utils.annualize_var(M, time_model)
+    gT_ann, year_ann = utils.annualize_var(gT, time_model)
+    gM_ann, year_ann = utils.annualize_var(gM, time_model)
+
+    # pseudo value with bias correction and vairance match
+    trw_pseudo = vsl_res[p2k_id]['trw_org']
+    t1, y1, t2, y2 = utils.overlap_ts(year_ann, trw_pseudo, time_obs, trw_obs)
+    real_mean = np.nanmean(y2)
+    real_std = np.nanstd(y2)
+    trw_pseudo = trw_pseudo/np.nanstd(trw_pseudo)*real_std
+    trw_pseudo = trw_pseudo - np.nanmean(trw_pseudo) + real_mean
+
+    #===========================================================
+    # plot
+    #-----------------------------------------------------------
+    tas_color = sns.xkcd_rgb['pale red']
+    pr_color = sns.xkcd_rgb['denim blue']
+    M_color = 'gray'
+    gM_color = M_color
+    gT_color = sns.xkcd_rgb['pale red']
+    gE_color = sns.xkcd_rgb['amber']
+    trw_color = sns.xkcd_rgb['medium green']
+
+    sns.set(style="ticks", font_scale=1.5)
+    fig = plt.figure(figsize=[20, 12])
+    gs = gridspec.GridSpec(5, 5)
+    gs.update(wspace=3, hspace=0.5)
+
+    ax_tas = plt.subplot(gs[0, 0:3])
+    ax_tas.plot(time_model, tas_model, '-', color=tas_color, alpha=0.1)
+    ax_tas.plot(year_ann, tas_ann, '-', color=tas_color, label=f'mean={np.nanmean(tas_model):.2f}, max={np.nanmax(tas_model):.2f}, min={np.nanmin(tas_model):.2f}, std={np.nanstd(tas_model):.2f}')
+    ax_tas.spines['right'].set_visible(False)
+    ax_tas.spines['top'].set_visible(False)
+    ax_tas.spines['bottom'].set_visible(False)
+    ax_tas.set_ylabel(r'tas. ($^\circ$C)', color=tas_color)
+    ax_tas.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+    ax_tas.tick_params('y', colors=tas_color)
+    ax_tas.spines['left'].set_color(tas_color)
+    ax_tas.axhline(y=T1, ls='--', color=tas_color)
+    ax_tas.axhline(y=T2, ls='--', color=tas_color)
+
+    ax_tas.text(year_ann[-1]+text_x_fix, T1, f'T1={T1:.2f}', color=tas_color, fontsize=15)
+    ax_tas.text(year_ann[-1]+text_x_fix, T2, f'T2={T2:.2f}', color=tas_color, fontsize=15)
+    ax_tas.set_xlim(xlim)
+    ax_tas.legend(loc='lower left', frameon=False, bbox_to_anchor=(0, -0.2))
+
+    #-----------------------------------------------------------
+    ax_pr = plt.subplot(gs[1, 0:3], sharex=ax_tas)
+    ax_pr.spines['right'].set_visible(False)
+    ax_pr.spines['top'].set_visible(False)
+    ax_pr.spines['bottom'].set_visible(False)
+    ax_pr.plot(time_model, pr_model, '-', color=pr_color, alpha=0.1)
+    ax_pr.plot(year_ann, pr_ann, '-', color=pr_color)
+    ax_pr.set_ylabel('acc. pr. (mm)', color=pr_color)
+    ax_pr.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+    ax_pr.tick_params('y', colors=pr_color)
+    ax_pr.spines['left'].set_color(pr_color)
+
+    #-----------------------------------------------------------
+    ax_soil = plt.subplot(gs[2, 0:3], sharex=ax_tas)
+    ax_soil.plot(time_model, M, '-', color=M_color, alpha=0.1)
+    ax_soil.plot(year_ann, M_ann, '-', color=M_color, label=f'mean={np.nanmean(M):.2f}, max={np.nanmax(M):.2f}, min={np.nanmin(M):.2f}, std={np.nanstd(M):.2f}')
+    ax_soil.tick_params('y', colors=M_color)
+    ax_soil.spines['right'].set_color(M_color)
+    ax_soil.spines['right'].set_visible(False)
+    ax_soil.spines['top'].set_visible(False)
+    ax_soil.spines['bottom'].set_visible(False)
+    ax_soil.set_ylabel('soil moisture (v/v)', color=M_color)
+    ax_soil.axhline(y=M1, ls='--', color=M_color)
+    ax_soil.axhline(y=M2, ls='--', color=M_color)
+    ax_soil.text(year_ann[-1]+text_x_fix, M1, f'M1={M1:.2f}', color=M_color, fontsize=15)
+    ax_soil.text(year_ann[-1]+text_x_fix, M2, f'M2={M2:.2f}', color=M_color, fontsize=15)
+    ax_soil.legend(loc='upper left', frameon=False, bbox_to_anchor=(0, 1.2))
+    ax_soil.spines['left'].set_color(M_color)
+    ax_soil.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+
+    #-----------------------------------------------------------
+    ax_map = plt.subplot(gs[0:2, 3:], projection=ccrs.Robinson())
+    ax_map.set_title(f'{p2k_id}\nTarget: (lat: {lat_obs:.2f}, lon: {lon_obs:.2f})\nFound: (lat: {lat_model:.2f}, lon: {lon_model:.2f})')
+
+    ax_map.set_global()
+    ax_map.add_feature(cfeature.LAND, facecolor='gray', alpha=0.3)
+    ax_map.gridlines(edgecolor='gray', linestyle=':')
+    p = PAGES2k()
+    ax_map.scatter(
+        lon_obs, lat_obs, marker=p.markers_dict['Tree Rings_WidthPages2'],
+        c=p.colors_dict['Tree Rings_WidthPages2'], edgecolor='k', s=50, transform=ccrs.Geodetic()
+    )
+
+    #-----------------------------------------------------------
+    ax_growth = plt.subplot(gs[3, 0:3], sharex=ax_tas)
+    ax_growth.plot(time_model, gT, '-', color=gT_color, alpha=0.1)
+    ax_growth.plot(year_ann, gT_ann, '-', color=gT_color, label='gT')
+    ax_growth.plot(time_model, gM, '-', color=gM_color, alpha=0.1)
+    ax_growth.plot(year_ann, gM_ann, '-', color=gM_color, label=f'gM')
+
+    ax_growth.spines['right'].set_visible(False)
+    ax_growth.spines['top'].set_visible(False)
+    ax_growth.spines['bottom'].set_visible(False)
+    ax_growth.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+    ax_growth.set_ylabel('growth')
+    ax_growth.set_ylim(0, 1)
+    ax_growth.legend(fontsize=15, bbox_to_anchor=(1.15, 1), loc='upper right', ncol=1, frameon=False)
+
+    if calc_corr:
+        res = utils.compare_ts(year_ann, trw_pseudo, time_obs, trw_obs)
+        corr = res['corr']
+
+    #-----------------------------------------------------------
+    ax_trw = plt.subplot(gs[4, 0:3], sharex=ax_tas)
+    ax_trw.plot(year_ann, trw_pseudo, ls_pseudoproxy, color=trw_color, label='pseudoproxy')
+    ax_trw.plot(time_obs, trw_obs, ls_proxy, color='gray', ms=2, label='proxy')
+    ax_trw.spines['right'].set_visible(False)
+    ax_trw.spines['top'].set_visible(False)
+    ax_trw.set_ylabel('TRW')
+    ax_trw.set_xlabel('Year (AD)')
+    ax_trw.legend(fontsize=15, bbox_to_anchor=(1.25, 1), loc='upper right', ncol=1, frameon=False)
+    ax_trw.set_xlim(xlim)
+
+    if calc_corr:
+        ax_trw.text(corr_loc[0], corr_loc[-1], f'corr={corr:.2f}', transform=ax_trw.transAxes, fontsize=15)
+
+    period_ticks=[2, 5, 10, 20, 50, 100, 200, 500, 1000]
+
+    #-----------------------------------------------------------
+    T1_a, T1_b, T1_lb, T1_ub = beta_params[0]
+    T2_a, T2_b, T2_lb, T2_ub = beta_params[1]
+    M1_a, M1_b, M1_lb, M1_ub = beta_params[2]
+    M2_a, M2_b, M2_lb, M2_ub = beta_params[3]
+
+    T1_prior = stats.beta.rvs(T1_a, T1_b, loc=T1_lb, scale=T1_ub-T1_lb, size=1001, random_state=seed)
+    T2_prior = stats.beta.rvs(T2_a, T2_b, loc=T2_lb, scale=T2_ub-T2_lb, size=1001, random_state=seed)
+    M1_prior = stats.beta.rvs(M1_a, M1_b, loc=M1_lb, scale=M1_ub-M1_lb, size=1001, random_state=seed)
+    M2_prior = stats.beta.rvs(M2_a, M2_b, loc=M2_lb, scale=M2_ub-M2_lb, size=1001, random_state=seed)
+
+    ax_Tdist = plt.subplot(gs[2, 3:])
+    sns.distplot(T2_prior, hist=False, color=M_color, kde_kws={'ls': '-'}, label=f'T2 (prior: {np.nanmedian(T2_prior):.2f})')
+    sns.distplot(T1_prior, hist=False, color=M_color, kde_kws={'ls': '--'}, label=f'T1 (prior: {np.nanmedian(T1_prior):.2f})')
+    ax_Tdist.axvline(x=np.nanmedian(T1_prior), ls='--', ymax=0.1, color=M_color)
+    ax_Tdist.axvline(x=np.nanmedian(T2_prior), ls='-', ymax=0.1, color=M_color)
+
+    sns.distplot(T2_dist, hist=False, color=tas_color, kde_kws={'ls': '-'}, label=f'T2 (posterior: {np.nanmedian(T2_dist):.2f})')
+    sns.distplot(T1_dist, hist=False, color=tas_color, kde_kws={'ls': '--'}, label=f'T1 (posterior: {np.nanmedian(T1_dist):.2f})')
+    ax_Tdist.axvline(x=np.nanmedian(T1_dist), ls='--', ymax=0.1, color=tas_color)
+    ax_Tdist.axvline(x=np.nanmedian(T2_dist), ls='-', ymax=0.1, color=tas_color)
+
+    ax_Tdist.spines['right'].set_visible(False)
+    ax_Tdist.spines['top'].set_visible(False)
+    ax_Tdist.set_title('Prior/Posterior of parameters')
+    ax_Tdist.set_ylabel('KDE')
+    ax_Tdist.set_xlabel(r'tas. ($^\circ$C)')
+    ax_Tdist.legend(frameon=False, loc='upper right', fontsize=11, ncol=2)
+
+    #-----------------------------------------------------------
+    ax_Mdist = plt.subplot(gs[3, 3:])
+    sns.distplot(M2_prior, hist=False, color=M_color, kde_kws={'ls': '-'}, label=f'M2 (prior: {np.nanmedian(M2_prior):.2f})')
+    sns.distplot(M1_prior, hist=False, color=M_color, kde_kws={'ls': '--'}, label=f'M1 (prior: {np.nanmedian(M1_prior):.2f})')
+    ax_Mdist.axvline(x=np.nanmedian(M1_prior), ls='--', ymax=0.1, color=M_color)
+    ax_Mdist.axvline(x=np.nanmedian(M2_prior), ls='-', ymax=0.1, color=M_color)
+
+    sns.distplot(M2_dist, hist=False, color=pr_color, kde_kws={'ls': '-'}, label=f'M2 (posterior: {np.nanmedian(M2_dist):.2f})')
+    sns.distplot(M1_dist, hist=False, color=pr_color, kde_kws={'ls': '--'}, label=f'M1 (posterior: {np.nanmedian(M1_dist):.2f})')
+    ax_Mdist.axvline(x=np.nanmedian(M1_dist), ls='--', ymax=0.1, color=pr_color)
+    ax_Mdist.axvline(x=np.nanmedian(M2_dist), ls='-', ymax=0.1, color=pr_color)
+
+    ax_Mdist.spines['right'].set_visible(False)
+    ax_Mdist.spines['top'].set_visible(False)
+    ax_Mdist.set_ylabel('KDE')
+    ax_Mdist.set_xlabel('soil moisture (v/v)')
+    ax_Mdist.legend(frameon=False, loc='upper right', fontsize=11, ncol=2)
+
+    #-----------------------------------------------------------
+    ax_spec = plt.subplot(gs[4:, 3:])
+    dcon = 0.01
+    ntau = 51
+
+    psd_pseudo, freqs_pseudo = p2k.calc_plot_psd(trw_pseudo, year_ann, plot_fig=False, anti_alias=False, dcon=dcon, ntau=ntau)
+    psd_proxy, freqs_proxy = p2k.calc_plot_psd(trw_obs, time_obs, plot_fig=False, anti_alias=False, dcon=dcon, ntau=ntau)
+
+    lw = 2
+    ax_spec.loglog(1/freqs_pseudo, psd_pseudo, lw=lw, color=trw_color, label='pseudoproxy')
+    ax_spec.loglog(1/freqs_proxy, psd_proxy, lw=lw, color='gray', label='proxy')
+    ax_spec.set_xticks(period_ticks)
+    ax_spec.get_xaxis().set_major_formatter(ScalarFormatter())
+    ax_spec.xaxis.set_major_formatter(FormatStrFormatter('%g'))
+    ax_spec.invert_xaxis()
+    ax_spec.set_ylabel('PSD')
+    ax_spec.set_xlabel('Period (years)')
+    ax_spec.spines['right'].set_visible(False)
+    ax_spec.spines['top'].set_visible(False)
+    # ax_spec.set_ylim([1e-1, 1e1])
+    ax_spec.set_xlim([200, 2])
+    ax_spec.legend(fontsize=15, loc='upper right', ncol=1, frameon=False)
+
+    #===========================================================
+
+    if calc_corr:
+        return fig, corr
+    else:
+        return fig
