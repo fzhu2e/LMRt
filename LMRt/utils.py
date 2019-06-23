@@ -760,7 +760,7 @@ def est_vslite_params(proxy_manager, tas, pr, lat_grid, lon_grid, time_grid,
 
 
 def est_vslite_params_from_df(df_TRW, tas_env, pr_env, lat_env, lon_env, time_env, latlon_ind_dict_path=None,
-                              matlab_path=None, func_path=None,
+                              matlab_path=None, func_path=None, tas_bias_dict_path=None,
                               restart_matlab_period=100,
                               nsamp=1000, errormod=0, gparpriors='fourbet',
                               pt_ests='med', nargout=10,
@@ -795,9 +795,35 @@ def est_vslite_params_from_df(df_TRW, tas_env, pr_env, lat_env, lon_env, time_en
         if verbose:
             print(func_path)
 
-    if latlon_ind_dict_path is not None:
+    lon_env = np.mod(lon_env, 360)
+
+    if tas_bias_dict_path is not None:
+        with open(tas_bias_dict_path, 'rb') as f:
+            tas_bias_dict = pickle.load(f)
+    else:
+        tas_bias_dict = None
+
+    if os.path.exists(latlon_ind_dict_path):
         with open(latlon_ind_dict_path, 'rb') as f:
             ind_dict = pickle.load(f)
+    else:
+        print('Search nearest locations ...')
+        ind_dict = {}
+        i = 0
+        for idx, row in df_TRW.iterrows():
+            i += 1
+            print(f'#{i}', end=' ')
+            lat_obs = row['geo_meanLat']
+            lon_obs = row['geo_meanLon']
+            lon_obs = np.mod(lon_obs, 360)
+            ind_id = (lat_obs, lon_obs)
+            if ind_id not in ind_dict:
+                lat_ind, lon_ind = find_closest_loc(lat_env, lon_env, lat_obs, lon_obs)
+                ind_dict[ind_id] = (lat_ind, lon_ind)
+                print(f'Target: ({lat_obs}, {lon_obs}); Found: ({lat_env[lat_ind]:.2f}, {lon_env[lon_ind]:.2f});')
+
+        with open(latlon_ind_dict_path, 'wb') as f:
+            pickle.dump(ind_dict, f)
 
     T1 = {}
     T2 = {}
@@ -810,7 +836,6 @@ def est_vslite_params_from_df(df_TRW, tas_env, pr_env, lat_env, lon_env, time_en
     mlab.start()
     i = 0
 
-    lon_env = np.mod(lon_env, 360)
     for idx, row in df_TRW.iterrows():
         i += 1
         p2k_id = row['paleoData_pages2kID']
@@ -821,13 +846,13 @@ def est_vslite_params_from_df(df_TRW, tas_env, pr_env, lat_env, lon_env, time_en
         trw_obs = row['paleoData_values']
         time_obs = row['year']
         time_obs, trw_obs = clean_ts(time_obs, trw_obs)
-        try:
-            lat_ind, lon_ind = ind_dict[(lat_obs, lon_obs)]
-        except:
-            lat_ind, lon_ind = find_closest_loc(lat_env, lon_env, lat_obs, lon_obs)
+        lat_ind, lon_ind = ind_dict[(lat_obs, lon_obs)]
         print(f'#{i} {p2k_id} - Target: ({lat_obs}, {lon_obs}); Found: ({lat_env[lat_ind]:.2f}, {lon_env[lon_ind]:.2f});')
 
         T = tas_env[:, lat_ind, lon_ind]
+        if tas_bias_dict is not None:
+            T += tas_bias_dict[p2k_id]
+
         P = pr_env[:, lat_ind, lon_ind]
 
         trw_year, trw_value = pick_range(time_obs, trw_obs, syear, eyear)
@@ -888,6 +913,190 @@ def est_vslite_params_from_df(df_TRW, tas_env, pr_env, lat_env, lon_env, time_en
     }
 
     return res_dict
+
+
+def est_vslite_params_single_site(
+    p2k_id,
+    tas_env, pr_env, lat_env, lon_env, time_env,
+    trw_obs, lat_obs, lon_obs, time_obs,
+    matlab_path=None, func_path=None, tas_bias_dict_path=None,
+    nsamp=1000, errormod=0, gparpriors='fourbet',
+    pt_ests='med', nargout=10,
+    beta_params=np.matrix([
+        [9, 5, 0, 9],
+        [3.5, 3.5, 10, 24],
+        [1.5, 2.8, 0, 0.1],
+        [1.5, 2.5, 0.1, 0.5],
+    ]),
+    seed=0, syear=1901, eyear=2001, verbose=False):
+    ''' Run the VSL parameter estimatino Matlab precedure
+
+    Args:
+        tas_env (1-D array): monthly surface air temperature [degC]
+        pr_env (1-D array): monthly accumulated precipitation [mm]
+        lat_env (float): latitude dim of tas/pr
+        lon_env (float): longitude dim of tas/pr
+        time_env (1-D array): temporal dim of tas/pr
+        pt_ests (str): 'med' or 'mle'
+        nsamp (int): the number of MCMC iterations
+        errmod (int): 0: white noise, 1: AR(1) noise
+        gparpriors (str): 'fourbet': beta distribution, 'uniform': uniform distribution
+        beta_params (matrix): the beta distribution parameters for T1, T2, M1, M2
+    '''
+    from pymatbridge import Matlab
+
+    if matlab_path is None:
+        raise ValueError('ERROR: matlab_path must be set!')
+    if func_path is None:
+        root_path = os.path.dirname(__file__)
+        func_path = os.path.join(root_path, 'estimate_vslite_params_v2_3.m')
+        if verbose:
+            print(func_path)
+
+    lon_env = np.mod(lon_env, 360)
+
+    if tas_bias_dict_path is not None:
+        with open(tas_bias_dict_path, 'rb') as f:
+            tas_bias_dict = pickle.load(f)
+    else:
+        tas_bias_dict = None
+
+    if tas_bias_dict is not None:
+        tas_env += tas_bias_dict[p2k_id]
+
+    trw_year, trw_value = pick_range(time_obs, trw_obs, syear, eyear)
+    env_year, env_tas = pick_years(trw_year, time_env, tas_env)
+    env_year, env_pr = pick_years(trw_year, time_env, pr_env)
+    nyr = int(len(env_year)/12)
+
+    if verbose:
+        print(f'{nyr} available years')
+        print(f'Running estimate_vslite_params_v2_3.m ...', end=' ')
+
+    # run Matlab
+    mlab = Matlab(matlab_path)
+    mlab.start()
+
+    add_samps = 0
+    converge_flag = 1
+    while (converge_flag == 1):
+        res = mlab.run_func(
+            func_path,
+            env_tas.reshape(nyr, 12).T, env_pr.reshape(nyr, 12).T, lat_obs, trw_value,
+            'seed', seed, 'nsamp', nsamp+add_samps, 'errormod', errormod,
+            'gparpriors', gparpriors, 'fourbetparams', beta_params,
+            'pt_ests', pt_ests,
+            nargout=nargout,
+        )
+
+        converge_flag = res['result'][9]
+        if converge_flag == 1:
+            add_samps += 1000
+            print(f'Inference not converged. Re-running with nsamp={nsamp+add_samps} ...')
+
+    mlab.stop()
+
+    T1 = res['result'][0]
+    T2 = res['result'][1]
+    M1 = res['result'][2]
+    M2 = res['result'][3]
+    params_est = res['result']
+
+    if verbose:
+        print(f'T1={T1}, T2={T2}, M1={M1}, M2={M2}\n')
+
+    res_dict = {
+        'T1': T1,
+        'T2': T2,
+        'M1': M1,
+        'M2': M2,
+        'params_est': params_est,
+    }
+
+    return res_dict
+
+
+def est_vsl_params_bc(site, latlon_ind_dict_path,
+                      tas_ref, pr_ref, lat_ref, lon_ref, time_ref,
+                      p_bar=0.2,
+                      matlab_path=None, func_path=None,
+                      nsamp=1000, errormod=0, gparpriors='fourbet',
+                      pt_ests='med', nargout=10,
+                      beta_params=np.matrix([
+                          [9, 5, 0, 9],
+                          [3.5, 3.5, 10, 24],
+                          [1.5, 2.8, 0, 0.1],
+                          [1.5, 2.5, 0.1, 0.5],
+                      ]), verbose=False):
+
+    p2k_id = site['paleoData_pages2kID']
+    trw_obs = site['paleoData_values']
+    time_obs = site['year']
+    lat_obs = site['geo_meanLat']
+    lon_obs = site['geo_meanLon']
+    lon_obs = np.mod(lon_obs, 360)
+    time_obs, trw_obs = clean_ts(time_obs, trw_obs)
+
+    with open(latlon_ind_dict_path, 'rb') as f:
+        ind_dict = pickle.load(f)
+
+    lat_ind, lon_ind = ind_dict[(lat_obs, lon_obs)]
+    lat_env = lat_ref[lat_ind]
+    lon_env = lon_ref[lon_ind]
+    time_env = time_ref
+
+    tas_env = np.copy(tas_ref[:, lat_ind, lon_ind])
+    pr_env = np.copy(pr_ref[:, lat_ind, lon_ind])
+
+    print(f'>>> ID: {p2k_id} - Target: ({lat_obs}, {lon_obs}); Found: ({lat_env:.2f}, {lon_env:.2f});')
+
+    # loop
+    T_bias = 0
+
+    loop_flag = True
+    while loop_flag:
+        vsl_params = est_vslite_params_single_site(
+            p2k_id, tas_env, pr_env, lat_env, lon_env, time_env,
+            trw_obs, lat_obs, lon_obs, time_obs,
+            matlab_path=matlab_path, func_path=func_path,
+            nsamp=nsamp, errormod=errormod, gparpriors=gparpriors,
+            pt_ests=pt_ests, nargout=nargout,
+            beta_params=beta_params, verbose=verbose)
+
+        T1 = vsl_params['T1']
+        T2 = vsl_params['T2']
+
+        tas_med = np.nanmedian(tas_env)
+        T_within = tas_env[(tas_env>=T1) & (tas_env<=T2)]
+        percentage = np.size(T_within)/np.size(tas_env)
+        if percentage >= p_bar:
+            # stop loop
+            print(f'>>> T1: {T1:.2f}, T2: {T2:.2f}, median(tas_env): {tas_med:.2f}, percentage: {percentage:.2f}')
+            loop_flag = False
+        else:
+            # bias
+            # correction
+            if tas_med > T2:
+                delta_T = -1
+            elif tas_med < T1:
+                delta_T = 1
+            else:
+                # skip
+                print(f'>>> T1: {T1:.2f}, T2: {T2:.2f}, median(tas_env): {tas_med:.2f}, percentage: {percentage:.2f}')
+                loop_flag = False
+                continue
+
+            while percentage < p_bar:
+                T_within = tas_env[(tas_env>=T1) & (tas_env<=T2)]
+                percentage = np.size(T_within)/np.size(tas_env)
+                print(f'>>> T1: {T1:.2f}, T2: {T2:.2f}, median(tas_env): {np.nanmedian(tas_env):.2f}, percentage: {percentage:.2f}')
+                if percentage < p_bar:
+                    tas_old = np.copy(tas_env)
+                    tas_env += delta_T
+                    T_bias += delta_T
+                    print(f'>>> median(tas_env): {np.nanmedian(tas_old):.2f} -> {np.nanmedian(tas_env):.2f}')
+
+    return vsl_params, T_bias
 
 
 def calibrate_psm(
