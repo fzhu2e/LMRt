@@ -8,6 +8,7 @@ from matplotlib.ticker import MaxNLocator, ScalarFormatter, FormatStrFormatter
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from matplotlib import cm
+import pickle
 
 import matplotlib as mpl
 import numpy as np
@@ -47,6 +48,140 @@ class PAGES2k(object):
         'Tree Rings_WidthPages2': '^',
         'Tree Rings_WoodDensity': 'v',
     }
+
+
+
+class PAGES2k_ptype(object):
+    ptypes = [
+        # tree
+        'tree_TRW',
+        'tree_MXD',
+        'tree_dDensity',
+        # glacier ice
+        'ice_melt',
+        'ice_d18O',
+        'ice_dD',
+        # sclerosponge
+        'sclerosponge_Sr/Ca',
+        'sclerosponge_d18O',
+        # bivalve
+        'bivalve_d18O',
+        # marine sediment
+        'marine_d18O',
+        'marine_foram Mg/Ca',
+        'marine_alkenone',
+        'marine_dynocist MAT',
+        'marine_foram d18O',
+        'marine_foraminifera',
+        'marine_diatom',
+        'marine_TEX86',
+        # documents
+        'documents_historic',
+        'documents_Documentary',
+        # hybrid
+        'hybrid_hybrid',
+        # coral
+        'coral',
+        'coral_d18O',
+        'coral_Sr/Ca',
+        'coral_calcification',
+        # speleothem
+        'speleothem_d18O',
+        'lake sediment',
+        'lake_midge',
+        'lake_reflectance',
+        'lake_varve thickness',
+        'lake_varve property',
+        'lake_sed accumulation',
+        'lake_TEX86',
+        'lake_BSi',
+        'lake_pollen',
+        'lake_chironomid',
+        'lake_chrysophyte',
+        'lake_alkenone',
+        # borehole
+        'borehole_borehole',
+    ]
+
+    markers_dict = {}
+    for ptype in ptypes:
+        if 'tree' in ptype:
+            markers_dict[ptype] = '^'
+        elif 'ice' in ptype:
+            markers_dict[ptype] = 'd'
+        elif 'sclerosponge' in ptype:
+            markers_dict[ptype] = '8'
+        elif 'bivalve' in ptype:
+            markers_dict[ptype] = 'p'
+        elif 'marine' in ptype:
+            markers_dict[ptype] = 'x'
+        elif 'documents' in ptype:
+            markers_dict[ptype] = 'v'
+        elif 'hybrid' in ptype:
+            markers_dict[ptype] = '*'
+        elif 'coral' in ptype:
+            markers_dict[ptype] = 'o'
+        elif 'speleothem' in ptype:
+            markers_dict[ptype] = 'D'
+        elif 'lake' in ptype:
+            markers_dict[ptype] = 's'
+        elif 'borehole' in ptype:
+            markers_dict[ptype] = 'P'
+
+    colors_dict = {}
+    for ptype in ptypes:
+        if 'TRW' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['green']
+        elif 'MXD' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['forest green']
+        elif 'dDensity' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['dark green']
+        elif 'd18O' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['light blue']
+        elif 'dD' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['baby blue']
+        elif 'melt' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['pale blue']
+        elif 'Sr/Ca' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['orange']
+        elif 'Mg/Ca' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['mauve']
+        elif 'alkenone' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['gold']
+        elif 'MAT' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['salmon']
+        elif 'diatom' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['teal']
+        elif 'TEX86' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['beige']
+        elif 'foraminifera' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['turquoise']
+        elif 'calcification' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['amber']
+        elif 'midge' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['bright blue']
+        elif 'reflectance' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['periwinkle']
+        elif 'thickness' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['navy blue']
+        elif 'property' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['aquamarine']
+        elif 'sed' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['cyan']
+        elif 'BSi' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['olive']
+        elif 'pollen' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['lime']
+        elif 'chironomid' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['light pink']
+        elif 'chrysophyte' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['lilac']
+        elif 'hybrid' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['ochre']
+        elif 'documents' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['puke']
+        elif 'borehole' in ptype:
+            colors_dict[ptype] = sns.xkcd_rgb['light brown']
 
 
 def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_col='type', time_col='time',
@@ -1133,6 +1268,7 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
 
 
 def plot_vsl_dashboard_p2k(p2k_id, vsl_res, vsl_params, meta_dict, xlim=[850, 2005],
+                           psd_dict_path=None,
                            ls_pseudoproxy='-', ls_proxy='-',
                            calc_corr=False, text_x_fix=0, corr_loc=[1.01, 0.1],
                            beta_params=np.array([
@@ -1364,11 +1500,18 @@ def plot_vsl_dashboard_p2k(p2k_id, vsl_res, vsl_params, meta_dict, xlim=[850, 20
 
     #-----------------------------------------------------------
     ax_spec = plt.subplot(gs[4:, 3:])
-    dcon = 0.01
-    ntau = 51
 
-    psd_pseudo, freqs_pseudo = p2k.calc_plot_psd(trw_pseudo, year_ann, plot_fig=False, anti_alias=False, dcon=dcon, ntau=ntau)
-    psd_proxy, freqs_proxy = p2k.calc_plot_psd(trw_obs, time_obs, plot_fig=False, anti_alias=False, dcon=dcon, ntau=ntau)
+    if psd_dict_path is None:
+        dcon = 0.01
+        ntau = 51
+
+        psd_pseudo, freqs_pseudo = p2k.calc_plot_psd(trw_pseudo, year_ann, plot_fig=False, anti_alias=False, dcon=dcon, ntau=ntau)
+        psd_proxy, freqs_proxy = p2k.calc_plot_psd(trw_obs, time_obs, plot_fig=False, anti_alias=False, dcon=dcon, ntau=ntau)
+    else:
+        with open(psd_dict_path, 'rb') as f:
+            psd_pseudo_dict, freqs_pseudo_dict, psd_proxy_dict, freqs_proxy_dict = pickle.load(f)
+
+        psd_pseudo, freqs_pseudo, psd_proxy, freqs_proxy = psd_pseudo_dict[p2k_id], freqs_pseudo_dict[p2k_id], psd_proxy_dict[p2k_id], freqs_proxy_dict[p2k_id]
 
     lw = 2
     ax_spec.loglog(1/freqs_pseudo, psd_pseudo, lw=lw, color=trw_color, label='pseudoproxy')
