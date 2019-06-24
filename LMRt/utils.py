@@ -1054,7 +1054,8 @@ def est_vsl_params_bc(site, latlon_ind_dict_path,
     T_bias = 0
 
     loop_flag = True
-    while loop_flag:
+    dec_times = 0
+    while loop_flag is True and dec_times <= 3:
         vsl_params = est_vslite_params_single_site(
             p2k_id, tas_env, pr_env, lat_env, lon_env, time_env,
             trw_obs, lat_obs, lon_obs, time_obs,
@@ -1087,9 +1088,16 @@ def est_vsl_params_bc(site, latlon_ind_dict_path,
                 continue
 
             while percentage < p_bar:
+                p_last = np.copy(percentage)
                 T_within = tas_env[(tas_env>=T1) & (tas_env<=T2)]
                 percentage = np.size(T_within)/np.size(tas_env)
                 print(f'>>> T1: {T1:.2f}, T2: {T2:.2f}, median(tas_env): {np.nanmedian(tas_env):.2f}, percentage: {percentage:.2f}')
+                if percentage < p_last:
+                    dec_times += 1
+                    tas_env -= delta_T
+                    T_bias -= delta_T
+                    print(f'>>> percentage is decreasing, break; finalize median(tas_env): {np.nanmedian(tas_env):.2f}')
+                    break
                 if percentage < p_bar:
                     tas_old = np.copy(tas_env)
                     tas_env += delta_T

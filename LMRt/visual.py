@@ -1267,7 +1267,7 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
         return fig
 
 
-def plot_vsl_dashboard_p2k(p2k_id, vsl_res, vsl_params, meta_dict, xlim=[850, 2005],
+def plot_vsl_dashboard_p2k(p2k_id, vsl_res, meta_dict, vsl_params, xlim=[850, 2005],
                            psd_dict_path=None,
                            ls_pseudoproxy='-', ls_proxy='-',
                            calc_corr=False, text_x_fix=0, corr_loc=[1.01, 0.1],
