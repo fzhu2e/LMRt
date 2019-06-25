@@ -579,30 +579,11 @@ def calc_ye(proxy_manager, ptypes, psm_name,
                 verbose=verbose, **psm_params,
             )
 
-            #  ct_list = [list(ye_tmp).count(i) for i in list(ye_tmp)]
-            #  if np.max(ct_list) > repeat_frac_threshold*np.size(ct_list):
-            #      # VS-Lite could yield constants
-            #      print(f'Too many same values; skipping {pobj.id} ...')
-            #      continue
-
-            #  if np.std(ye_tmp) < std_threshold:
-            #      # VS-Lite could yield constants
-            #      print(f'Variability too small; skipping {pobj.id} ...')
-            #      continue
-
             if np.all(np.isnan(ye_tmp)):
                 print(f'Fail to forward; skipping {pobj.id} ...')
                 continue
 
-            t1, y1, t2, y2 = overlap_ts(pobj.time, pobj.values.values, ye_time, ye_tmp)
-
-            if match_std is True:
-                factor = np.std(y1) / np.std(y2)
-                ye_tmp = factor * ye_tmp  # adjust the standard deviation
-
-            if match_mean is True:
-                bias = np.mean(ye_tmp) - np.mean(y1)  # estimated bias: the difference between the mean values
-                ye_tmp = ye_tmp - bias  # remove the estimated bias from Ye
+            ye_tmp = ts_matching(ye_time, ye_tmp, pobj.time, pobj.values.values, match_std=match_std, match_mean=match_mean)
 
             ye_out.append(ye_tmp)
             pid_map[pobj.id] = k
@@ -2616,7 +2597,7 @@ def annualize_var(var, year_float, weights=None):
     var_ann = var_da.groupby('time.year').mean('time')
     var_ann = var_ann.values
 
-    year_ann = np.array(list(set([t.year for t in time])))
+    year_ann = np.sort(list(set([t.year for t in time])))
     return var_ann, year_ann
 
 
@@ -2918,6 +2899,51 @@ def calc_seasonal_avg(
                 pickle.dump([var_ann_dict, year_ann, lat, lon], f)
 
     return var_ann_dict, year_ann
+
+
+def ts_matching(time_target, value_target, time_ref, value_ref, match_std=True, match_mean=True, verbose=False):
+    ''' Perform mean correction and variance matching against the reference timeseries over overlapped time interval
+
+    Args:
+        time_target (1-D array): the time axis of the target timeseries
+        value_target (1-D array): the value axis of the target timeseries
+        time_ref (1-D array): the time axis of the reference timeseries
+        value_ref (1-D array): the value axis of the reference timeseries
+
+    Returns:
+        time_corrected (1-D array): the time axis of the target timeseries after correction
+        value_corrected (1-D array): the value axis of the target timeseries after correction
+    '''
+
+    value_target_bak = np.copy(value_target)
+
+    if match_std is True:
+        t_target, v_target, t_ref, v_ref = overlap_ts(time_target, value_target, time_ref, value_ref)
+        factor = np.std(v_ref) / np.std(v_target)
+        value_target = factor * value_target
+
+    # order matters: match_std first and then match_mean
+    if match_mean is True:
+        t_target, v_target, t_ref, v_ref = overlap_ts(time_target, value_target, time_ref, value_ref)
+        bias = np.mean(v_ref) - np.mean(v_target)
+        value_target = value_target + bias
+
+    if verbose:
+        t_target, v_target_bak, t_ref, v_ref = overlap_ts(time_target, value_target_bak, time_ref, value_ref)
+        t_target, v_target, t_ref, v_ref = overlap_ts(time_target, value_target, time_ref, value_ref)
+
+        print(f'---------------------------')
+        print(f'overlapped timepoints: {len(t_ref)}')
+        print(f'---------------------------')
+        print(f'\tmean\tstd')
+        print(f'---------------------------')
+        print(f'ref:\t{np.mean(v_ref):.2f}\t{np.std(v_ref):.2f}')
+        print(f'before:\t{np.mean(v_target_bak):.2f}\t{np.std(v_target_bak):.2f}')
+        print(f'after:\t{np.mean(v_target):.2f}\t{np.std(v_target):.2f}')
+        print()
+
+    return value_target
+
 
 # ===============================================
 #  Multivariate bias correction

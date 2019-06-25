@@ -1067,12 +1067,7 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
 
     # pseudo value with bias correction and vairance match
     trw_pseudo = vsl_res[pid]['trw_org']
-    t1, y1, t2, y2 = utils.overlap_ts(year_ann, trw_pseudo, trw_time, trw_value)
-    real_mean = np.nanmean(y2)
-    real_std = np.nanstd(y2)
-    trw_pseudo = trw_pseudo/np.nanstd(trw_pseudo)*real_std
-    trw_pseudo = trw_pseudo - np.nanmean(trw_pseudo) + real_mean
-
+    trw_pseudo = LMRt.utils.ts_matching(year_ann, trw_pseudo, trw_time, trw_value)
 
     #===========================================================
     # plot
