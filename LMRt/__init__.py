@@ -334,7 +334,7 @@ class ReconJob:
             lat_model, lon_model, time_model, prior_vars = utils.get_env_vars(
                 prior_filesdict, rename_vars=rename_vars,
                 useLib=useLib, calc_anomaly=calc_anomaly, ref_period=ref_period,
-                lat_str=lat_str, lon_str=lon_str, std_units=std_units, verbose=verbose
+                lat_str=lat_str, lon_str=lon_str, verbose=verbose
             )
 
             if elev_datapath:
