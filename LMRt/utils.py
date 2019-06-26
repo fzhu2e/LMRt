@@ -571,13 +571,16 @@ def calc_ye(proxy_manager, ptypes, psm_name,
                 ind = pid_obs.index(pobj.id)
                 psm_params['species'] = species_obs[ind]
 
-            ye_tmp, ye_time = prysm.forward(
+            res = prysm.forward(
                 psm_name, pobj.lat, pobj.lon,
                 lat_model, lon_model, time_model,
                 prior_vars,
                 elev_obs=pobj.elev, elev_model=elev_model,
                 verbose=verbose, **psm_params,
             )
+
+            ye_time = res['pseudo_time']
+            ye_tmp = res['pseudo_value']
 
             if np.all(np.isnan(ye_tmp)):
                 print(f'Fail to forward; skipping {pobj.id} ...')
