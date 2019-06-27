@@ -2396,6 +2396,10 @@ def datetime2year_float(date):
 
 
 def year_float2datetime(year_float, resolution='day'):
+    if np.min(year_float) < 0:
+        raise ValueError('Cannot handel negative years. Please truncate first.')
+        return None
+
     ''' Convert an array of floats in unit of year to a datetime time; accuracy: one day
     '''
     year = np.array([int(y) for y in year_float], dtype=int)
@@ -2561,7 +2565,7 @@ def make_xr(var, year_float):
     return var_da
 
 
-def annualize_var(var, year_float, weights=None):
+def annualize_var(var, year_float, resolution='month', weights=None):
     ''' Annualize a variable array
 
     Args:
@@ -2581,7 +2585,7 @@ def annualize_var(var, year_float, weights=None):
     for i in range(ndims-1):
         dims.append(f'dim{i+1}')
 
-    time = year_float2datetime(year_float)
+    time = year_float2datetime(year_float, resolution=resolution)
 
     if weights is not None:
         weights_da = xr.DataArray(weights, dims=dims, coords={'time': time})
@@ -2760,7 +2764,7 @@ def pick_years(year_int, time_grid, var_grid):
     return time_grid[mask], var_grid[mask]
 
 
-def clean_ts(ts, ys):
+def clean_ts(ts, ys, start=None):
     # delete NaNs if there is any
     ys = np.asarray(ys, dtype=np.float)
     ts = np.asarray(ts, dtype=np.float)
@@ -2776,6 +2780,11 @@ def clean_ts(ts, ys):
     sort_ind = np.argsort(ts)
     ys = ys[sort_ind]
     ts = ts[sort_ind]
+
+    if start:
+        mask = ts >= start
+        ts = ts[mask]
+        ys = ys[mask]
 
     return ts, ys
 

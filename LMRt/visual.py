@@ -1328,11 +1328,7 @@ def plot_vsl_dashboard_p2k(p2k_id, vsl_res, meta_dict, vsl_params, xlim=[850, 20
 
     # pseudo value with bias correction and vairance match
     trw_pseudo = vsl_res[p2k_id]['trw_org']
-    t1, y1, t2, y2 = utils.overlap_ts(year_ann, trw_pseudo, time_obs, trw_obs)
-    real_mean = np.nanmean(y2)
-    real_std = np.nanstd(y2)
-    trw_pseudo = trw_pseudo/np.nanstd(trw_pseudo)*real_std
-    trw_pseudo = trw_pseudo - np.nanmean(trw_pseudo) + real_mean
+    trw_pseudo = utils.ts_matching(year_ann, trw_pseudo, time_obs, trw_obs)
 
     #===========================================================
     # plot
