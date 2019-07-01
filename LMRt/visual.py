@@ -241,11 +241,13 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
         for index, row in df.iterrows():
             ptype = row[type_col]
             time = row[time_col]
+            time = np.array([float(t) for t in time])
+            time = time[~np.isnan(time)]
             if ptype not in proxy_count.keys():
                 proxy_count[ptype] = np.zeros(np.size(year))
 
             for k in time:
-                if k < np.max(year):
+                if int(k) < np.max(year):
                     proxy_count[ptype][int(k)] += 1
 
         cumu_count = np.zeros(np.size(year))
