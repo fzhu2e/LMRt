@@ -375,7 +375,7 @@ class ReconJob:
 
         df_metadata_new = pd.DataFrame()
         df_proxies_new = pd.DataFrame(index=years)
-        i = 0
+
         for ptype, filepath in ye_filesdict.items():
             precalc_ye = np.load(ye_filesdict[ptype])
             pid_idx_map = precalc_ye['pid_index_map'][()]
@@ -420,6 +420,86 @@ class ReconJob:
                         proxy_str = 'WidthPages2'
                     series['type'] = f'{archive_str}_{proxy_str}'
                     df_metadata_new = df_metadata_new.append(series, ignore_index=True)
+
+        if metadata_savepath:
+            df_metadata_new.to_pickle(metadata_savepath)
+
+        if proxies_savepath:
+            df_proxies_new.to_pickle(proxies_savepath)
+
+        return df_metadata_new, df_proxies_new
+
+    def build_pseudoproxies_from_df(self, metadata_df_filepath, proxies_df_filepath,
+                                    df_pp, exclude_list=None,
+                                    years=np.arange(850, 2006),
+                                    add_noise=False, noise_type='white', SNR=1, g=0.5,
+                                    metadata_savepath=None, proxies_savepath=None,
+                                    real_time_axis=False, seed=0):
+        ''' Build pseudoproxies from Ye files with metadata of real obs.
+
+        Args:
+            df_pp (DataFrame): the DataFrame of the pseudoproxies
+            g (float): autocorrelation of the AR1 noise
+            noise_type (str): available options include ['white', 'AR1'],
+                              if not set, white noise will be applied
+        '''
+        random.seed(seed)
+        years = np.array(years, dtype=np.float)
+
+        df = pd.read_pickle(metadata_df_filepath)
+        df_val = pd.read_pickle(proxies_df_filepath)
+
+        df_metadata_new = pd.DataFrame()
+        df_proxies_new = pd.DataFrame(index=years)
+
+        # translate from paleoData_pages2kID to pobj.id in LMR
+        id_map = {}
+        for i, row in df_pp.iterrows():
+            p2k_id = row['paleoData_pages2kID']
+            for pid in df['Proxy ID'].values:
+                if p2k_id in pid:
+                    id_map[p2k_id] = pid
+
+
+        for p2k_id, pid in tqdm(id_map.items()):
+            if exclude_list is None or pid not in exclude_list or p2k_id not in exclude_list:
+                series_pp = df_pp[df_pp['paleoData_pages2kID']==p2k_id]
+                vals = np.array(series_pp['pseudo_value'].values[0])
+
+                if add_noise:
+                    sig_var = np.nanvar(vals)
+                    noise_var = sig_var / SNR
+                    if noise_type == 'AR1':
+                        noise = utils.ar1_noise(years, vals, g=g, seed=seed)
+                        n_std = np.nanstd(noise)
+                        noise = noise * np.sqrt(noise_var)/n_std
+
+                    else:
+                        noise = np.random.normal(0, np.sqrt(noise_var), size=np.size(vals))
+
+                    vals = vals + noise
+
+                if real_time_axis:
+                    df_pid = df_val[pid].dropna()
+                    real_years = df_pid.index.values
+                    for y in years:
+                        if y not in real_years:
+                            idx = list(years).index(y)
+                            vals[idx] = np.nan
+
+                df_proxies_new[pid] = vals
+
+                series = df[df['Proxy ID']==pid]
+                archive_str = series['Archive type'].values[0]
+                proxy_str = series['Proxy measurement'].values[0]
+                if proxy_str == 'thickness':
+                    proxy_str = 'Varve'
+                elif proxy_str == 'density' or proxy_str == 'MXD':
+                    proxy_str = 'WoodDensity'
+                elif proxy_str == 'trsgi':
+                    proxy_str = 'WidthPages2'
+                series['type'] = f'{archive_str}_{proxy_str}'
+                df_metadata_new = df_metadata_new.append(series, ignore_index=True)
 
         if metadata_savepath:
             df_metadata_new.to_pickle(metadata_savepath)
