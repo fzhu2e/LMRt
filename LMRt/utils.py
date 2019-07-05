@@ -1427,7 +1427,7 @@ def get_ye(proxy_manager, prior_sample_idxs, ye_filesdict, proxy_set, verbose=Fa
         if verbose:
             print(f'Loading precalculated Ye from:\n {ye_filesdict[psm_key]}\n')
 
-        precalc_files[psm_key] = np.load(ye_filesdict[psm_key])
+        precalc_files[psm_key] = np.load(ye_filesdict[psm_key], allow_pickle=True)
 
     if verbose:
         print('Now extracting proxy type-dependent Ye values...\n')
