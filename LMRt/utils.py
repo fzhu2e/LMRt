@@ -16,6 +16,7 @@ from tqdm import tqdm
 import pickle
 from scipy import signal
 from scipy import optimize
+from scipy import stats
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import glob
@@ -2957,6 +2958,134 @@ def ts_matching(time_target, value_target, time_ref, value_ref, match_std=True, 
     return value_target
 
 
+def compute_annual_means(time_raw,data_raw,valid_frac,year_type):
+    """
+    Computes annual-means from raw data.
+    Inputs:
+        time_raw   : Original time axis
+        data_raw   : Original data
+        valid_frac : The fraction of sub-annual data necessary to create annual mean.  Otherwise NaN.
+        year_type  : "calendar year" (Jan-Dec) or "tropical year" (Apr-Mar)
+
+    Outputs: time_annual, data_annual
+
+    Authors: R. Tardif, Univ. of Washington; M. Erb, Univ. of Southern California
+
+    """
+
+    # Check if dealing with multiple chronologies in one data stream (for NCDC files)
+    array_shape = data_raw.shape
+    if len(array_shape) == 2:
+        nbtimes, nbvalid = data_raw.shape
+    elif len(array_shape) == 1:
+        nbtimes, = data_raw.shape
+        nbvalid = 1
+    else:
+        raise SystemExit('ERROR in compute_annual_means: Unrecognized shape of data input array.')
+
+    # -------------------------------------------
+    # Determine temporal resolution of the record
+    # -------------------------------------------
+
+    # time differences between adjacent data pts
+    time_between_records = np.diff(time_raw, n=1)
+
+    # Temporal resolution taken as the mode of the time differences
+    mode_time_between_records = stats.mode(time_between_records)
+    time_resolution = abs(mode_time_between_records.mode[0])
+
+    # check if time_resolution = 0.0 !!! sometimes adjacent records are tagged at same time ...
+    if time_resolution == 0.0:
+        print('***WARNING! Found adjacent records with same times!')
+        inderr = np.where(time_between_records == 0.0)
+        print(inderr)
+        time_between_records = np.delete(time_between_records,inderr)
+        time_resolution = abs(stats.mode(time_between_records)[0][0])
+
+    # some extra checks
+    if mode_time_between_records.count[0] == 1:
+        # all unique time differences
+        # subannual or annual+ ?
+        years_in_dataset = np.floor(time_raw)
+        years_between_records = np.diff(years_in_dataset, n=1)
+        mode_years_between_records = stats.mode(years_between_records)
+        if mode_years_between_records.mode[0] > 0:
+            # annual+ resolution
+            # take resolution as smallest detected interval that is annual or longer
+            time_resolution = np.min(years_between_records[years_between_records>0.])
+        else:
+            # subannual
+            time_resolution = np.mean(time_between_records)
+
+    if time_resolution <= 1.0:
+        proxy_resolution = int(1.0) # coarse-graining to annual
+    else:
+        proxy_resolution = int(time_resolution)
+
+
+    # Get rounded integer values of all years present in record.
+    years_all = [int(np.floor(time_raw[k])) for k in range(0,len(time_raw))]
+    years = list(set(years_all)) # 'set' is used to get unique values in list
+    years = sorted(years) # sort the list
+
+    years = np.insert(years,0,years[0]-1) # M. Erb
+
+    # bounds, for calendar year : [years_beg,years_end[
+    years_beg = np.asarray(years,dtype=np.float64) # inclusive lower bound
+    years_end = years_beg + 1.                     # exclusive upper bound
+
+    # If some of the time values are floats (sub-annual resolution)
+    # and year_type is tropical_year, adjust the years to cover the
+    # tropical year (Apr-Mar).
+    if np.equal(np.mod(time_raw,1),0).all() == False and year_type == 'tropical year':
+        print("Tropical year averaging...")
+
+        # modify bounds defining the "year"
+        for i, yr in enumerate(years):
+            # beginning of interval
+            if calendar.isleap(yr):
+                years_beg[i] = float(yr)+((31+29+31)/float(366))
+            else:
+                years_beg[i] = float(yr)+((31+28+31)/float(365))
+            # end of interval
+            if calendar.isleap(yr+1):
+                years_end[i] = float(yr+1)+((31+29+31)/float(366))
+            else:
+                years_end[i] = float(yr+1)+((31+28+31)/float(365))
+
+    time_annual = np.asarray(years,dtype=np.float64)
+    data_annual = np.zeros(shape=[len(years),nbvalid], dtype=np.float64)
+    # fill with NaNs for default values
+    data_annual[:] = np.NAN
+
+    # Calculate the mean of all data points with the same year.
+    for i in range(len(years)):
+        ind = [j for j, year in enumerate(time_raw) if (year >= years_beg[i]) and (year < years_end[i])]
+        nbdat = len(ind)
+
+        # TODO: check nb of non-NaN values !!!!! ... ... ... ... ... ...
+
+        if time_resolution <= 1.0:
+            max_nb_per_year = int(1.0/time_resolution)
+            frac = float(nbdat)/float(max_nb_per_year)
+            if frac > valid_frac:
+                data_annual[i,:] = np.nanmean(data_raw[ind],axis=0)
+        else:
+            if nbdat > 1:
+                print('***WARNING! Found multiple records in same year in data with multiyear resolution!')
+                print('   year= %d %d' %(years[i], nbdat))
+            # Note: this calculates the mean if multiple entries found
+            data_annual[i,:] = np.nanmean(data_raw[ind],axis=0)
+
+
+    # check and modify time_annual array to reflect only the valid data present in the annual record
+    # for correct tagging of "Oldest" and "Youngest" data
+    indok = np.where(np.isfinite(data_annual))[0]
+    keep = np.arange(indok[0],indok[-1]+1,1)
+
+
+    return time_annual[keep], data_annual[keep,:], proxy_resolution
+
 # ===============================================
 #  Multivariate bias correction
 # -----------------------------------------------
@@ -3413,7 +3542,7 @@ def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), 
                 os.path.dirname(path),
                 os.path.basename(path),
                 calib_vars[name],
-                outtimeavg=lsit(range(1, 13)),
+                outtimeavg=list(range(1, 13)),
                 anom_ref=ref_period,
             )
             time_grid = dd['tas_sfc_Amon']['years']

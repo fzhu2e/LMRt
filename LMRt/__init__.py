@@ -14,6 +14,7 @@ from tqdm import tqdm
 import pandas as pd
 import xarray as xr
 import random
+from scipy import stats
 
 from . import utils
 
@@ -508,6 +509,93 @@ class ReconJob:
             df_proxies_new.to_pickle(proxies_savepath)
 
         return df_metadata_new, df_proxies_new
+
+    def build_proxies_from_df(self, df, exclude_list=None, time_year=np.arange(1, 2020),
+                              time_col='year', value_col='paleoData_values',
+                              metadata_savepath=None, proxies_savepath=None):
+        ''' Build proxies database from a DataFrame
+
+        Args:
+            df (DataFrame): the DataFrame of the proxies
+        '''
+        df_metadata = pd.DataFrame(columns=[
+            'Proxy ID',
+            'Archive type',
+            'Lat (N)',
+            'Lon (E)',
+            'Elev',
+            'Proxy measurement',
+            'Databases',
+            'Resolution (yr)',
+            'Seasonality',
+        ])
+        df_metadata['Seasonality'] = np.nan
+        df_metadata['Seasonality'] = df_metadata['Seasonality'].astype(object)
+
+        df_proxies = pd.DataFrame(index=time_year)
+
+        archive_dict = {
+            'coral': 'Corals and Sclerosponges',
+            'sclerosponge': 'Corals and Sclerosponges',
+            'glacier ice': 'Ice Cores',
+            'lake sediment': 'Lake Cores',
+            'marine sediment': 'Marine Cores',
+            'speleothem': 'Speleothems',
+            'tree': 'Tree Rings',
+            'bivalve': 'Bivalve',
+            'borehole': 'Borehole',
+            'documents': 'Documents',
+            'hybrid': 'Hybrid',
+        }
+
+        for i, row in tqdm(df.iterrows(), total=len(df)):
+            p2k_id = row['paleoData_pages2kID']
+            p2k_dsn = row['dataSetName']
+            p2k_archive = row['archiveType']
+            p2k_lat = row['geo_meanLat']
+            p2k_lon = row['geo_meanLon']
+            p2k_elev = row['geo_meanElev']
+            p2k_vn = row['paleoData_variableName']
+            p2k_season = row['seasonality']
+
+            if p2k_archive == 'glacier ice' and p2k_vn == 'd18O1':
+                p2k_vn = 'd18O'
+
+            if p2k_archive == 'tree' and p2k_vn == 'temperature1':
+                p2k_vn = 'temperature'
+
+            if p2k_archive == 'lake sediment' and (p2k_vn == 'temperature1' or p2k_vn == 'temperature3'):
+                p2k_vn = 'temperature'
+
+            pid = f'PAGES2kv2_{p2k_dsn}_{p2k_id}:{p2k_vn}'
+            df_metadata.loc[i, 'Proxy ID'] = pid
+            df_metadata.loc[i, 'Archive type'] = archive_dict[p2k_archive]
+            df_metadata.loc[i, 'Lat (N)'] = p2k_lat
+            df_metadata.loc[i, 'Lon (E)'] = np.mod(p2k_lon, 360)
+            df_metadata.loc[i, 'Elev'] = p2k_elev
+            df_metadata.loc[i, 'Proxy measurement'] = p2k_vn
+            df_metadata.loc[i, 'Databases'] = ['PAGES2kv2']
+            df_metadata.at[i, 'Seasonality'] = p2k_season
+
+            p2k_time = np.array(row[time_col], dtype=np.float)
+            p2k_value = np.array(row[value_col], dtype=np.float)
+            p2k_time, p2k_value = utils.clean_ts(p2k_time, p2k_value)
+            time_annual, data_annual, proxy_resolution = utils.compute_annual_means(p2k_time, p2k_value, 0.5, 'calendar year')
+            data_annual = np.squeeze(data_annual)
+            df_metadata.loc[i, 'Resolution (yr)'] = proxy_resolution
+            df_metadata.loc[i, 'Oldest (C.E.)'] = np.min(time_annual)
+            df_metadata.loc[i, 'Youngest (C.E.)'] = np.max(time_annual)
+
+            series = pd.Series(data_annual, index=time_annual)
+            df_proxies[pid] = series
+
+        if metadata_savepath:
+            df_metadata.to_pickle(metadata_savepath)
+
+        if proxies_savepath:
+            df_proxies.to_pickle(proxies_savepath)
+
+        return df_metadata, df_proxies
 
     def load_ye_files(self, ye_filesdict, verbose=False):
         ''' Load precalculated Ye files
