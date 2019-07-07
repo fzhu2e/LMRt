@@ -432,7 +432,7 @@ class ReconJob:
 
     def build_pseudoproxies_from_df(self, metadata_df_filepath, proxies_df_filepath,
                                     df_pp, exclude_list=None,
-                                    years=np.arange(850, 2006),
+                                    years=np.arange(850, 2006), value_col='pseudo_value',
                                     add_noise=False, noise_type='white', SNR=1, g=0.5,
                                     metadata_savepath=None, proxies_savepath=None,
                                     real_time_axis=False, seed=0):
@@ -465,7 +465,7 @@ class ReconJob:
         for p2k_id, pid in tqdm(id_map.items()):
             if exclude_list is None or pid not in exclude_list or p2k_id not in exclude_list:
                 series_pp = df_pp[df_pp['paleoData_pages2kID']==p2k_id]
-                vals = np.array(series_pp['pseudo_value'].values[0])
+                vals = np.array(series_pp[value_col].values[0])
 
                 if add_noise:
                     sig_var = np.nanvar(vals)
