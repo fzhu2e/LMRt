@@ -441,8 +441,13 @@ def plot_gmt_vs_inst(gmt_qs, year, ana_pathdict,
     mask_ref = (year >= ref_period[0]) & (year <= ref_period[-1])
     lmr_gmt = gmt_qs[mask] - np.nanmean(gmt_qs[mask_ref, 1])  # remove the mean w.r.t. the ref_period
 
+    var_str = {
+        'gmt': 'gm',
+        'nhmt': 'nhm',
+        'shmt': 'shm',
+    }
     inst_gmt, inst_time = utils.load_inst_analyses(
-        ana_pathdict, var=var, verif_yrs=verif_yrs, ref_period=ref_period)
+        ana_pathdict, var=var_str[var], verif_yrs=verif_yrs, ref_period=ref_period)
 
     consensus_yrs = np.copy(verif_yrs)
     for name in ana_pathdict.keys():
