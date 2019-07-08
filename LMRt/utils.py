@@ -520,8 +520,7 @@ def calc_ye_linearPSM(proxy_manager, ptypes, psm_name,
 def calc_ye(proxy_manager, ptypes, psm_name,
             lat_model, lon_model, time_model,
             prior_vars,
-            std_threshold=1e-2,
-            repeat_frac_threshold=0.5, elev_model=None,
+            elev_model=None,
             match_std=True, match_mean=True,
             verbose=False, **psm_params):
 
