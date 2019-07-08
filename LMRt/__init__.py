@@ -238,7 +238,7 @@ class ReconJob:
                        lat_str='lat', lon_str='lon',
                        repeat_frac_threashold=0.5,
                        match_std=True, match_mean=True, tas_bias=None, pr_factor=None,
-                       calc_anomaly=True, ref_period=(1951, 1980), precalc_avg_pathdict=None, **psm_params):
+                       calc_anomaly=None, ref_period=(1951, 1980), precalc_avg_pathdict=None, **psm_params):
         ''' Build precalculated Ye files from priors
 
         Args:
@@ -263,6 +263,8 @@ class ReconJob:
 
             if precalc_avg_pathdict is None:
                 # load environmental variables
+                if calc_anomaly is None:
+                    calc_anomaly = True
                 lat_model, lon_model, time_model, prior_vars = utils.get_env_vars(
                     prior_filesdict, rename_vars=rename_vars,
                     useLib=useLib, calc_anomaly=calc_anomaly, ref_period=ref_period,
@@ -331,6 +333,8 @@ class ReconJob:
             )
         else:
             # load environmental variables
+            if calc_anomaly is None:
+                calc_anomaly = False
             lat_model, lon_model, time_model, prior_vars = utils.get_env_vars(
                 prior_filesdict, rename_vars=rename_vars,
                 useLib=useLib, calc_anomaly=calc_anomaly, ref_period=ref_period,
