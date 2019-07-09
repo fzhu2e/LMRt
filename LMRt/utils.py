@@ -3678,6 +3678,75 @@ def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 200
 
     return corr, ce, inst_lat, inst_lon
 
+
+def calc_field_corr_ce(exp_dir, field_model, time_model, lat_model, lon_model, verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980],
+                            valid_frac=0.5, var_name='tas_sfc_Amon'):
+    ''' Calculate corr and CE between LMR and model field
+
+    Note: The time axis of the LMR field is assumed to fully cover the range of verif_yrs
+    '''
+    field_model, time_model = annualize_var(field_model, time_model)  # annualize the model field
+
+    if not os.path.exists(exp_dir):
+        raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
+
+    field_em, year, lat, lon = load_field_from_jobs(exp_dir, var=var_name)
+    syear, eyear = verif_yrs[0], verif_yrs[-1]
+
+    if syear < np.min(year) or eyear > np.max(year):
+        raise ValueError('ERROR: The time axis of the LMR field is not fully covering the range of verif_yrs!!!')
+
+    mask = (year >= syear) & (year <= eyear)
+    mask_ref = (year >= ref_period[0]) & (year <= ref_period[-1])
+    field_lmr = field_em[mask] - np.nanmean(field_em[mask_ref, :, :], axis=0)  # remove the mean w.r.t. the ref_period
+
+    nlat_lmr = np.size(lat)
+    nlon_lmr = np.size(lon)
+    specob_lmr = Spharmt(nlon_lmr, nlat_lmr, gridtype='regular', legfunc='computed')
+
+    mask_ref = (time_model >= ref_period[0]) & (time_model <= ref_period[-1])
+    field_model -= np.nanmean(field_model[mask_ref, :, :], axis=0)  # remove the mean w.r.t. the ref_period
+
+    print(f'Regridding LMR onto model grid ...')
+
+    nlat_model = np.size(lat_model)
+    nlon_model = np.size(lon_model)
+
+    corr = np.ndarray((nlat_model, nlon_model))
+    ce = np.ndarray((nlat_model, nlon_model))
+
+    specob_model = Spharmt(nlon_model, nlat_model, gridtype='regular', legfunc='computed')
+
+    overlap_yrs = np.intersect1d(verif_yrs, time_model)
+    ind_lmr = np.searchsorted(verif_yrs, overlap_yrs)
+    ind_model = np.searchsorted(time_model, overlap_yrs)
+
+    lmr_on_model = []
+    for i in ind_lmr:
+        lmr_on_model_each_yr = regrid(specob_lmr, specob_model, field_lmr[i], ntrunc=None, smooth=None)
+        lmr_on_model.append(lmr_on_model_each_yr)
+
+    lmr_on_model = np.asarray(lmr_on_model)
+
+    for i in range(nlat_model):
+        for j in range(nlon_model):
+            ts_model = field_model[ind_model, i, j]
+            ts_lmr = lmr_on_model[:, i, j]
+
+            ts_model_notnan = ts_model[~np.isnan(ts_model)]
+            ts_lmr_notnan = ts_lmr[~np.isnan(ts_model)]
+            nt = len(ind_model)
+            nt_notnan = np.shape(ts_model_notnan)[0]
+
+            if nt_notnan/nt >= valid_frac:
+                corr[i, j] = np.corrcoef(ts_model_notnan, ts_lmr_notnan)[1, 0]
+            else:
+                corr[i, j] = np.nan
+
+            ce[i, j] = coefficient_efficiency(ts_model, ts_lmr, valid_frac)
+
+    return corr, ce, lat_model, lon_model
+
 # -----------------------------------------------
 #  Superposed Epoch Analysis
 # -----------------------------------------------
