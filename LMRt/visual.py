@@ -345,8 +345,7 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                    site_markersize=50, site_color=sns.xkcd_rgb['amber'],
                    projection=ccrs.Robinson, transform=ccrs.PlateCarree(),
                    central_longitude=0, latlon_range=None,
-                   land_alpha=1, ocean_alpha=1,
-                   land_color=sns.xkcd_rgb['silver'], ocean_color=sns.xkcd_rgb['silver'],
+                   land_color=sns.xkcd_rgb['light grey'], ocean_color=sns.xkcd_rgb['light grey'],
                    land_zorder=None, ocean_zorder=None,
                    clim=None, cmap='RdBu_r', extend='both', mode='mesh', add_gridlines=False,
                    cbar_labels=None, cbar_pad=0.05, cbar_orientation='vertical', cbar_aspect=10,
@@ -393,8 +392,8 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
     else:
         ax.set_global()
 
-    ax.add_feature(cfeature.LAND, facecolor=land_color, edgecolor='k', alpha=land_alpha, zorder=land_zorder)
-    ax.add_feature(cfeature.OCEAN, facecolor=ocean_color, edgecolor='k', alpha=ocean_alpha, zorder=ocean_zorder)
+    ax.add_feature(cfeature.LAND, facecolor=land_color, edgecolor=land_color, zorder=land_zorder)
+    ax.add_feature(cfeature.OCEAN, facecolor=ocean_color, edgecolor=ocean_color, zorder=ocean_zorder)
     ax.coastlines()
 
     if add_gridlines:
