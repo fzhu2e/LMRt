@@ -341,6 +341,8 @@ def plot_proxy_age_map(df, lon_col='lon', lat_col='lat', type_col='type', time_c
 
 def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                    title=None, title_size=20, title_weight='normal', figsize=[10, 8],
+                   site_lats=None, site_lons=None, site_marker='o',
+                   site_markersize=50, site_color=sns.xkcd_rgb['amber'],
                    projection=ccrs.Robinson, transform=ccrs.PlateCarree(),
                    central_longitude=0, latlon_range=None,
                    land_alpha=1, ocean_alpha=1,
@@ -421,6 +423,10 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
 
     if cbar_title:
         cbar.ax.set_title(cbar_title)
+
+    if site_lats is not None and site_lons is not None:
+        ax.scatter(site_lons, site_lats, s=site_markersize, c=site_color, marker=site_marker, edgecolors='k',
+                   zorder=99, transform=transform)
 
     return fig
 

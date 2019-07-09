@@ -3607,7 +3607,7 @@ def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), 
 
 
 def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980],
-                            valid_frac=0.5):
+                            valid_frac=0.5, var_name='tas_sfc_Amon'):
     ''' Calculate corr and CE between LMR and instrumental fields
 
     Note: The time axis of the LMR field is assumed to fully cover the range of verif_yrs
@@ -3615,7 +3615,7 @@ def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 200
     if not os.path.exists(exp_dir):
         raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
 
-    field_em, year, lat, lon = load_field_from_jobs(exp_dir, var='tas_ens_mean')
+    field_em, year, lat, lon = load_field_from_jobs(exp_dir, var=var_name)
     syear, eyear = verif_yrs[0], verif_yrs[-1]
 
     if syear < np.min(year) or eyear > np.max(year):
