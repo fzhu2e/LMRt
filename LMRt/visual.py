@@ -347,7 +347,7 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                    central_longitude=0, latlon_range=None,
                    land_color=sns.xkcd_rgb['light grey'], ocean_color=sns.xkcd_rgb['light grey'],
                    land_zorder=None, ocean_zorder=None,
-                   clim=None, cmap='RdBu_r', extend='both', mode='mesh', add_gridlines=False,
+                   clim=None, cmap='RdBu_r', cmap_under=None, cmap_over=None, extend='both', mode='latlon', add_gridlines=False,
                    cbar_labels=None, cbar_pad=0.05, cbar_orientation='vertical', cbar_aspect=10,
                    cbar_fraction=0.15, cbar_shrink=0.5, cbar_title=None, font_scale=1.5):
 
@@ -400,6 +400,10 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
         ax.gridlines(edgecolor='gray', linestyle=':', crs=transform)
 
     cmap = plt.get_cmap(cmap)
+    if cmap_under is not None:
+        cmap.set_under(cmap_under)
+    if cmap_over is not None:
+        cmap.set_over(cmap_over)
 
     if mode == 'latlon':
         im = ax.contourf(lon_c, lat_c, field_var_c, levels, transform=transform, cmap=cmap, extend=extend)
@@ -424,8 +428,13 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
         cbar.ax.set_title(cbar_title)
 
     if site_lats is not None and site_lons is not None:
-        ax.scatter(site_lons, site_lats, s=site_markersize, c=site_color, marker=site_marker, edgecolors='k',
-                   zorder=99, transform=transform)
+        if type(site_lats) is not dict:
+            ax.scatter(site_lons, site_lats, s=site_markersize, c=site_color, marker=site_marker, edgecolors='k',
+                       zorder=99, transform=transform)
+        else:
+            for name in site_lats.keys():
+                ax.scatter(site_lons[name], site_lats[name], s=site_markersize[name], c=site_color[name], marker=site_marker[name], edgecolors='k',
+                           zorder=99, transform=transform)
 
     return fig
 
