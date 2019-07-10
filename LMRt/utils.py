@@ -589,7 +589,12 @@ def calc_ye(proxy_manager, ptypes, psm_name,
                 print(f'Fail to forward; skipping {pobj.id} ...')
                 continue
 
-            ye_tmp = ts_matching(ye_time, ye_tmp, pobj.time, pobj.values.values, match_std=match_std, match_mean=match_mean)
+            res_dict = ts_matching(ye_time, ye_tmp, pobj.time, pobj.values.values, match_std=match_std, match_mean=match_mean)
+            ye_tmp = res_dict['value_target']
+            if verbose:
+                factor = res_dict['factor']
+                bias = res_dict['bias']
+                print(f'TS matching: factor={factor:.2f}, bias={bias:.2f}')
 
             ye_out.append(ye_tmp)
             pid_map[pobj.id] = k
@@ -2936,12 +2941,16 @@ def ts_matching(time_target, value_target, time_ref, value_ref, match_std=True, 
         t_target, v_target, t_ref, v_ref = overlap_ts(time_target, value_target, time_ref, value_ref)
         factor = np.std(v_ref) / np.std(v_target)
         value_target = factor * value_target
+    else:
+        factor = np.nan
 
     # order matters: match_std first and then match_mean
     if match_mean is True:
         t_target, v_target, t_ref, v_ref = overlap_ts(time_target, value_target, time_ref, value_ref)
         bias = np.mean(v_ref) - np.mean(v_target)
         value_target = value_target + bias
+    else:
+        bias = np.nan
 
     if verbose:
         t_target, v_target_bak, t_ref, v_ref = overlap_ts(time_target, value_target_bak, time_ref, value_ref)
@@ -2957,7 +2966,13 @@ def ts_matching(time_target, value_target, time_ref, value_ref, match_std=True, 
         print(f'after:\t{np.mean(v_target):.2f}\t{np.std(v_target):.2f}')
         print()
 
-    return value_target
+    res_dict = {
+        'value_target': value_target,
+        'factor': factor,
+        'bias': bias,
+    }
+
+    return res_dict
 
 
 def compute_annual_means(time_raw,data_raw,valid_frac,year_type):

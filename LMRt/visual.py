@@ -1088,7 +1088,7 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
 
     # pseudo value with bias correction and vairance match
     trw_pseudo = vsl_res[pid]['trw_org']
-    trw_pseudo = LMRt.utils.ts_matching(year_ann, trw_pseudo, trw_time, trw_value)
+    trw_pseudo = LMRt.utils.ts_matching(year_ann, trw_pseudo, trw_time, trw_value)['value_target']
 
     #===========================================================
     # plot
@@ -1349,7 +1349,7 @@ def plot_vsl_dashboard_p2k(p2k_id, vsl_res, meta_dict, vsl_params, xlim=[850, 20
 
     # pseudo value with bias correction and vairance match
     trw_pseudo = vsl_res[p2k_id]['trw_org']
-    trw_pseudo = utils.ts_matching(year_ann, trw_pseudo, time_obs, trw_obs)
+    trw_pseudo = utils.ts_matching(year_ann, trw_pseudo, time_obs, trw_obs)['value_target']
 
     #===========================================================
     # plot
