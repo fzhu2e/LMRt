@@ -64,7 +64,10 @@ def get_prior(filepath, datatype, cfg, anom_reference_period=(1951, 1980), verbo
 
     prior_datadir = os.path.dirname(filepath)
     prior_datafile = os.path.basename(filepath)
-    statevars = cfg.prior.state_variables.toDict()
+    if type(cfg.prior.state_variables) is not dict:
+        statevars = cfg.prior.state_variables.toDict()
+    else:
+        statevars = cfg.prior.state_variables
     statevars_info = cfg.prior.state_variables_info.toDict()
 
     if cfg.core.recon_timescale == 1:
