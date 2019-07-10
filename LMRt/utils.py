@@ -3517,6 +3517,8 @@ def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), 
         'ERA20-20C': load_gridded_data.read_gridded_data_CMIP5_model,
         '20CR-V2': load_gridded_data.read_gridded_data_CMIP5_model,
         'GPCC': load_gridded_data.read_gridded_data_GPCC,
+        'PREC': get_env_vars,
+        '20CR-V2C': get_env_vars,
     }
 
     calib_vars = {
@@ -3527,6 +3529,8 @@ def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), 
         'ERA20-20C': {'tas_sfc_Amon': 'anom'},
         '20CR-V2': {'tas_sfc_Amon': 'anom'},
         'GPCC': ['precip'],
+        'PREC': 'precip',
+        '20CR-V2C': 'precip',
     }
 
     inst_field = {}
@@ -3560,6 +3564,25 @@ def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), 
                 ref_period,
                 outfreq,
             )
+
+        elif name == 'PREC':
+            lat_grid, lon_grid, time_grid, vars_grid = load_func[name](
+                {'precip': path},
+                calc_anomaly=True,
+                ref_period=ref_period,
+            )
+            prate = vars_grid['precip']/24/3600  # convert from mm/day to kg/m^2/s
+            anomaly_grid, time_grid = annualize_var(prate, time_grid)
+            time_grid = year_float2datetime(time_grid)
+
+        elif name == '20CR-V2C':
+            lat_grid, lon_grid, time_grid, vars_grid = load_func[name](
+                {'prate': path},
+                calc_anomaly=True,
+                ref_period=ref_period,
+            )
+            anomaly_grid, time_grid = annualize_var(vars_grid['prate'], time_grid)
+            time_grid = year_float2datetime(time_grid)
 
         else:
             time_grid, lat_grid, lon_grid, anomaly_grid = load_func[name](
