@@ -186,7 +186,7 @@ class PAGES2k_ptype(object):
 
 def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_col='type', time_col='time',
                  title=None, title_weight='normal', font_scale=1.5, rc=PAGES2k(),
-                 figsize=[8, 10], projection=ccrs.Robinson(), markersize=50, plot_count=True,
+                 figsize=[8, 10], projection=ccrs.Robinson, central_longitude=0, markersize=50, plot_count=True,
                  lgd_ncol=1, lgd_anchor_upper=(1, -0.1), lgd_anchor_lower=(1, -0.05),lgd_frameon=False):
 
     sns.set(style='darkgrid', font_scale=font_scale)
@@ -200,6 +200,7 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
     gs = gridspec.GridSpec(nrow, 1)
     gs.update(wspace=0, hspace=0.1)
 
+    projection = projection(central_longitude=central_longitude)
     ax_map = plt.subplot(gs[0], projection=projection)
 
     if title:
