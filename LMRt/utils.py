@@ -296,8 +296,8 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
 
     for site in all_proxy_ids:
         site_meta = db_metadata[db_metadata['Proxy ID'] == site]
-        start_yr = site_meta['Youngest (C.E.)'].iloc[0]
-        end_yr = site_meta['Oldest (C.E.)'].iloc[0]
+        start_yr = site_meta['Oldest (C.E.)'].iloc[0]
+        end_yr = site_meta['Youngest (C.E.)'].iloc[0]
         lat = site_meta['Lat (N)'].iloc[0]
         lon = site_meta['Lon (E)'].iloc[0]
         elev = site_meta['Elev'].iloc[0]

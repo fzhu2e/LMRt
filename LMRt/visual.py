@@ -576,6 +576,7 @@ def plot_ts_from_jobs(
     qs=[0.025, 0.25, 0.5, 0.75, 0.975], pannel_size=[10, 4], ylabel='T anom. (K)',
     font_scale=1.5, hspace=0.5, ylim=[-1, 1], color=sns.xkcd_rgb['pale red'],
     title=None, plot_title=True, title_y=1,
+    plot_lgd=True,
     lgd_ncol=3, lgd_bbox_to_anchor=None,
     lgd_order=[0, 2, 3, 1], style='ticks',
     bias_correction=False,
@@ -696,17 +697,19 @@ def plot_ts_from_jobs(
                 ax.set_title(f'{title_str} (corr={corr:.2f}; CE={ce:.2f})', y=title_y)
 
             if plot_i == 0:
-                if lgd_order:
-                    handles, labels = ax.get_legend_handles_labels()
-                    ax.legend(
-                        [handles[idx] for idx in lgd_order], [labels[idx] for idx in lgd_order],
-                        loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor,
-                    )
-                else:
-                    ax.legend(loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor)
+                if plot_lgd:
+                    if lgd_order:
+                        handles, labels = ax.get_legend_handles_labels()
+                        ax.legend(
+                            [handles[idx] for idx in lgd_order], [labels[idx] for idx in lgd_order],
+                            loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor,
+                        )
+                    else:
+                        ax.legend(loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor)
         else:
             ax.set_title(title_str, y=title_y)
-            ax.legend(loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor)
+            if plot_lgd:
+                ax.legend(loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor)
 
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
