@@ -50,9 +50,11 @@ class ReconJob:
             print(f'pid={os.getpid()} >>> job.cfg updated')
 
     def load_proxies(self, proxies_df_filepath, metadata_df_filepath, precalib_filesdict=None,
+                     select_box_lf=None, select_box_ur=None,
                      seed=0, verbose=False, print_assim_proxy_count=False, print_proxy_type_list=False):
 
         all_proxy_ids, all_proxies = utils.get_proxy(self.cfg, proxies_df_filepath, metadata_df_filepath,
+                                                     select_box_lf=select_box_lf, select_box_ur=select_box_ur,
                                                      precalib_filesdict=precalib_filesdict, verbose=verbose)
 
         ind_assim, ind_eval = utils.generate_proxy_ind(self.cfg, len(all_proxy_ids), seed=seed)
@@ -695,13 +697,17 @@ class ReconJob:
 
     def run(self, prior_filepath, prior_datatype, db_proxies_filepath, db_metadata_filepath,
             recon_years=None, seed=0, precalib_filesdict=None, ye_filesdict=None,
+            select_box_lf=None, select_box_ur=None,
             verbose=False, print_proxy_type_list=False, print_assim_proxy_count=False, save_dirpath=None, mode='normal'):
 
         self.load_prior(prior_filepath, prior_datatype, verbose=verbose, seed=seed)
+
         self.load_proxies(db_proxies_filepath, db_metadata_filepath, precalib_filesdict=precalib_filesdict,
+                          select_box_lf=select_box_lf, select_box_ur=select_box_ur,
                           print_proxy_type_list=print_proxy_type_list,
                           print_assim_proxy_count=print_assim_proxy_count,
                           verbose=verbose, seed=seed)
+
         self.load_ye_files(ye_filesdict=ye_filesdict, verbose=verbose)
 
         self.run_da(recon_years=recon_years, mode=mode, verbose=verbose)

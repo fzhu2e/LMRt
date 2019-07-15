@@ -275,8 +275,8 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
 def plot_proxy_age_map(df, lon_col='lon', lat_col='lat', type_col='type', time_col='time',
                        title=None, title_weight='normal', font_scale=1.5,
                        figsize=[12, 10], projection=ccrs.Robinson, central_longitude=0, markersize=150,
-                       lgd_ncol=1, lgd_anchor=(1, -0.1), lgd_frameon=False,
-                       add_nino34_box=False, add_nino12_box=False):
+                       plot_cbar=True, marker_color=None, transform=ccrs.PlateCarree(),
+                       add_nino34_box=False, add_nino12_box=False, add_box=False, add_box_lf=None, add_box_ur=None):
 
     p = PAGES2k()
 
@@ -294,11 +294,17 @@ def plot_proxy_age_map(df, lon_col='lon', lat_col='lat', type_col='type', time_c
 
     if add_nino12_box:
         x, y = [-90, -90, -80, -80, -90], [0, -10, -10, 0, 0]
-        ax_map.plot(x, y, '--', transform=ccrs.Geodetic(), color='gray')
+        ax_map.plot(x, y, '--', transform=transform, color='gray')
 
     if add_nino34_box:
         x, y = [-170, -170, -120, -120, -170], [5, -5, -5, 5, 5]
-        ax_map.plot(x, y, '--', transform=ccrs.Geodetic(), color='gray')
+        ax_map.plot(x, y, '--', transform=transform, color='gray')
+
+    if add_box:
+        lf_lat, lf_lon = add_box_lf
+        ur_lat, ur_lon = add_box_ur
+        x, y = [lf_lon, lf_lon, ur_lon, ur_lon, lf_lon], [ur_lat, lf_lat, lf_lat, ur_lat, ur_lat]
+        ax_map.plot(x, y, '--', transform=transform, color='gray')
 
     color_norm = Normalize(vmin=0, vmax=1000)
 
@@ -323,19 +329,28 @@ def plot_proxy_age_map(df, lon_col='lon', lat_col='lat', type_col='type', time_c
         type_names.append(f'{ptype} (n={max_count[-1]})')
         lons = list(df[selector][lon_col])
         lats = list(df[selector][lat_col])
-        s_plots.append(
-            ax_map.scatter(
-                lons, lats, marker=p.markers_dict[ptype], cmap=cmap, norm=color_norm,
-                c=ages, edgecolor='k', s=markersize, transform=ccrs.Geodetic()
+        if marker_color is None:
+            s_plots.append(
+                ax_map.scatter(
+                    lons, lats, marker=p.markers_dict[ptype], cmap=cmap, norm=color_norm,
+                    c=ages, edgecolor='k', s=markersize, transform=ccrs.Geodetic()
+                )
             )
-        )
+        else:
+            s_plots.append(
+                ax_map.scatter(
+                    lons, lats, marker=p.markers_dict[ptype], cmap=cmap, norm=color_norm,
+                    c=marker_color, edgecolor='k', s=markersize, transform=ccrs.Geodetic()
+                )
+            )
 
-    cbar_lm = plt.colorbar(s_plots[0], orientation='vertical',
-                           pad=0.05, aspect=10, extend='min',
-                           ax=ax_map, fraction=0.05, shrink=0.5)
+    if plot_cbar:
+        cbar_lm = plt.colorbar(s_plots[0], orientation='vertical',
+                               pad=0.05, aspect=10, extend='min',
+                               ax=ax_map, fraction=0.05, shrink=0.5)
 
-    cbar_lm.ax.set_title(r'age [yrs]', y=1.05)
-    cbar_lm.set_ticks([0, 200, 400, 600, 800, 1000])
+        cbar_lm.ax.set_title(r'age [yrs]', y=1.05)
+        cbar_lm.set_ticks([0, 200, 400, 600, 800, 1000])
 
     return fig
 

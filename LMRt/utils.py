@@ -246,7 +246,8 @@ def regrid_prior(cfg, X, verbose=False):
     return Xb_one, Xb_one_coords, new_state_info
 
 
-def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict=None, verbose=False):
+def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict=None, verbose=False,
+              select_box_lf=None, select_box_ur=None):
 
     db_proxies = pd.read_pickle(proxies_df_filepath).to_dense()
     db_metadata = pd.read_pickle(metadata_df_filepath)
@@ -353,6 +354,19 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
 
             if verbose:
                 print(f'\npid={os.getpid()} >>> SNR = {SNR}, proxy_var = {proxy_var:.5f}, ob_err_var = {ob_err_var:.5f}')
+
+        if select_box_lf is not None and select_box_ur is not None:
+            # pick the proxies only inside the selected box defined with the
+            # (lat, lon) of the lower-left and upper-right corner
+            for idx, pobj in enumerate(picked_proxies):
+                lf_lat, lf_lon = select_box_lf
+                ur_lat, ur_lon = select_box_ur
+                lf_lon = np.mod(lf_lon, 360)
+                ur_lon = np.mod(ur_lon, 360)
+                p_lon = np.mod(pobj.lon, 360)
+                if pobj.lat < lf_lat or pobj.lat > ur_lat or p_lon < lf_lon or p_lon > ur_lon:
+                    picked_proxies.pop(idx)
+                    picked_proxy_ids.pop(idx)
 
     return picked_proxy_ids, picked_proxies
 
