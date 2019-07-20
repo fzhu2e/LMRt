@@ -2949,6 +2949,9 @@ def ts_matching(time_target, value_target, time_ref, value_ref, match_std=True, 
         value_corrected (1-D array): the value axis of the target timeseries after correction
     '''
 
+    value_target = np.array(value_target)
+    value_ref = np.array(value_ref)
+
     value_target_bak = np.copy(value_target)
 
     if match_std is True:
