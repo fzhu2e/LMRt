@@ -1228,6 +1228,7 @@ def calibrate_psm(
                         'fitAIC': optimal_reg.aic,
                         'fitBIC': optimal_reg.bic,
                         'fitR2adj': optimal_reg.rsquared_adj,
+                        'PSMresid': optimal_reg.resid,
                     }
                     if verbose:
                         pprint(precalib_dict_pobj)
@@ -1260,6 +1261,7 @@ def calibrate_psm(
                         'fitAIC': optimal_reg.aic,
                         'fitBIC': optimal_reg.bic,
                         'fitR2adj': optimal_reg.rsquared_adj,
+                        'PSMresid': optimal_reg.resid,
                     }
 
                     if verbose:
