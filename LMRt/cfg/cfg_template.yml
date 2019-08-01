@@ -28,6 +28,7 @@ core:
   online_reconstruction: False
   clean_start: True
   use_precalc_ye: True
+  output_details: False
   write_posterior_Ye: False
   # save_full_field: False
   recon_period: !!python/tuple [0, 2000]

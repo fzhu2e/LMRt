@@ -1604,7 +1604,15 @@ def update_year(yr_idx, target_year,
 
         ob_err = Y.psm_obj.R/float(nYobs)
 
-        Xa = enkf_update_array(Xb, Yobs, Ye, ob_err, loc=loc, inflate=inflate)
+        if cfg.core.output_details:
+            details_dict = enkf_update_array(Xb, Yobs, Ye, ob_err, loc=loc, inflate=inflate, output_details=True)
+            Xa = details_dict['Xa']
+            os.makedirs(cfg.core.output_details_dirpath, exist_ok=True)
+            filename = f'enkf_details_{yr_idx}_{Y.id}.pkl'
+            with open(os.path.join(cfg.core.output_details_dirpath, filename), 'wb') as f:
+                pickle.dump(details_dict, f)
+        else:
+            Xa = enkf_update_array(Xb, Yobs, Ye, ob_err, loc=loc, inflate=inflate, output_details=False)
 
         xbvar = Xb.var(axis=1, ddof=1)
         xavar = Xa.var(axis=1, ddof=1)
@@ -2095,7 +2103,7 @@ def haversine(lon1, lat1, lon2, lat2):
     return km
 
 
-def enkf_update_array(Xb, obvalue, Ye, ob_err, loc=None, inflate=None):
+def enkf_update_array(Xb, obvalue, Ye, ob_err, loc=None, inflate=None, output_details=False):
     """ Function to do the ensemble square-root filter (EnSRF) update
     (ref: Whitaker and Hamill, Mon. Wea. Rev., 2002)
 
@@ -2175,7 +2183,24 @@ def enkf_update_array(Xb, obvalue, Ye, ob_err, loc=None, inflate=None):
     if np.ma.isMaskedArray(Xa): np.ma.set_fill_value(Xa, np.nan)
 
     # Return the full state
-    return Xa
+    if output_details:
+        details_dict = {
+            'xbm': xbm,
+            'xam': xam,
+            'Xbp': Xbp,
+            'Xap': Xap,
+            'Xa': Xa,
+            'kmat': kmat,
+            'kcov': kcov,
+            'kdenom': kcov,
+            'varye': varye,
+            'beta': beta,
+            'ob_err': ob_err,
+            'innov': innov,
+        }
+        return details_dict
+    else:
+        return Xa
 
 
 def Kalman_ESRF(cfg, vY, vR, vYe, Xb_in,
