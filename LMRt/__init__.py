@@ -387,12 +387,12 @@ class ReconJob:
                     vals = precalc_vals[idx]
 
                     if add_noise:
-                        sig_var = np.nanvar(vals)
-                        noise_var = sig_var / SNR
+                        sig_std = np.nanstd(vals)
+                        noise_std = sig_std / SNR
                         if noise_type == 'AR1':
                             noise = utils.ar1_noise(years, vals, g=g, seed=seed)
                             n_std = np.nanstd(noise)
-                            noise = noise * np.sqrt(noise_var)/n_std
+                            noise = noise * noise_std/n_std
 
                         else:
                             noise = np.random.normal(0, np.sqrt(noise_var), size=np.size(vals))
@@ -467,12 +467,12 @@ class ReconJob:
                 vals = np.array(series_pp[value_col].values[0])
 
                 if add_noise:
-                    sig_var = np.nanvar(vals)
-                    noise_var = sig_var / SNR
+                    sig_std = np.nanstd(vals)
+                    noise_std = sig_std / SNR
                     if noise_type == 'AR1':
                         noise = utils.ar1_noise(years, vals, g=g, seed=seed)
                         n_std = np.nanstd(noise)
-                        noise = noise * np.sqrt(noise_var)/n_std
+                        noise = noise * noise_std/n_std
 
                     else:
                         noise = np.random.normal(0, np.sqrt(noise_var), size=np.size(vals))

@@ -343,9 +343,10 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
                 if verbose:
                     print(err_msg)
         else:
-            proxy_var = np.nanvar(values)
+            proxy_std = np.nanstd(values)
             SNR = proxy_db_cfg[db_name].SNR[proxy_type]
-            ob_err_var = proxy_var / SNR
+            ob_err_std = proxy_std / SNR
+            ob_err_var = ob_err_std**2
 
             psm_obj = PSM(psm_key, ob_err_var)
             pobj = Proxy(site, proxy_type, start_yr, end_yr, lat, lon, elev, seasonality, values, time, psm_obj)
