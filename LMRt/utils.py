@@ -3833,6 +3833,93 @@ def calc_field_corr_ce(exp_dir, field_model, time_model, lat_model, lon_model, v
 
     return corr, ce, lat_model, lon_model
 
+
+def calc_field_cov(field, lat, lon, year, target_field, target_lat, target_lon, verif_yrs=np.arange(1880, 2000),
+                   verbose=False):
+    ''' Calculate the correlation map between the field and the timeseries of a target field at the target location
+
+    Args:
+        field (ndarray): the field in dims (nt x nlat x nlon)
+        lat/lon (array): the lat/lon array of the field
+        year (array): the time axis in float
+        target_field (ndarray): the target field in dims (nt x nlat x nlon)
+        target_lat/lon (float): the target location
+        verif_yrs (tuple): the time period to calculate correlation
+
+    Returns:
+        corr (ndarray): the correlation map in dims (nlat x nlon)
+    '''
+    nt, nlat, nlon = np.shape(field)
+    lat_ind, lon_ind = find_closest_loc(lat, lon, target_lat, target_lon)
+    found_lat, found_lon = lat[lat_ind], lon[lon_ind]
+    if verbose:
+        print(f'Target: ({target_lat}, {target_lon}); Found: ({found_lat:.2f}, {found_lon:.2f})')
+
+    syear, eyear = verif_yrs[0], verif_yrs[-1]
+    if syear < np.min(year) or eyear > np.max(year):
+        raise ValueError('ERROR: The time axis of the field is not fully covering the range of verif_yrs!!!')
+    mask = (year >= syear) & (year <= eyear)
+
+    corr = np.ndarray((nlat, nlon))
+    target_ts = target_field[mask, lat_ind, lon_ind]
+    for i in range(nlat):
+        for j in range(nlon):
+            ij_ts = field[mask, i, j]
+            corr[i, j] = np.corrcoef(target_ts, ij_ts)[1, 0]
+
+    res = {
+        'corr': corr,
+        'found_lat': found_lat,
+        'found_lon': found_lon,
+    }
+    return res
+
+
+def calc_corr_between_fields(
+    field1, time1, lat1, lon1,
+    field2, time2, lat2, lon2,
+    verif_yrs=np.arange(1880, 2000)
+):
+    syear, eyear = verif_yrs[0], verif_yrs[-1]
+    mask1 = (time1 >= syear) & (time1 <= eyear)
+    mask2 = (time2 >= syear) & (time2 <= eyear)
+    field1_inside = field1[mask1]
+    field2_inside = field2[mask2]
+    time1_inside = time1[mask1]
+    time2_inside = time2[mask2]
+
+    nlat1 = np.size(lat1)
+    nlon1 = np.size(lon1)
+    nlat2 = np.size(lat2)
+    nlon2 = np.size(lon2)
+    specob1 = Spharmt(nlon1, nlat1, gridtype='regular', legfunc='computed')
+    specob2 = Spharmt(nlon2, nlat2, gridtype='regular', legfunc='computed')
+
+    overlap_yrs = np.intersect1d(time1_inside, time2_inside)
+    ind1 = np.searchsorted(time1_inside, overlap_yrs)
+    ind2 = np.searchsorted(time2_inside, overlap_yrs)
+
+    field1_on_field2 = []
+    for i in ind1:
+        field1_on_field2_each_yr = regrid(specob1, specob2, field1_inside[i], ntrunc=None, smooth=None)
+        field1_on_field2.append(field1_on_field2_each_yr)
+
+    field1_on_field2 = np.asarray(field1_on_field2)
+
+    corr = np.ndarray((nlat2, nlon2))
+
+    for i in range(nlat2):
+        for j in range(nlon2):
+            ts1 = field1_on_field2[ind1, i, j]
+            ts2 = field2_inside[ind2, i, j]
+
+            ts1_notnan = ts1[~np.isnan(ts1)]
+            ts2_notnan = ts2[~np.isnan(ts2)]
+
+            corr[i, j] = np.corrcoef(ts1_notnan, ts2_notnan)[1, 0]
+
+    return corr
+
 # -----------------------------------------------
 #  Superposed Epoch Analysis
 # -----------------------------------------------
