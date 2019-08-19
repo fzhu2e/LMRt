@@ -26,7 +26,7 @@ from scipy.misc import factorial
 import cftime
 from pprint import pprint
 from time import time as ttime
-#  from IPython import embed
+from IPython import embed
 from pathos.multiprocessing import ProcessingPool as Pool
 
 from . import load_gridded_data  # original file from LMR
@@ -1188,15 +1188,21 @@ def calibrate_psm(
                     print(f'>>> Target: ({pobj.lat}, {pobj.lon}); Found: ({ref_lat[var_name][lat_ind]:.2f}, {ref_lon[var_name][lon_ind]:.2f})')
 
                 # load seasons for each variable
-                try:
+                if pobj.type in seasonality.keys():
                     seasons[var_name] = seasonality[pobj.type][f'seasons_{var_name}']
-                    if pobj.seasonality not in seasons[var_name]:
-                        seasons[var_name].append(pobj.seasonality)
-                except:
-                    #  seasons[var_name] = [[1,2,3,4,5,6,7,8,9,10,11,12]]
-                    # revert back to proxy metadata
-                    seasons[var_name] = [pobj.seasonality]
+                    meta_season_in_list = False
+                    for avgMonths in seasons[var_name]:
+                        if list(pobj.seasonality) == avgMonths:
+                            meta_season_in_list = True
+                            break
 
+                    if meta_season_in_list is False:
+                        seasons[var_name].append(list(pobj.seasonality))
+                else:
+                    seasons[var_name] = [list(pobj.seasonality)]
+
+                if verbose:
+                    print(f'seasons[{var_name}]:', seasons[var_name])
 
                 ref_value[var_name] = {}
                 for season, field in ref_var[var_name].items():
@@ -1212,6 +1218,7 @@ def calibrate_psm(
                     ref_time[var_name], ref_value[var_name], seasons[var_name],
                     verbose=verbose
                 )
+
                 if optimal_reg is None:
                     # not enough data for regression; skip
                     return None

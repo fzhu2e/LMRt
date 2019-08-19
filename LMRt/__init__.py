@@ -180,10 +180,10 @@ class ReconJob:
                 seasons_list = []
                 season_tag = f'seasons_{var_name}'
                 for k, season_dict in seasonality.items():
-                    seasons_list += season_dict[season_tag]
+                    seasons_list.append(season_dict[season_tag])
 
                 for pobj in self.proxy_manager.all_proxies:
-                    seasons_list.append(pobj.seasonality)
+                    seasons_list.append(list(pobj.seasonality))
 
                 seasons_set = set(map(tuple, seasons_list))
                 avgMonths_setdict[var_name] = list(map(list, seasons_set))
@@ -197,6 +197,7 @@ class ReconJob:
             for var_name, v in calib_refsdict.items():
                 dataset_name, dataset_path = v
                 print(f'>>> Calculating seasonal-average on: {dataset_name} ...')
+                #  print(avgMonths_setdict[varname])
                 var_ann_dict, year_ann = utils.calc_seasonal_avg(
                     inst_field[dataset_name], inst_time[dataset_name],
                     lat=inst_lat[dataset_name], lon=inst_lon[dataset_name],
@@ -499,6 +500,7 @@ class ReconJob:
                 elif proxy_str == 'trsgi':
                     proxy_str = 'WidthPages2'
                 series['type'] = f'{archive_str}_{proxy_str}'
+                series['Seasonality'] = series_pp['seasonality']
                 df_metadata_new = df_metadata_new.append(series, ignore_index=True)
 
         if metadata_savepath:
