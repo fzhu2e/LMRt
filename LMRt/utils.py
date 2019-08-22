@@ -3885,7 +3885,7 @@ def calc_field_cov(field, lat, lon, year, target_field, target_lat, target_lon, 
 def calc_corr_between_fields(
     field1, time1, lat1, lon1,
     field2, time2, lat2, lon2,
-    verif_yrs=np.arange(1880, 2000)
+    verif_yrs=np.arange(1880, 2000),
 ):
     syear, eyear = verif_yrs[0], verif_yrs[-1]
     mask1 = (time1 >= syear) & (time1 <= eyear)
@@ -3895,23 +3895,26 @@ def calc_corr_between_fields(
     time1_inside = time1[mask1]
     time2_inside = time2[mask2]
 
-    nlat1 = np.size(lat1)
-    nlon1 = np.size(lon1)
-    nlat2 = np.size(lat2)
-    nlon2 = np.size(lon2)
-    specob1 = Spharmt(nlon1, nlat1, gridtype='regular', legfunc='computed')
-    specob2 = Spharmt(nlon2, nlat2, gridtype='regular', legfunc='computed')
-
     overlap_yrs = np.intersect1d(time1_inside, time2_inside)
     ind1 = np.searchsorted(time1_inside, overlap_yrs)
     ind2 = np.searchsorted(time2_inside, overlap_yrs)
 
-    field1_on_field2 = []
-    for i in ind1:
-        field1_on_field2_each_yr = regrid(specob1, specob2, field1_inside[i], ntrunc=None, smooth=None)
-        field1_on_field2.append(field1_on_field2_each_yr)
+    nlat1 = np.size(lat1)
+    nlon1 = np.size(lon1)
+    nlat2 = np.size(lat2)
+    nlon2 = np.size(lon2)
 
-    field1_on_field2 = np.asarray(field1_on_field2)
+    if nlat1 == nlat2 and nlon1 == nlon2:
+        field1_on_field2 = field1_inside[ind1]
+    else:
+        specob1 = Spharmt(nlon1, nlat1, gridtype='regular', legfunc='computed')
+        specob2 = Spharmt(nlon2, nlat2, gridtype='regular', legfunc='computed')
+
+        field1_on_field2 = []
+        for i in ind1:
+            field1_on_field2_each_yr = regrid(specob1, specob2, field1_inside[i], ntrunc=None, smooth=None)
+
+        field1_on_field2 = np.asarray(field1_on_field2)
 
     corr = np.ndarray((nlat2, nlon2))
 
@@ -3920,10 +3923,12 @@ def calc_corr_between_fields(
             ts1 = field1_on_field2[ind1, i, j]
             ts2 = field2_inside[ind2, i, j]
 
-            ts1_notnan = ts1[~np.isnan(ts1)]
-            ts2_notnan = ts2[~np.isnan(ts2)]
-
-            corr[i, j] = np.corrcoef(ts1_notnan, ts2_notnan)[1, 0]
+            if np.isnan(ts1).all() or np.isnan(ts2).all():
+                corr[i, j] = np.nan
+                continue
+            else:
+                t1, y1, t2, y2 = overlap_ts(time1_inside[ind1], ts1, time2_inside[ind2], ts2)
+                corr[i, j] = np.corrcoef(y1, y2)[1, 0]
 
     return corr
 
