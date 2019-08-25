@@ -113,7 +113,8 @@ class ReconJob:
 
             print(f'{"TOTAL":>45s}:{len(self.proxy_manager.all_proxies):5d}')
 
-    def load_prior(self, prior_filepath, prior_datatype, anom_reference_period=(1951, 1980), seed=0, verbose=False):
+    def load_prior(self, prior_filepath, prior_datatype, anom_reference_period=(1951, 1980), seed=0,
+                   avgInterval=None, verbose=False):
         ''' Load prior variables
 
         Args:
@@ -125,7 +126,9 @@ class ReconJob:
         '''
         prior_dict = utils.get_prior(
             prior_filepath, prior_datatype, self.cfg,
-            anom_reference_period=anom_reference_period, verbose=verbose
+            anom_reference_period=anom_reference_period,
+            avgInterval=avgInterval,
+            verbose=verbose
         )
 
         ens, prior_sample_indices, coords, full_state_info = utils.populate_ensemble(
@@ -699,10 +702,14 @@ class ReconJob:
 
     def run(self, prior_filepath, prior_datatype, db_proxies_filepath, db_metadata_filepath,
             recon_years=None, seed=0, precalib_filesdict=None, ye_filesdict=None,
+            anom_reference_period=(1951, 1980), avgInterval=None,
             select_box_lf=None, select_box_ur=None,
             verbose=False, print_proxy_type_list=False, print_assim_proxy_count=False, save_dirpath=None, mode='normal'):
 
-        self.load_prior(prior_filepath, prior_datatype, verbose=verbose, seed=seed)
+        self.load_prior(prior_filepath, prior_datatype,
+                        anom_reference_period=anom_reference_period,
+                        avgInterval=avgInterval,
+                        verbose=verbose, seed=seed)
 
         self.load_proxies(db_proxies_filepath, db_metadata_filepath, precalib_filesdict=precalib_filesdict,
                           select_box_lf=select_box_lf, select_box_ur=select_box_ur,

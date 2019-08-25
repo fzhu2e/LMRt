@@ -57,7 +57,7 @@ def setup_cfg(cfg):
     return cfg
 
 
-def get_prior(filepath, datatype, cfg, anom_reference_period=(1951, 1980), verbose=False):
+def get_prior(filepath, datatype, cfg, anom_reference_period=(1951, 1980), verbose=False, avgInterval=None):
     read_func = {
         'CMIP5': load_gridded_data.read_gridded_data_CMIP5_model,
     }
@@ -70,13 +70,14 @@ def get_prior(filepath, datatype, cfg, anom_reference_period=(1951, 1980), verbo
         statevars = cfg.prior.state_variables
     statevars_info = cfg.prior.state_variables_info.toDict()
 
-    if cfg.core.recon_timescale == 1:
-        avgInterval = {'annual': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
-    elif cfg.core.recon_timescale > 1:
-        avgInterval = {'multiyaer': [cfg.core.recon_timescale]}
-    else:
-        print('ERROR in config.: unrecognized job.cfg.core.recon_timescale!')
-        raise SystemExit()
+    if avgInterval is None:
+        if cfg.core.recon_timescale == 1:
+            avgInterval = {'annual': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
+        elif cfg.core.recon_timescale > 1:
+            avgInterval = {'multiyaer': [cfg.core.recon_timescale]}
+        else:
+            print('ERROR in config.: unrecognized job.cfg.core.recon_timescale!')
+            raise SystemExit()
 
     detrend = cfg.prior.detrend
 
