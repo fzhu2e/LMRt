@@ -3774,12 +3774,15 @@ def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 200
 
 
 def calc_field_corr_ce(exp_dir, field_model, time_model, lat_model, lon_model, verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980],
-                            valid_frac=0.5, var_name='tas_sfc_Amon'):
+                            valid_frac=0.5, var_name='tas_sfc_Amon', avgMonths=None):
     ''' Calculate corr and CE between LMR and model field
 
     Note: The time axis of the LMR field is assumed to fully cover the range of verif_yrs
     '''
-    field_model, time_model = annualize_var(field_model, time_model)  # annualize the model field
+    if avgMonths is None:
+        field_model, time_model = annualize_var(field_model, time_model)  # annualize the model field
+    else:
+        field_model, time_model = seasonal_var(field_model, time_model, avgMonths=avgMonths)
 
     if not os.path.exists(exp_dir):
         raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
