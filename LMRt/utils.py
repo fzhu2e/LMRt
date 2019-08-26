@@ -3845,8 +3845,9 @@ def calc_field_corr_ce(exp_dir, field_model, time_model, lat_model, lon_model, v
     return corr, ce, lat_model, lon_model
 
 
-def calc_field_cov(field, lat, lon, year, target_field, target_lat, target_lon, verif_yrs=np.arange(1880, 2000),
-                   verbose=False):
+def calc_field_cov(field, lat, lon, year,
+                   target_field, target_lat, target_lon, target_year,
+                   verif_yrs=np.arange(1880, 2000), verbose=False):
     ''' Calculate the correlation map between the field and the timeseries of a target field at the target location
 
     Args:
@@ -3872,11 +3873,21 @@ def calc_field_cov(field, lat, lon, year, target_field, target_lat, target_lon, 
     mask = (year >= syear) & (year <= eyear)
 
     corr = np.ndarray((nlat, nlon))
-    target_ts = target_field[mask, lat_ind, lon_ind]
+    target_ts = target_field[:, lat_ind, lon_ind]
+    target_year, target_ts = clean_ts(target_year, target_ts)
+
     for i in range(nlat):
         for j in range(nlon):
             ij_ts = field[mask, i, j]
-            corr[i, j] = np.corrcoef(target_ts, ij_ts)[1, 0]
+            ij_year, ij_ts = clean_ts(year[mask], ij_ts)
+
+            overlap_yrs = np.intersect1d(ij_year, target_year)
+            ind1 = np.searchsorted(ij_year, overlap_yrs)
+            ind2 = np.searchsorted(target_year, overlap_yrs)
+
+            ij_ts_overlap = ij_ts[ind1]
+            target_ts_overlap = target_ts[ind2]
+            corr[i, j] = np.corrcoef(target_ts_overlap, ij_ts_overlap)[1, 0]
 
     res = {
         'corr': corr,
