@@ -186,6 +186,7 @@ class PAGES2k_ptype(object):
 
 def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_col='type', time_col='time',
                  title=None, title_weight='normal', font_scale=1.5, rc=PAGES2k(),
+                 plot_timespan=None,  plot_xticks=[850, 1000, 1200, 1400, 1600, 1800, 2000],
                  figsize=[8, 10], projection=ccrs.Robinson, central_longitude=0, markersize=50, plot_count=True,
                  lgd_ncol=1, lgd_anchor_upper=(1, -0.1), lgd_anchor_lower=(1, -0.05),lgd_frameon=False):
 
@@ -266,6 +267,9 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
 
         ax_count.set_xlabel('Year (AD)')
         ax_count.set_ylabel('number of proxies')
+        if plot_timespan is not None:
+            ax_count.set_xlim(plot_timespan)
+            ax_count.set_xticks(plot_xticks)
         handles, labels = ax_count.get_legend_handles_labels()
         ax_count.legend(handles[::-1], labels[::-1], frameon=lgd_frameon, bbox_to_anchor=lgd_anchor_lower, loc='lower left')
 
