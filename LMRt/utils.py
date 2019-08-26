@@ -3890,6 +3890,7 @@ def calc_corr_between_fields(
     field1, time1, lat1, lon1,
     field2, time2, lat2, lon2,
     verif_yrs=np.arange(1880, 2000),
+    verbose=False,
 ):
     syear, eyear = verif_yrs[0], verif_yrs[-1]
     mask1 = (time1 >= syear) & (time1 <= eyear)
@@ -3900,6 +3901,8 @@ def calc_corr_between_fields(
     time2_inside = time2[mask2]
 
     overlap_yrs = np.intersect1d(time1_inside, time2_inside)
+    if verbose:
+        print(f'Timespan: {np.min(overlap_yrs)} - {np.max(overlap_yrs)}')
     ind1 = np.searchsorted(time1_inside, overlap_yrs)
     ind2 = np.searchsorted(time2_inside, overlap_yrs)
 
