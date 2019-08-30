@@ -2403,6 +2403,7 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath, dtype
         output_dict[f'{name}_shm_ens'] = (('year', 'ens'), shm_ens)
 
         if name == 'tas_sfc_Amon':
+            # calculate NINO indices
             nino_ind = nino_indices(field_ens_save[name], lats, lons)
             nino12 = nino_ind['nino1+2']
             nino3 = nino_ind['nino3']
@@ -2418,6 +2419,10 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath, dtype
             output_dict['nino3'] = (('year', 'ens'), nino3)
             output_dict['nino3.4'] = (('year', 'ens'), nino34)
             output_dict['nino4'] = (('year', 'ens'), nino4)
+
+            # calculate tripole index (TPI)
+            tpi = calc_tpi(field_ens_save[name], lats, lons)
+            output_dict['tpi'] = (('year', 'ens'), tpi)
 
     os.makedirs(save_dirpath, exist_ok=True)
     save_path = os.path.join(save_dirpath, f'job_r{seed:02d}.nc')
@@ -3407,6 +3412,47 @@ def nino_indices(sst, lats, lons):
             weights=np.cos(np.deg2rad(lats[lat_mask[region]])),
         )
     return ind
+
+
+def calc_tpi(sst, lats, lons):
+    ''' Calculate Nino indices
+
+    Args:
+        sst: sea-surface temperature, the last two dimensions are assumed to be (lat, lon)
+        lats: the latitudes in format of (-90, 90)
+        lons: the longitudes in format of (0, 360)
+    '''
+    def lon360(lon):
+        # convert from (-180, 180) to (0, 360)
+        return np.mod(lon, 360)
+
+    lats = np.asarray(lats)
+    lons = np.asarray(lons)
+
+    lat_mask = {}
+    lon_mask = {}
+    ssta = {}
+
+    lat_mask['1'] = (lats >= 25) & (lats <= 45)
+    lon_mask['1'] = (lons >= lon360(140)) & (lons <= lon360(-145))
+
+    lat_mask['2'] = (lats >= -10) & (lats <= 10)
+    lon_mask['2'] = (lons >= lon360(170)) & (lons <= lon360(-90))
+
+    lat_mask['3'] = (lats >= -50) & (lats <= -15)
+    lon_mask['3'] = (lons >= lon360(150)) & (lons <= lon360(-160))
+
+    for region in lat_mask.keys():
+        sst_sub = sst[..., lon_mask[region]]
+        sst_sub = sst_sub[..., lat_mask[region], :]
+        ssta[region] = np.average(
+            np.average(sst_sub, axis=-1),
+            axis=-1,
+            weights=np.cos(np.deg2rad(lats[lat_mask[region]])),
+        )
+
+    tpi = ssta['2'] - (ssta['1'] + ssta['3'])/2
+    return tpi
 
 
 def pobjs2df(pobjs,
