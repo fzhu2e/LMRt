@@ -3473,7 +3473,13 @@ def pobjs2df(pobjs,
     return df
 
 
-def compare_ts(t1, y1, t2, y2, stats=['corr', 'ce', 'rmse'], valid_frac=0.5):
+def compare_ts(t1, y1, t2, y2, stats=['corr', 'ce', 'rmse'], valid_frac=0.5, ref_period=[1951, 1980]):
+    # remove mean over ref_period
+    mask_ref1 = (t1 >= ref_period[0]) & (t1 <= ref_period[1])
+    mask_ref2 = (t2 >= ref_period[0]) & (t2 <= ref_period[1])
+    y1 -= np.nanmean(y1[mask_ref1])
+    y2 -= np.nanmean(y2[mask_ref2])
+
     t1_overlap, y1_overlap, t2_overlap, y2_overlap = overlap_ts(t1, y1, t2, y2)
 
     res = {}
@@ -3831,14 +3837,12 @@ def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 200
 
 
 def calc_field_corr_ce(exp_dir, field_model, time_model, lat_model, lon_model, verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980],
-                            valid_frac=0.5, var_name='tas_sfc_Amon', avgMonths=None):
+                            valid_frac=0.5, var_name='tas_sfc_Amon', avgMonths=[1,2,3,4,5,6,7,8,9,10,11,12]):
     ''' Calculate corr and CE between LMR and model field
 
     Note: The time axis of the LMR field is assumed to fully cover the range of verif_yrs
     '''
-    if avgMonths is None:
-        field_model, time_model = annualize_var(field_model, time_model)  # annualize the model field
-    else:
+    if avgMonths is not None:
         field_model, time_model = seasonal_var(field_model, time_model, avgMonths=avgMonths)
 
     if not os.path.exists(exp_dir):
