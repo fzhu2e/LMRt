@@ -640,10 +640,11 @@ def plot_ts_from_jobs(
         'tas_sfc_Amon_gm_ens': 'Global mean temperature',
         'tas_sfc_Amon_nhm_ens': 'NH mean temperature',
         'tas_sfc_Amon_shm_ens': 'SH mean temperature',
-        'nino1+2': 'Annual Niño 1+2 index',
-        'nino3': 'Annual Niño 3 index',
-        'nino3.4': 'Annual Niño 3.4 index',
-        'nino4': 'Annual Niño 4 index',
+        'nino1+2': 'Annual Niño 1+2 Index',
+        'nino3': 'Annual Niño 3 Index',
+        'nino3.4': 'Annual Niño 3.4 Index',
+        'nino4': 'Annual Niño 4 Index',
+        'tpi': 'Annual Tripole Index',
     }
 
     for plot_i, var in enumerate(plot_vars):
