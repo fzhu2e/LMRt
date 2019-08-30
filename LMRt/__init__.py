@@ -681,7 +681,7 @@ class ReconJob:
         self.res = Results(field_ens)
         print(f'\npid={os.getpid()} >>> job.res created')
 
-    def save_results(self, save_dirpath, seed=0, recon_years=None):
+    def save_results(self, save_dirpath, seed=0, recon_years=None, dtype=np.float32):
         if recon_years is None:
             yr_start = self.cfg.core.recon_period[0]
             yr_end = self.cfg.core.recon_period[-1]
@@ -693,6 +693,7 @@ class ReconJob:
                 recon_years,
                 seed,
                 save_dirpath,
+                dtype=dtype,
             )
 
         save_path = os.path.join(save_dirpath, f'job_r{seed:02d}.nc')

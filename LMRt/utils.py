@@ -2366,7 +2366,7 @@ def Kalman_optimal(Y, vR, Ye, Xb, loc_rad=None, nsvs=None, transform_only=False,
     return xam, Xap, SVD
 
 
-def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath):
+def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath, dtype=np.float32):
     grid = make_grid(prior)
     lats = grid.lat
     lons = grid.lon
@@ -2382,7 +2382,8 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath):
 
     output_dict = {}
     for name in var_names:
-        output_dict[name] = (('year', 'lat', 'lon'), field_ens_mean[name])
+        field_tmp = np.array(field_ens_mean[name], dtype=dtype)
+        output_dict[name] = (('year', 'lat', 'lon'), field_tmp)
 
         gm_ens = np.zeros((nyr, nens))
         nhm_ens = np.zeros((nyr, nens))
@@ -2391,6 +2392,11 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath):
         for k in range(nens):
             gm_ens[:, k], nhm_ens[:, k], shm_ens[:, k] = global_hemispheric_means(
                 field_ens_save[name][:, k, :, :], lats)
+
+        # compress to float32
+        gm_ens = np.array(gm_ens, dtype=dtype)
+        nhm_ens = np.array(gm_ens, dtype=dtype)
+        shm_ens = np.array(gm_ens, dtype=dtype)
 
         output_dict[f'{name}_gm_ens'] = (('year', 'ens'), gm_ens)
         output_dict[f'{name}_nhm_ens'] = (('year', 'ens'), nhm_ens)
@@ -2402,6 +2408,11 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath):
             nino3 = nino_ind['nino3']
             nino34 = nino_ind['nino3.4']
             nino4 = nino_ind['nino4']
+
+            nino12 = np.array(nino12, dtype=dtype)
+            nino3 = np.array(nino3, dtype=dtype)
+            nino34 = np.array(nino34, dtype=dtype)
+            nino4 = np.array(nino4, dtype=dtype)
 
             output_dict['nino1+2'] = (('year', 'ens'), nino12)
             output_dict['nino3'] = (('year', 'ens'), nino3)
