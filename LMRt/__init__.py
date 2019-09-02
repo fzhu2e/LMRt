@@ -17,6 +17,7 @@ import random
 from scipy import stats
 
 from . import utils
+from . import visual
 
 ProxyManager = namedtuple(
     'ProxyManager',
