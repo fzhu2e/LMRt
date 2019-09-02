@@ -3473,21 +3473,26 @@ def pobjs2df(pobjs,
     return df
 
 
-def compare_ts(t1, y1, t2, y2, stats=['corr', 'ce', 'rmse'], valid_frac=0.5, detrend=False, detrend_kws=None):
+def compare_ts(t1, y1, t2, y2, stats=['corr', 'ce', 'rmse'], valid_frac=0.5,
+               detrend=False, detrend_kws={}, npts_lb=25):
     # remove mean over ref_period
     mask_ref1 = (t1 >= ref_period[0]) & (t1 <= ref_period[1])
     mask_ref2 = (t2 >= ref_period[0]) & (t2 <= ref_period[1])
     y1 -= np.nanmean(y1[mask_ref1])
     y2 -= np.nanmean(y2[mask_ref2])
     if detrend:
-        y1 = signal.detrend(y1, detrend_kws**)
-        y2 = signal.detrend(y2, detrend_kws**)
+        y1 = signal.detrend(y1, **detrend_kws)
+        y2 = signal.detrend(y2, **detrend_kws)
 
     t1_overlap, y1_overlap, t2_overlap, y2_overlap = overlap_ts(t1, y1, t2, y2)
 
     res = {}
     if 'corr' in stats:
-        res['corr'] = np.corrcoef(y1_overlap, y2_overlap)[1, 0]
+        if np.size(y1_overlap) < npts_lb or np.size(y2_overlap) < npts_lb:
+            print('compare_ts() >>> Warning: overlapped timeseries is too short for correlation calculation (npts < 25). Returnning NaN ...')
+            res['corr'] = np.nan
+        else:
+            res['corr'] = np.corrcoef(y1_overlap, y2_overlap)[1, 0]
 
     if 'rmse' in stats:
         res['rmse'] = np.sqrt(((y1_overlap - y2_overlap)**2).mean())
@@ -3767,7 +3772,7 @@ def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), 
 
 
 def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980],
-                            valid_frac=0.5, var_name='tas_sfc_Amon', detrend=False, detrend_kws=None):
+                            valid_frac=0.5, var_name='tas_sfc_Amon', detrend=False, detrend_kws={}):
     ''' Calculate corr and CE between LMR and instrumental fields
 
     Note: The time axis of the LMR field is assumed to fully cover the range of verif_yrs
@@ -3830,8 +3835,8 @@ def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 200
                 nt_notnan = np.shape(ts_inst_notnan)[0]
 
                 if detrend:
-                    ts_inst_notnan = signal.detrend(ts_inst_notnan, detrend_kws**)
-                    ts_lmr_notnan = signal.detrend(ts_lmr_notnan, detrend_kws**)
+                    ts_inst_notnan = signal.detrend(ts_inst_notnan, **detrend_kws)
+                    ts_lmr_notnan = signal.detrend(ts_lmr_notnan, **detrend_kws)
 
                 if nt_notnan/nt >= valid_frac:
 
@@ -3847,7 +3852,7 @@ def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 200
 def calc_field_corr_ce(exp_dir, field_model, time_model, lat_model, lon_model,
                        verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980],
                        valid_frac=0.5, var_name='tas_sfc_Amon',
-                       avgMonths=[1,2,3,4,5,6,7,8,9,10,11,12], detrend=False, detrend_kws=None):
+                       avgMonths=[1,2,3,4,5,6,7,8,9,10,11,12], detrend=False, detrend_kws={}):
     ''' Calculate corr and CE between LMR and model field
 
     Note: The time axis of the LMR field is assumed to fully cover the range of verif_yrs
@@ -3907,8 +3912,8 @@ def calc_field_corr_ce(exp_dir, field_model, time_model, lat_model, lon_model,
             nt_notnan = np.shape(ts_model_notnan)[0]
 
             if detrend:
-                ts_model_notnan = signal.detrend(ts_model_notnan, detrend_kws**)
-                ts_lmr_notnan = signal.detrend(ts_lmr_notnan, detrend_kws**)
+                ts_model_notnan = signal.detrend(ts_model_notnan, **detrend_kws)
+                ts_lmr_notnan = signal.detrend(ts_lmr_notnan, **detrend_kws)
 
             if nt_notnan/nt >= valid_frac:
                 corr[i, j] = np.corrcoef(ts_model_notnan, ts_lmr_notnan)[1, 0]
@@ -3923,7 +3928,7 @@ def calc_field_corr_ce(exp_dir, field_model, time_model, lat_model, lon_model,
 def calc_field_cov(field, lat, lon, year,
                    target_field, target_lat, target_lon, target_year,
                    verif_yrs=np.arange(1880, 2000), verbose=False,
-                   detrend=False, detrend_kws=None):
+                   npts_lb=25, detrend=False, detrend_kws={}):
     ''' Calculate the correlation map between the field and the timeseries of a target field at the target location
 
     Args:
@@ -3961,13 +3966,17 @@ def calc_field_cov(field, lat, lon, year,
             ind1 = np.searchsorted(ij_year, overlap_yrs)
             ind2 = np.searchsorted(target_year, overlap_yrs)
 
-            ij_ts_overlap = ij_ts[ind1]
-            target_ts_overlap = target_ts[ind2]
-            if detrend:
-                target_ts_overlap = signal.detrend(target_ts_overlap, detrend_kws**)
-                ij_ts_overlap = signal.detrend(ij_ts_overlap, detrend_kws**)
+            if np.size(ind1) < npts_lb or np.size(ind2) < npts_lb:
+                print('(i, j) >>> Warning: overlapped timeseries is too short for correlation calculation (npts < 25). Returnning NaN ...')
+                corr[i, j] = np.nan
+            else:
+                ij_ts_overlap = ij_ts[ind1]
+                target_ts_overlap = target_ts[ind2]
+                if detrend:
+                    target_ts_overlap = signal.detrend(target_ts_overlap, **detrend_kws)
+                    ij_ts_overlap = signal.detrend(ij_ts_overlap, **detrend_kws)
 
-            corr[i, j] = np.corrcoef(target_ts_overlap, ij_ts_overlap)[1, 0]
+                corr[i, j] = np.corrcoef(target_ts_overlap, ij_ts_overlap)[1, 0]
 
     res = {
         'corr': corr,
@@ -3981,7 +3990,7 @@ def calc_corr_between_fields(
     field1, time1, lat1, lon1,
     field2, time2, lat2, lon2,
     verif_yrs=np.arange(1880, 2000),
-    verbose=False, detrend=False, detrend_kws=None
+    verbose=False, detrend=False, detrend_kws={}
 ):
     syear, eyear = verif_yrs[0], verif_yrs[-1]
     mask1 = (time1 >= syear) & (time1 <= eyear)
