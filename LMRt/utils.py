@@ -3474,12 +3474,14 @@ def pobjs2df(pobjs,
 
 
 def compare_ts(t1, y1, t2, y2, stats=['corr', 'ce', 'rmse'], valid_frac=0.5,
-               detrend=False, detrend_kws={}, npts_lb=25):
+               ref_period=[1951, 1980], detrend=False, detrend_kws={}, npts_lb=25):
     # remove mean over ref_period
-    mask_ref1 = (t1 >= ref_period[0]) & (t1 <= ref_period[1])
-    mask_ref2 = (t2 >= ref_period[0]) & (t2 <= ref_period[1])
-    y1 -= np.nanmean(y1[mask_ref1])
-    y2 -= np.nanmean(y2[mask_ref2])
+    if ref_period is not None:
+        mask_ref1 = (t1 >= ref_period[0]) & (t1 <= ref_period[1])
+        mask_ref2 = (t2 >= ref_period[0]) & (t2 <= ref_period[1])
+        y1 -= np.nanmean(y1[mask_ref1])
+        y2 -= np.nanmean(y2[mask_ref2])
+
     if detrend:
         y1 = signal.detrend(y1, **detrend_kws)
         y2 = signal.detrend(y2, **detrend_kws)
