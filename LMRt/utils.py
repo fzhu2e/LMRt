@@ -2879,6 +2879,18 @@ def overlap_ts(t1, y1, t2, y2):
     return t1_overlap, y1_overlap, t2_overlap, y2_overlap
 
 
+def rolling_avg(ts, ys, win_len, rolling_kws={}):
+    data = {'time': ts, 'value': ys}
+    df = pd.DataFrame(data)
+    df = df.set_index('time')
+    df_avg = df.rolling(win_len, **rolling_kws).sum()
+
+    ts_out = df_avg.index.values
+    ys_out = df_avg['value'].values
+
+    return ts_out, ys_out
+
+
 def get_distance(lon_pt, lat_pt, lon_ref, lat_ref):
     """
     Vectorized calculation the great circle distances between lat-lon points
