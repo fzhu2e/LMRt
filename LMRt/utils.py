@@ -3244,7 +3244,7 @@ def mbc(tas, pr, time,
 # ===============================================
 #  Noise
 # -----------------------------------------------
-def ar1_noise(ts, ys, g=0.5, seed=0):
+def ar1_noise(ts, ys, g=None, seed=0):
     '''Returns the AR1 noise
     '''
     random.seed(seed)
@@ -3259,6 +3259,10 @@ def ar1_noise(ts, ys, g=0.5, seed=0):
         evenly_spaced = False
 
     if evenly_spaced:
+        if g is None:
+            ar1_mod = sm.tsa.AR(ys, missing='drop').fit(maxlag=1)
+            g = ar1_mod.params[1]
+
         ar = np.r_[1, -g]
         ma = np.r_[1, 0.0]
         sig = np.std(ys)
@@ -3270,7 +3274,11 @@ def ar1_noise(ts, ys, g=0.5, seed=0):
         def ar1_func(a):
             return np.sum((ys[1:] - ys[:-1]*a**dts)**2)
 
-        a_est = optimize.minimize_scalar(ar1_func, bounds=[0, 1], method='bounded').x
+        if g is None:
+            a_est = optimize.minimize_scalar(ar1_func, bounds=[0, 1], method='bounded').x
+        else:
+            a_est = g
+
         tau_est = -1 / np.log(a_est)
 
         noise = np.ones(nt)
