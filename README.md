@@ -34,6 +34,7 @@ Ultimately, it aims to provide following features:
 + [xarray](https://github.com/pydata/xarray): N-D labeled arrays and datasets in Python (`pip install xarray`)
 + [netCDF4](https://github.com/Unidata/netcdf4-python): the python interface for netCDF4 format (`conda install netCDF4`)
 + [pyspharm](https://code.google.com/archive/p/pyspharm/): an  object-oriented python interface to the NCAR SPHEREPACK library (`conda install -c conda-forge pyspharm`)
++ [pyyaml](https://github.com/yaml/pyyaml): The next generation YAML parser and emitter for Python (`pip install pyyaml`).
 
 ## How to install
 Once the above dependencies are installed, simply
