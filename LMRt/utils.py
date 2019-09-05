@@ -4237,10 +4237,14 @@ def sea_dbl(time, value, events, preyr=5, postyr=15, seeds=None, nsample=10,
         Rao MP, Cook ER, Cook BI, et al (2019) A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty.
             Dendrochronologia 55:119–124. doi: 10.1016/j.dendro.2019.05.001
     '''
+    if type(events) is list:
+        events = np.array(events)
+
     nevents = np.size(events)
     total_draws = factorial(nevents)/factorial(nsample)/factorial(nevents-nsample)
     nyr = preyr + postyr + 1
 
+    # embed()
     # avoid edges
     time_inner = time[preyr:-postyr]
     events_inner = events[(events>=np.min(time_inner)) & (events<=np.max(time_inner))]
@@ -4359,6 +4363,9 @@ def sea_dbl_field(time, field, events, preyr=5, post_avg_range=[0], seeds=None, 
         Rao MP, Cook ER, Cook BI, et al (2019) A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty.
             Dendrochronologia 55:119–124. doi: 10.1016/j.dendro.2019.05.001
     '''
+    if type(events) is list:
+        events = np.array(events)
+
     nevents = np.size(events)
     total_draws = factorial(nevents)/factorial(nsample)/factorial(nevents-nsample)
 
