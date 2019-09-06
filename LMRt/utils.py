@@ -3494,7 +3494,7 @@ def pobjs2df(pobjs,
 
 
 def compare_ts(t1, y1, t2, y2, stats=['corr', 'ce', 'rmse'], valid_frac=0.5,
-               ref_period=[1951, 1980], detrend=False, detrend_kws={}, npts_lb=25):
+               ref_period=None, detrend=False, detrend_kws={}, npts_lb=25):
     # remove mean over ref_period
     if ref_period is not None:
         mask_ref1 = (t1 >= ref_period[0]) & (t1 <= ref_period[1])
