@@ -22,7 +22,7 @@ import statsmodels.formula.api as smf
 import glob
 from scipy.stats.mstats import mquantiles
 from scipy import spatial
-from scipy.misc import factorial
+from scipy.special import factorial
 import cftime
 from pprint import pprint
 from time import time as ttime
