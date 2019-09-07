@@ -3244,12 +3244,15 @@ def mbc(tas, pr, time,
 # ===============================================
 #  Noise
 # -----------------------------------------------
-def ar1_noise(ts, ys, g=None, seed=0):
+def ar1_noise(ts, ys, g=None, sig_noise=1, nt_noise=None, seed=0):
     '''Returns the AR1 noise
     '''
     random.seed(seed)
-
     ts, ys = clean_ts(ts, ys)
+
+    if nt_noise is None:
+        nt_noise = np.size(ts)
+
     nt = np.size(ts)
     dts = np.diff(ts)
     dt_mean = np.mean(dts)
@@ -3259,18 +3262,18 @@ def ar1_noise(ts, ys, g=None, seed=0):
         evenly_spaced = False
 
     if evenly_spaced:
+        # evenly spaced case
         if g is None:
             ar1_mod = sm.tsa.AR(ys, missing='drop').fit(maxlag=1)
             g = ar1_mod.params[1]
 
         ar = np.r_[1, -g]
         ma = np.r_[1, 0.0]
-        sig = np.std(ys)
-        sig_n = sig * np.sqrt(1-g**2)
 
-        noise = sm.tsa.arma_generate_sample(
-            ar=ar, ma=ma, nsample=nt, burnin=50, sigma=sig_n)
+        noise = sm.tsa.arma_generate_sample(ar=ar, ma=ma, nsample=nt_noise, burnin=50)
+
     else:
+        # unevenly spaced case
         def ar1_func(a):
             return np.sum((ys[1:] - ys[:-1]*a**dts)**2)
 
@@ -3281,12 +3284,14 @@ def ar1_noise(ts, ys, g=None, seed=0):
 
         tau_est = -1 / np.log(a_est)
 
-        noise = np.ones(nt)
-        for i in range(1, nt):
+        noise = np.ones(nt_noise)
+        for i in range(1, nt_noise):
             scaled_dt =  (ts[i] - ts[i-1]) / tau_est
             rho = np.exp(-scaled_dt)
             err = np.random.normal(0, np.sqrt(1- rho**2), 1)
             noise[i] = noise[i-1]*rho + err
+
+    noise = noise / np.nanstd(noise) * sig_noise
 
     return noise
 
