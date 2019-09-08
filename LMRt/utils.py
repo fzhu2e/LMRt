@@ -499,7 +499,12 @@ def calc_ye_linearPSM(proxy_manager, ptypes, psm_name,
                     tas_ann = env_var['T'][season_tag_T][:, lat_ind, lon_ind]
                     pr_ann = env_var['M'][season_tag_M][:, lat_ind, lon_ind]
 
-                    pseudo_value = slope_temperature*tas_ann + slope_moisture*pr_ann + intercept
+                    t1, t2 = env_time['T'], env_time['M']
+                    overlap_yrs = np.intersect1d(t1, t2)
+                    ind1 = np.searchsorted(t1, overlap_yrs)
+                    ind2 = np.searchsorted(t2, overlap_yrs)
+
+                    pseudo_value = slope_temperature*tas_ann[ind1] + slope_moisture*pr_ann[ind2] + intercept
 
                 if verbose:
                     mean_value = np.nanmean(pseudo_value)
@@ -1232,7 +1237,7 @@ def calibrate_psm(
                         'NbCalPts': int(optimal_reg.nobs),
                         'PSMintercept': optimal_reg.params[0],
                         'PSMslope': optimal_reg.params[1],
-                        'PSMcorrel': np.sign(optimal_reg.params[1])*np.sqrt(optimal_reg.rsquared),
+                        'PSMcorrel': np.sqrt(optimal_reg.rsquared),
                         'PSMmse': np.mean(optimal_reg.resid**2),
                         'fitAIC': optimal_reg.aic,
                         'fitBIC': optimal_reg.bic,
@@ -1265,7 +1270,7 @@ def calibrate_psm(
                         'PSMintercept': optimal_reg.params[0],
                         f'PSMslope_temperature': optimal_reg.params[1],
                         f'PSMslope_moisture': optimal_reg.params[2],
-                        'PSMcorrel': np.sign(optimal_reg.params[1])*np.sqrt(optimal_reg.rsquared),
+                        'PSMcorrel': np.sqrt(optimal_reg.rsquared),
                         'PSMmse': np.mean(optimal_reg.resid**2),
                         'fitAIC': optimal_reg.aic,
                         'fitBIC': optimal_reg.bic,
