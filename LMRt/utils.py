@@ -28,6 +28,7 @@ from pprint import pprint
 from time import time as ttime
 from IPython import embed
 from pathos.multiprocessing import ProcessingPool as Pool
+import itertools
 
 from . import load_gridded_data  # original file from LMR
 
@@ -1908,6 +1909,32 @@ def find_closest_loc(lat, lon, target_lat, target_lon, mode=None, verbose=False)
         return lat_ind, lon_ind
     else:
         return lat_ind[0], lon_ind[0]
+
+
+def search_nearest_not_nan(field, lat_ind, lon_ind, distance=3):
+    fix_sum = []
+    lat_fix_list = []
+    lon_fix_list = []
+    for lat_fix, lon_fix in itertools.product(np.arange(-distance, distance+1), np.arange(-distance, distance+1)):
+        lat_fix_list.append(lat_fix)
+        lon_fix_list.append(lon_fix)
+        fix_sum.append(np.abs(lat_fix)+np.abs(lon_fix))
+
+    lat_fix_list = np.asarray(lat_fix_list)
+    lon_fix_list = np.asarray(lon_fix_list)
+
+    sort_i = np.argsort(fix_sum)
+
+    for lat_fix, lon_fix in zip(lat_fix_list[sort_i], lon_fix_list[sort_i]):
+        target = np.asarray(field[:, lat_ind+lat_fix, lon_ind+lon_fix])
+        if np.all(np.isnan(target)):
+            continue
+        else:
+            print(f'Found not nan with (lat_fix, lon_fix): ({lat_fix}, {lon_fix})')
+            return target, lat_fix, lon_fix
+
+    print(f'PRYSM >>> Fail to find value not nan!')
+    return np.nan, np.nan, np.nan
 
 
 def generate_latlon(nlats, nlons, include_endpts=False,
