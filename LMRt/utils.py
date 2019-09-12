@@ -1933,7 +1933,7 @@ def search_nearest_not_nan(field, lat_ind, lon_ind, distance=3):
             print(f'Found not nan with (lat_fix, lon_fix): ({lat_fix}, {lon_fix})')
             return target, lat_fix, lon_fix
 
-    print(f'PRYSM >>> Fail to find value not nan!')
+    print(f'Fail to find value not nan!')
     return np.nan, np.nan, np.nan
 
 
@@ -3279,7 +3279,7 @@ def mbc(tas, pr, time,
 def ar1_noise(ts, ys, g=None, sig_noise=1, nt_noise=None, seed=0):
     '''Returns the AR1 noise
     '''
-    random.seed(seed)
+    np.random.seed(seed)
     ts, ys = clean_ts(ts, ys)
 
     if nt_noise is None:
@@ -3311,6 +3311,7 @@ def ar1_noise(ts, ys, g=None, sig_noise=1, nt_noise=None, seed=0):
 
         if g is None:
             a_est = optimize.minimize_scalar(ar1_func, bounds=[0, 1], method='bounded').x
+            g = a_est
         else:
             a_est = g
 
@@ -3325,7 +3326,7 @@ def ar1_noise(ts, ys, g=None, sig_noise=1, nt_noise=None, seed=0):
 
     noise = noise / np.nanstd(noise) * sig_noise
 
-    return noise
+    return noise, g
 
 
 # ===============================================
