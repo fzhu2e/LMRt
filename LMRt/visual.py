@@ -23,8 +23,8 @@ from . import utils
 class PAGES2k(object):
     colors_dict = {
         'Bivalve_d18O': sns.xkcd_rgb['gold'],
-        'Corals and Sclerosponges_Rates': sns.xkcd_rgb['orange'],
-        'Corals and Sclerosponges_SrCa': sns.xkcd_rgb['yellow'],
+        'Corals and Sclerosponges_Rates': sns.xkcd_rgb['yellow'],
+        'Corals and Sclerosponges_SrCa': sns.xkcd_rgb['orange'],
         'Corals and Sclerosponges_d18O': sns.xkcd_rgb['amber'],
         'Ice Cores_MeltFeature': sns.xkcd_rgb['pale blue'],
         'Ice Cores_d18O': sns.xkcd_rgb['light blue'],
