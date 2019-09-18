@@ -19,6 +19,10 @@ from cartopy import util as cutil
 
 from . import utils
 
+import pandas as pd
+import statsmodels as sm
+from statsmodels.graphics.gofplots import ProbPlot
+from pandas.plotting import autocorrelation_plot
 
 class PAGES2k(object):
     colors_dict = {
@@ -1572,3 +1576,68 @@ def plot_vsl_dashboard_p2k(p2k_id, vsl_res, meta_dict, vsl_params, xlim=[850, 20
         return fig, corr
     else:
         return fig
+
+
+def plot_linreg_residual(mdl, figsize=[20, 15], title=None,
+                         font_scale=2, wspace=0.3, hspace=0.3):
+    ''' Plot residual analysis
+    Args:
+        mdl (dict): the linreg model dict from statsmodels
+
+    Ref: adapted from GEOL425L course lab 11 by Julien Emile-Geay
+    '''
+    # fitted values (need a constant term for intercept)
+    sns.set(style='ticks', font_scale=font_scale)
+    fig = plt.figure(figsize=figsize)
+
+    model_fitted_y = mdl.fittedvalues
+    # model residuals
+    model_residuals = mdl.resid
+    # normalized residuals
+    model_norm_residuals = mdl.get_influence().resid_studentized_internal
+    # absolute squared normalized residuals
+    model_norm_residuals_abs_sqrt = np.sqrt(np.abs(model_norm_residuals))
+    # absolute residuals
+    model_abs_resid = np.abs(model_residuals)
+
+    gs = gridspec.GridSpec(2, 2)
+    gs.update(wspace=wspace, hspace=hspace)
+
+    ax = {}
+    ax[0] = plt.subplot(gs[0])
+    # a) residuals vs fitted values
+    ax[0].scatter(model_fitted_y, model_residuals)
+    ax[0].set_title('a) Residuals vs Fitted Values')
+    ax[0].set_xlabel('Fitted values')
+    ax[0].set_ylabel('Residuals')
+    # b) plot QQ plot of residuals
+    ax[1] = plt.subplot(gs[1])
+    ax[1].set_title('b) QQ plot of residuals')
+    QQ = ProbPlot(model_norm_residuals)
+    QQ.qqplot(line='45', alpha=0.5, color='#4C72B0', lw=1, ax=ax[1])
+
+    # c) Autocorrelation of residuals
+    ax[2] = plt.subplot(gs[2])
+    autocorrelation_plot(pd.DataFrame(model_residuals),ax[2])
+    dw = sm.stats.stattools.durbin_watson(model_residuals)
+    ax[2].set_title(f'c) persistence of residuals, DW={dw:4.4f}')
+    # need to fix grid
+
+    # d) Scale-Location Plot
+    ax[3] = plt.subplot(gs[3])
+    ax[3].scatter(model_fitted_y, model_norm_residuals_abs_sqrt, alpha=0.5)
+    sns.regplot(
+        model_fitted_y, model_norm_residuals_abs_sqrt,
+        scatter=False, ci=False, lowess=True,
+        line_kws={'color': 'black', 'lw': 1, 'alpha': 0.8}, ax=ax[3]
+    )
+    ax[3].set_title('d) Scale-Location')
+    ax[3].set_xlabel('Fitted values')
+    ax[3].set_ylabel(r'$\sqrt{|Standardized \; Residuals|}$');
+
+    if title is not None:
+        fig.suptitle(title)
+
+    return fig, ax
+
+
