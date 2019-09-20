@@ -1144,7 +1144,7 @@ def calibrate_psm(
             'seasons_T': [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]],
             'seasons_M': [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]],
         },
-    }, nproc=4, verbose=False):
+    }, nproc=4, nobs_lb=25, verbose=False):
     ''' Calibrate linear/bilinear PSMs
 
     Args:
@@ -1225,7 +1225,7 @@ def calibrate_psm(
                 optimal_seasonality, optimal_reg = linear_regression(
                     pobj.time[mask], pobj.values.values[mask],
                     ref_time[var_name], ref_value[var_name], seasons[var_name],
-                    verbose=verbose
+                    verbose=verbose, nobs_lb=nobs_lb,
                 )
 
                 if optimal_reg is None:
@@ -1259,7 +1259,7 @@ def calibrate_psm(
                     pobj.time[mask], pobj.values.values[mask],
                     ref_time[var_name_1], ref_value[var_name_1], seasons[var_name_1],
                     ref_time[var_name_2], ref_value[var_name_2], seasons[var_name_2],
-                    verbose=verbose
+                    verbose=verbose, nobs_lb=nobs_lb,
                 )
                 if optimal_reg is None:
                     # not enough data for regression; skip
@@ -1308,7 +1308,7 @@ def calibrate_psm(
     return precalib_dict
 
 
-def linear_regression(proxy_time, proxy_value, ref_time, ref_value, seasons, verbose=False):
+def linear_regression(proxy_time, proxy_value, ref_time, ref_value, seasons, verbose=False, nobs_lb=25):
     metric_list = []
     reg_res_list = []
     df_list = []
@@ -1335,7 +1335,7 @@ def linear_regression(proxy_time, proxy_value, ref_time, ref_value, seasons, ver
         except:
             nobs = 0
 
-        if nobs < 25:
+        if nobs < nobs_lb:
             # Insufficent observation/calibration overlap to calibrate psm.
             reg_res_list.append(None)
             metric_list.append(np.nan)
@@ -1360,7 +1360,7 @@ def linear_regression(proxy_time, proxy_value, ref_time, ref_value, seasons, ver
 def bilinear_regression(proxy_time, proxy_value,
                         ref_time_1, ref_value_1, seasons_1,
                         ref_time_2, ref_value_2, seasons_2,
-                        verbose=False):
+                        verbose=False, nobs_lb=25):
 
     i_idx_list = []
     j_idx_list = []
@@ -1397,7 +1397,7 @@ def bilinear_regression(proxy_time, proxy_value,
             except:
                 nobs = 0
 
-            if nobs < 25:
+            if nobs < nobs_lb:
                 # Insufficent observation/calibration overlap to calibrate psm.
                 reg_res_list.append(None)
                 metric_list.append(np.nan)
