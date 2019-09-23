@@ -629,6 +629,42 @@ def calc_ye(proxy_manager, ptypes, psm_name,
     return pid_map, ye_out
 
 
+def combine_yes(ye_path_dict, output_path):
+    # load Ye's
+    ye = {}
+    for k, v in ye_path_dict.items():
+        ye[k] = np.load(v, allow_pickle=True)
+
+    pid_index_map = {}
+    ye_vals = {}
+    for k, v in ye_path_dict.items():
+        pid_index_map[k] = ye[k]['pid_index_map'][()]
+        ye_vals[k] = ye[k]['ye_vals']
+
+    # total ye
+    ye_all_list = []
+    for k in ye_path_dict.keys():
+        ye_all_list.append(ye_vals[k])
+
+    ye_all = np.concatenate(ye_all_list, axis=0)
+
+    # total pid_map
+    pid_map_all = {}
+
+    # combine all of them
+    tot_count = 0
+    for k in ye_path_dict.keys():
+        for pid, idx in pid_index_map[k].items():
+            pid_map_all[pid] = idx + tot_count
+
+        tot_count = np.size(list(pid_map_all))
+
+    np.savez(output_path, pid_index_map=pid_map_all, ye_vals=ye_all)
+    print(f"Saving the combined Ye's to: {output_path} ...")
+
+    return ye_all, pid_map_all
+
+
 def est_vslite_params(proxy_manager, tas, pr, lat_grid, lon_grid, time_grid,
                       matlab_path=None, func_path=None,
                       restart_matlab_period=100,
