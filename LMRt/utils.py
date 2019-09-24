@@ -251,7 +251,7 @@ def regrid_prior(cfg, X, verbose=False):
 
 
 def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict=None, verbose=False,
-              select_box_lf=None, select_box_ur=None):
+              exclude_list=None, select_box_lf=None, select_box_ur=None):
 
     db_proxies = pd.read_pickle(proxies_df_filepath).to_dense()
     db_metadata = pd.read_pickle(metadata_df_filepath)
@@ -298,6 +298,11 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
     picked_proxies = []
     picked_proxy_ids = []
     #  start, finish = cfg.core.recon_period
+
+    if exclude_list is not None:
+        for pid in exclude_list:
+            if pid in all_proxy_ids:
+                all_proxy_ids.remove(pid)
 
     for site in all_proxy_ids:
         site_meta = db_metadata[db_metadata['Proxy ID'] == site]
