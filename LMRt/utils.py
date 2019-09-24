@@ -3674,6 +3674,32 @@ def coefficient_efficiency(ref, test, valid=None):
 
     return CE
 
+
+def calc_ens_calib_ratio(pobjs, ye_filepath, calc_period=[1850, 2000]):
+    ye = np.load(ye_filepath, allow_pickle=True)
+    pid_index_map = ye['pid_index_map'][()]
+    ye_vals = ye['ye_vals']
+
+    start_yr, end_yr = calc_period
+
+    calib_ratio = []
+    for Y in pobjs:
+        pid = Y.id
+        if pid in pid_index_map:
+            idx = pid_index_map[pid]
+            ye_mean = np.mean(ye_vals[idx])
+            Yvals = Y.values[(Y.values.index > start_yr) & (Y.values.index <= end_yr)].values
+            ye_mean_err = ye_mean - Yvals
+            ye_mean_err_var = np.var(ye_mean_err, ddof=1)
+            evar = np.var(ye_vals[idx], ddof=1)
+
+            ratio = ye_mean_err_var / (evar + Y.psm_obj.R)
+            calib_ratio.append(ratio)
+
+    return calib_ratio
+
+
+
 # -----------------------------------------------
 # Correlation and coefficient Efficiency (CE)
 # -----------------------------------------------
