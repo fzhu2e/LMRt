@@ -39,7 +39,7 @@ Proxy = namedtuple(
     ['id', 'type', 'start_yr', 'end_yr', 'lat', 'lon', 'elev', 'seasonality', 'values', 'time', 'psm_obj']
 )
 
-PSM = namedtuple('PSM', ['psm_key', 'R'])
+PSM = namedtuple('PSM', ['psm_key', 'R', 'SNR'])
 
 Grid = namedtuple('Grid', ['lat', 'lon', 'nlat', 'nlon', 'nens'])
 
@@ -342,10 +342,12 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
                 if verbose:
                     print(site, psm_key)
                 psm_site_data = psm_data[(proxy_type, site)]
-                psm_obj = PSM(psm_key, psm_site_data['PSMmse'])
+                SNR = np.nanstd(values) / np.sqrt(psm_site_data['PSMmse'])
+                psm_obj = PSM(psm_key, psm_site_data['PSMmse'], SNR)
                 pobj = Proxy(site, proxy_type, start_yr, end_yr, lat, lon, elev, seasonality, values, time, psm_obj)
                 picked_proxies.append(pobj)
                 picked_proxy_ids.append(site)
+
             except KeyError:
                 #  err_msg = f'Proxy in database but not found in pre-calibration file {precalib_filesdict[psm_key]}...\nSkipping: {site}'
                 err_msg = f'Proxy in database but not found in pre-calibration files...\nSkipping: {site}'
@@ -357,7 +359,7 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
             ob_err_std = proxy_std / SNR
             ob_err_var = ob_err_std**2
 
-            psm_obj = PSM(psm_key, ob_err_var)
+            psm_obj = PSM(psm_key, ob_err_var, SNR)
             pobj = Proxy(site, proxy_type, start_yr, end_yr, lat, lon, elev, seasonality, values, time, psm_obj)
             picked_proxies.append(pobj)
             picked_proxy_ids.append(site)
@@ -1287,6 +1289,7 @@ def calibrate_psm(
                         'fitBIC': optimal_reg.bic,
                         'fitR2adj': optimal_reg.rsquared_adj,
                         'PSMresid': optimal_reg.resid,
+                        'SNR': np.std(pobj.values.values[mask]) / np.sqrt(np.mean(optimal_reg.resid**2)),
                         'linreg': optimal_reg,
                     }
                     if verbose:
@@ -1321,6 +1324,7 @@ def calibrate_psm(
                         'fitBIC': optimal_reg.bic,
                         'fitR2adj': optimal_reg.rsquared_adj,
                         'PSMresid': optimal_reg.resid,
+                        'SNR': np.std(pobj.values.values[mask]) / np.sqrt(np.mean(optimal_reg.resid**2)),
                         'linreg': optimal_reg,
                     }
 
