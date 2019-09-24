@@ -3675,7 +3675,7 @@ def coefficient_efficiency(ref, test, valid=None):
     return CE
 
 
-def calc_ens_calib_ratio(pobjs, ye_filepath, calc_period=[1850, 2000]):
+def calc_ens_calib_ratio(pobjs, ye_filepath, calc_period=[1850, 2000], verbose=False, exclude_list=None):
     ye = np.load(ye_filepath, allow_pickle=True)
     pid_index_map = ye['pid_index_map'][()]
     ye_vals = ye['ye_vals']
@@ -3685,20 +3685,22 @@ def calc_ens_calib_ratio(pobjs, ye_filepath, calc_period=[1850, 2000]):
     calib_ratio = []
     for Y in pobjs:
         pid = Y.id
-        if pid in pid_index_map:
-            idx = pid_index_map[pid]
-            ye_mean = np.mean(ye_vals[idx])
-            Yvals = Y.values[(Y.values.index > start_yr) & (Y.values.index <= end_yr)].values
-            ye_mean_err = ye_mean - Yvals
-            ye_mean_err_var = np.var(ye_mean_err, ddof=1)
-            evar = np.var(ye_vals[idx], ddof=1)
+        if exclude_list is None or pid not in exclude_list:
+            if pid in pid_index_map:
+                idx = pid_index_map[pid]
+                ye_mean = np.mean(ye_vals[idx])
+                Yvals = Y.values[(Y.values.index > start_yr) & (Y.values.index <= end_yr)].values
+                ye_mean_err = ye_mean - Yvals
+                ye_mean_err_var = np.var(ye_mean_err, ddof=1)
+                evar = np.var(ye_vals[idx], ddof=1)
 
-            ratio = ye_mean_err_var / (evar + Y.psm_obj.R)
-            calib_ratio.append(ratio)
+                ratio = ye_mean_err_var / (evar + Y.psm_obj.R)
+                if not np.isnan(ratio):
+                    calib_ratio.append(ratio)
+                if verbose:
+                    print(f'{pid}, ye_mean: {ye_mean:.2f}, ye_mean_err_var: {ye_mean_err_var:.2f}, evar: {evar:.2f}, Y.psm_obj.R: {Y.psm_obj.R:.2f}, ratio: {ratio:.2f}')
 
     return calib_ratio
-
-
 
 # -----------------------------------------------
 # Correlation and coefficient Efficiency (CE)
