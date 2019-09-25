@@ -342,8 +342,7 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
                 if verbose:
                     print(site, psm_key)
                 psm_site_data = psm_data[(proxy_type, site)]
-                SNR = np.nanstd(values) / np.sqrt(psm_site_data['PSMmse'])
-                psm_obj = PSM(psm_key, psm_site_data['PSMmse'], SNR)
+                psm_obj = PSM(psm_key, psm_site_data['PSMmse'], psm_site_data['SNR'])
                 pobj = Proxy(site, proxy_type, start_yr, end_yr, lat, lon, elev, seasonality, values, time, psm_obj)
                 picked_proxies.append(pobj)
                 picked_proxy_ids.append(site)
@@ -1275,6 +1274,8 @@ def calibrate_psm(
                     # not enough data for regression; skip
                     return None
                 else:
+                    t1, y1, t2, y2 = overlap_ts(pobj.time[mask], pobj.values.values[mask], optimal_reg.resid.index, optimal_reg.resid.values)
+                    std_proxy = np.nanstd(y1)
                     precalib_dict_pobj = {
                         'lat': pobj.lat,
                         'lon': pobj.lon,
@@ -1289,7 +1290,7 @@ def calibrate_psm(
                         'fitBIC': optimal_reg.bic,
                         'fitR2adj': optimal_reg.rsquared_adj,
                         'PSMresid': optimal_reg.resid,
-                        'SNR': np.std(pobj.values.values[mask]) / np.sqrt(np.mean(optimal_reg.resid**2)),
+                        'SNR': std_proxy / np.sqrt(np.mean(optimal_reg.resid**2)),
                         'linreg': optimal_reg,
                     }
                     if verbose:
@@ -1309,6 +1310,8 @@ def calibrate_psm(
                     # not enough data for regression; skip
                     return None
                 else:
+                    t1, y1, t2, y2 = overlap_ts(pobj.time[mask], pobj.values.values[mask], optimal_reg.resid.index, optimal_reg.resid.values)
+                    std_proxy = np.nanstd(y1)
                     precalib_dict_pobj = {
                         'lat': pobj.lat,
                         'lon': pobj.lon,
@@ -1324,7 +1327,7 @@ def calibrate_psm(
                         'fitBIC': optimal_reg.bic,
                         'fitR2adj': optimal_reg.rsquared_adj,
                         'PSMresid': optimal_reg.resid,
-                        'SNR': np.std(pobj.values.values[mask]) / np.sqrt(np.mean(optimal_reg.resid**2)),
+                        'SNR': std_proxy / np.sqrt(np.mean(optimal_reg.resid**2)),
                         'linreg': optimal_reg,
                     }
 
