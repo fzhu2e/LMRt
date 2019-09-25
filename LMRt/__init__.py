@@ -2,7 +2,7 @@
 '''
 __author__ = 'Feng Zhu'
 __email__ = 'fengzhu@usc.edu'
-__version__ = '0.5.2'
+__version__ = '0.5.3'
 
 import yaml
 import os
