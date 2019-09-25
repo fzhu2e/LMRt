@@ -372,7 +372,7 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                    projection=ccrs.Robinson, transform=ccrs.PlateCarree(),
                    central_longitude=0, latlon_range=None,
                    land_color=sns.xkcd_rgb['light grey'], ocean_color=sns.xkcd_rgb['light grey'],
-                   land_zorder=None, ocean_zorder=None,
+                   land_zorder=None, ocean_zorder=None, signif_values=None, signif_range=[0.05, 9999], hatch='..',
                    clim=None, cmap='RdBu_r', cmap_under=None, cmap_over=None, extend='both', mode='latlon', add_gridlines=False,
                    cbar_labels=None, cbar_pad=0.05, cbar_orientation='vertical', cbar_aspect=10,
                    cbar_fraction=0.15, cbar_shrink=0.5, cbar_title=None, font_scale=1.5):
@@ -380,6 +380,8 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
     if add_cyclic_point:
         if mode == 'latlon':
             field_var_c, lon_c = cutil.add_cyclic_point(field_var, lon)
+            if signif_values is not None:
+                signif_values_c, lon_c = cutil.add_cyclic_point(signif_values, lon)
             lat_c = lat
         elif mode == 'mesh':
             if len(np.shape(lat)) == 1:
@@ -392,6 +394,8 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
             lon_c = np.ndarray((nx, ny+1))
             lat_c = np.ndarray((nx, ny+1))
             field_var_c = np.ndarray((nx, ny+1))
+            if signif_values is not None:
+                signif_values_c = np.ndarray((nx, ny+1))
 
             lon_c[:, :-1] = lon
             lon_c[:, -1] = lon[:, 0]
@@ -401,8 +405,14 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
 
             field_var_c[:, :-1] = field_var
             field_var_c[:, -1] = field_var[:, 0]
+
+            if signif_values is not None:
+                signif_values_c[:, :-1] = signif_values
+                signif_values_c[:, -1] = signif_values[:, 0]
     else:
         field_var_c, lat_c, lon_c = field_var, lat, lon
+        if signif_values is not None:
+            signif_values_c = signif_values
 
     sns.set(style='ticks', font_scale=font_scale)
     fig = plt.figure(figsize=figsize)
@@ -443,6 +453,9 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
 
     if clim:
         im.set_clim(clim)
+
+    if signif_values is not None:
+        ax.contourf(lon_c, lat_c, signif_values_c, signif_range, transform=transform, hatches=[hatch], colors='none')
 
     cbar = fig.colorbar(im, ax=ax, orientation=cbar_orientation, pad=cbar_pad, aspect=cbar_aspect, extend=extend,
                         fraction=cbar_fraction, shrink=cbar_shrink)
