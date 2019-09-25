@@ -253,7 +253,7 @@ def regrid_prior(cfg, X, verbose=False):
 def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict=None, verbose=False,
               exclude_list=None, select_box_lf=None, select_box_ur=None):
 
-    db_proxies = pd.read_pickle(proxies_df_filepath).to_dense()
+    db_proxies = pd.read_pickle(proxies_df_filepath)
     db_metadata = pd.read_pickle(metadata_df_filepath)
 
     proxy_db_cfg = {
