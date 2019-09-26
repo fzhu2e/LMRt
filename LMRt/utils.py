@@ -2757,9 +2757,13 @@ def annualize_var(var, year_float, resolution='month', weights=None):
         del weights, weights_da  # save the memory
 
         var = np.multiply(coeff, var)
+        var_da = xr.DataArray(var, dims=dims, coords={'time': time})
+        var_ann = var_da.groupby('time.year').sum('time')
 
-    var_da = xr.DataArray(var, dims=dims, coords={'time': time})
-    var_ann = var_da.groupby('time.year').mean('time')
+    else:
+        var_da = xr.DataArray(var, dims=dims, coords={'time': time})
+        var_ann = var_da.groupby('time.year').mean('time')
+
     var_ann = var_ann.values
 
     year_ann = np.sort(list(set([t.year for t in time])))
