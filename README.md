@@ -36,6 +36,7 @@ Ultimately, it aims to provide following features:
 + [pyspharm](https://code.google.com/archive/p/pyspharm/): an  object-oriented python interface to the NCAR SPHEREPACK library (`conda install -c conda-forge pyspharm`)
 + [pyyaml](https://github.com/yaml/pyyaml): The next generation YAML parser and emitter for Python (`pip install pyyaml`).
 + [scikit-learn](https://scikit-learn.org/stable/index.html): Machine Learning in Python (`pip install -U scikit-learn`).
++ [cartopy](https://scitools.org.uk/cartopy/docs/latest/): a Python package designed for geospatial data processing in order to produce maps and other geospatial data analyses (`conda install -c conda-forge cartopy`).
 
 ## How to install
 Once the above dependencies are installed, simply
