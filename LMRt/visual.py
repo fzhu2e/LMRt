@@ -929,7 +929,7 @@ def plot_volc_composites(gmt, event_yrs, start_yr=0, before=3, after=10, highpas
 
 def plot_sea_res(res, style='ticks', font_scale=2, figsize=[10, 6], signif_fontsize=15, ls='-o', color='k',
                  shade_alpha=0.3, signif_alpha=0.3, signif_color='k', signif_text_loc_fix=(0.1, -0.01),
-                 xticks=None, title=None):
+                 xticks=None, title=None, plot_signif=True):
     ''' Plot SEA results
     '''
     sns.set(style=style, font_scale=font_scale)
@@ -938,10 +938,11 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[10, 6], signif_fonts
     ax.plot(res['composite_yr'], res['composite_qs'][1], ls, color=color)
     ax.fill_between(res['composite_yr'], res['composite_qs'][0], res['composite_qs'][-1], color=color, alpha=shade_alpha)
 
-    for i, qs_v in enumerate(res['qs_signif']):
-        ax.plot(res['composite_yr'], res['composite_qs_signif'][i], '--', color=signif_color, alpha=signif_alpha)
-        ax.text(res['composite_yr'][-1]+signif_text_loc_fix[0], res['composite_qs_signif'][i][-1]+signif_text_loc_fix[-1],
-                f'{qs_v*100:g}%', color=signif_color, alpha=signif_alpha, fontsize=signif_fontsize)
+    if plot_signif:
+        for i, qs_v in enumerate(res['qs_signif']):
+            ax.plot(res['composite_yr'], res['composite_qs_signif'][i], '--', color=signif_color, alpha=signif_alpha)
+            ax.text(res['composite_yr'][-1]+signif_text_loc_fix[0], res['composite_qs_signif'][i][-1]+signif_text_loc_fix[-1],
+                    f'{qs_v*100:g}%', color=signif_color, alpha=signif_alpha, fontsize=signif_fontsize)
 
     ax.set_ylabel('T anom. (K)')
     ax.set_xlabel('Years relative to event year')
