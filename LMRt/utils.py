@@ -3385,7 +3385,7 @@ def ar1_noise(ts, ys, g=None, sig_noise=1, nt_noise=None, seed=0):
     return noise, g
 
 
-def colored_noise_2regimes(alpha1, alpha2, f_break, t, f0=None, m=None):
+def colored_noise_2regimes(alpha1, alpha2, f_break, t, f0=None, m=None, seed=None):
     ''' Generate a colored noise timeseries with two regimes
 
     Args:
@@ -3413,6 +3413,9 @@ def colored_noise_2regimes(alpha1, alpha2, f_break, t, f0=None, m=None):
 
     k = np.arange(m) + 1  # wave numbers
 
+    if seed is not None:
+        np.random.seed(seed)
+
     theta = np.random.rand(int(m))*2*np.pi  # random phase
 
     f_vec = k*f0
@@ -3432,7 +3435,7 @@ def colored_noise_2regimes(alpha1, alpha2, f_break, t, f0=None, m=None):
     return y
 
 
-def colored_noise(alpha, t, f0=None, m=None):
+def colored_noise(alpha, t, f0=None, m=None, seed=None):
     ''' Generate a colored noise timeseries
 
     Args:
@@ -3458,6 +3461,9 @@ def colored_noise(alpha, t, f0=None, m=None):
         m = n//2
 
     k = np.arange(m) + 1  # wave numbers
+
+    if seed is not None:
+        np.random.seed(seed)
 
     theta = np.random.rand(int(m))*2*np.pi  # random phase
     for j in range(n):
