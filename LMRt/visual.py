@@ -7,6 +7,7 @@ from matplotlib.colors import BoundaryNorm, Normalize
 from matplotlib.ticker import MaxNLocator, ScalarFormatter, FormatStrFormatter
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 from matplotlib import cm
 import pickle
 
@@ -371,6 +372,7 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                    site_markersize=50, site_color=sns.xkcd_rgb['amber'],
                    projection=ccrs.Robinson, transform=ccrs.PlateCarree(),
                    central_longitude=0, latlon_range=None,
+                   lon_ticks=[60, 120, 180, 240, 300], lat_ticks=[-90, -45, 0, 45, 90],
                    land_color=sns.xkcd_rgb['light grey'], ocean_color=sns.xkcd_rgb['light grey'],
                    land_zorder=None, ocean_zorder=None, signif_values=None, signif_range=[0.05, 9999], hatch='..',
                    clim=None, cmap='RdBu_r', cmap_under=None, cmap_over=None, extend='both', mode='latlon', add_gridlines=False,
@@ -424,7 +426,18 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
         plt.title(title, fontsize=title_size, fontweight=title_weight)
 
     if latlon_range:
+        lon_min, lon_max, lat_min, lat_max = latlon_range
         ax.set_extent(latlon_range, crs=transform)
+        lon_formatter = LongitudeFormatter(zero_direction_label=False)
+        lat_formatter = LatitudeFormatter()
+        ax.xaxis.set_major_formatter(lon_formatter)
+        ax.yaxis.set_major_formatter(lat_formatter)
+        lon_ticks = np.array(lon_ticks)
+        lat_ticks = np.array(lat_ticks)
+        mask_lon = (lon_ticks >= lon_min) & (lon_ticks <= lon_max)
+        mask_lat = (lat_ticks >= lat_min) & (lat_ticks <= lat_max)
+        ax.set_xticks(lon_ticks[mask_lon], crs=ccrs.PlateCarree())
+        ax.set_yticks(lat_ticks[mask_lat], crs=ccrs.PlateCarree())
     else:
         ax.set_global()
 
@@ -991,7 +1004,18 @@ def plot_sea_field_map(field_var, field_signif_lb, field_signif_ub, lat, lon,
         plt.title(title, fontsize=title_size, fontweight=title_weight)
 
     if latlon_range:
+        lon_min, lon_max, lat_min, lat_max = latlon_range
         ax.set_extent(latlon_range, crs=transform)
+        lon_formatter = LongitudeFormatter(zero_direction_label=False)
+        lat_formatter = LatitudeFormatter()
+        ax.xaxis.set_major_formatter(lon_formatter)
+        ax.yaxis.set_major_formatter(lat_formatter)
+        lon_ticks = np.array(lon_ticks)
+        lat_ticks = np.array(lat_ticks)
+        mask_lon = (lon_ticks >= lon_min) & (lon_ticks <= lon_max)
+        mask_lat = (lat_ticks >= lat_min) & (lat_ticks <= lat_max)
+        ax.set_xticks(lon_ticks[mask_lon], crs=ccrs.PlateCarree())
+        ax.set_yticks(lat_ticks[mask_lat], crs=ccrs.PlateCarree())
     else:
         ax.set_global()
 
