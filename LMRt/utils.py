@@ -24,6 +24,7 @@ from scipy.stats.mstats import mquantiles
 from scipy.stats.mstats import gmean
 from scipy import spatial
 from scipy.special import factorial
+from scipy.stats import gaussian_kde
 import cftime
 from pprint import pprint
 from time import time as ttime
@@ -4976,8 +4977,19 @@ def butter_lowpass(cutoff, fs, order=5):
     b, a = signal.butter(order, normal_cutoff, btype='low', analog=False)
     return b, a
 
-
 def butter_lowpass_filter(data, cutoff, fs, order=5):
     b, a = butter_lowpass(cutoff, fs, order=order)
     y = signal.filtfilt(b, a, data)
+    return y
+
+def butter_bandpass(lowcut, highcut, fs, order=5):
+    nyq = 0.5 * fs
+    low = lowcut / nyq
+    high = highcut / nyq
+    sos = signal.butter(order, [low, high], btype='band', output='sos')
+    return sos
+
+def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
+    sos = butter_bandpass(lowcut, highcut, fs, order=order)
+    y = signal.sosfilt(sos, data)
     return y
