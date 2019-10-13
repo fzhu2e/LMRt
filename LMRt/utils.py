@@ -21,6 +21,7 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import glob
 from scipy.stats.mstats import mquantiles
+from scipy.stats.mstats import gmean
 from scipy import spatial
 from scipy.special import factorial
 import cftime
@@ -4882,7 +4883,7 @@ def ar1_fit(ts):
     '''
 
 
-    ar1_mod = sm.tsa.AR(ts, missing='drop').fit(maxlag=1, trend='nc')
+    ar1_mod = sm.tsa.AR(ts, missing='drop').fit(maxlag=1)
     g = ar1_mod.params[1]
 
     return g
