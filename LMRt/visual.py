@@ -488,7 +488,7 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                 ax.scatter(site_lons[name], site_lats[name], s=site_markersize[name], c=site_color[name], marker=site_marker[name], edgecolors='k',
                            zorder=99, transform=transform)
 
-    return fig
+    return fig, ax
 
 
 def plot_gmt_vs_inst(gmt_qs, year, ana_pathdict,
@@ -1052,7 +1052,7 @@ def plot_sea_field_map(field_var, field_signif_lb, field_signif_ub, lat, lon,
     if cbar_title:
         cbar.ax.set_title(cbar_title)
 
-    return fig
+    return fig, ax
 
 
 def plot_vsl_dashboard(pid, vsl_res, vsl_params,
