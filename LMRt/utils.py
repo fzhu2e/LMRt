@@ -2973,10 +2973,22 @@ def rolling_avg(ts, ys, win_len, rolling_kws={}):
     data = {'time': ts, 'value': ys}
     df = pd.DataFrame(data)
     df = df.set_index('time')
-    df_avg = df.rolling(win_len, **rolling_kws).sum()
+    df_avg = df.rolling(win_len, **rolling_kws).mean()
 
     ts_out = df_avg.index.values
     ys_out = df_avg['value'].values
+
+    return ts_out, ys_out
+
+
+def rolling_std(ts, ys, win_len, rolling_kws={}):
+    data = {'time': ts, 'value': ys}
+    df = pd.DataFrame(data)
+    df = df.set_index('time')
+    df_std = df.rolling(win_len, **rolling_kws).std()
+
+    ts_out = df_std.index.values
+    ys_out = df_std['value'].values
 
     return ts_out, ys_out
 
@@ -3273,6 +3285,24 @@ def compute_annual_means(time_raw,data_raw,valid_frac,year_type):
 
 
     return time_annual[keep], data_annual[keep,:], proxy_resolution
+
+
+def make_groups(ys, window, apply_func=None, apply_kws={}):
+    nt = np.size(ys)
+    ngrp = nt // window
+    grp = np.ndarray((ngrp, window))
+    grp[:] = np.nan
+    for i in range(ngrp):
+        grp[i] = ys[i:i+window]
+
+    if apply_func is None:
+        res = grp
+    else:
+        res = np.empty(ngrp)
+        for i, g in enumerate(grp):
+            res[i] = apply_func(g, **apply_kws)
+
+    return res
 
 # ===============================================
 #  Multivariate bias correction
