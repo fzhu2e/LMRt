@@ -356,6 +356,7 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
                     print(err_msg)
         else:
             proxy_std = np.nanstd(values)
+            proxy_var = np.nanvar(values)
             SNR = proxy_db_cfg[db_name].SNR[proxy_type]
             ob_err_std = proxy_std / SNR
             ob_err_var = ob_err_std**2
@@ -1293,7 +1294,7 @@ def calibrate_psm(
                         'fitR2adj': optimal_reg.rsquared_adj,
                         'PSMresid': optimal_reg.resid,
                         'SNR': std_proxy / np.sqrt(np.mean(optimal_reg.resid**2)),
-                        'linreg': optimal_reg,
+                        #  'linreg': optimal_reg,
                     }
                     if verbose:
                         pprint(precalib_dict_pobj)
@@ -1330,7 +1331,7 @@ def calibrate_psm(
                         'fitR2adj': optimal_reg.rsquared_adj,
                         'PSMresid': optimal_reg.resid,
                         'SNR': std_proxy / np.sqrt(np.mean(optimal_reg.resid**2)),
-                        'linreg': optimal_reg,
+                        #  'linreg': optimal_reg,
                     }
 
                     if verbose:
