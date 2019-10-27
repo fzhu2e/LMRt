@@ -4735,6 +4735,8 @@ def corr_sig(y1, y2, nsim=1000, method='isospectral', alpha=0.05):
         (r, signif, p) = corr_isopersist(y1, y2, alpha=alpha, nsim=nsim)
     elif method == 'isospectral':
         (r, signif, p) = corr_isospec(y1, y2, alpha=alpha, nsim=nsim)
+    else:
+        raise KeyError(f'{method} is not a valid method')
 
     return r, signif, p
 
@@ -4765,7 +4767,7 @@ def corr_ttest(y1, y2, alpha=0.05):
     Ney2 = N * (1-g2) / (1+g2)
 
     Ne = gmean([Ney1+Ney2])
-    assert Ne >= 10, 'Too few effective d.o.f. to apply this method!'
+    assert Ne >= 10, f'Too few effective d.o.f. to apply this method! Ne={Ne}, Ney1={Ney1:.2f}, Ney2={Ney2:.2f}, g1={g1:.2f}, g2={g2:.2f}'
 
     df = Ne - 2
     t = np.abs(r) * np.sqrt(df/(1-r**2))
