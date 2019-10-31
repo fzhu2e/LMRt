@@ -273,6 +273,7 @@ class ReconJob:
                 # load environmental variables
                 if calc_anomaly is None:
                     calc_anomaly = True
+
                 lat_model, lon_model, time_model, prior_vars = utils.get_env_vars(
                     prior_filesdict, rename_vars=rename_vars,
                     useLib=useLib, calc_anomaly=calc_anomaly, ref_period=ref_period,
@@ -343,6 +344,7 @@ class ReconJob:
             # load environmental variables
             if calc_anomaly is None:
                 calc_anomaly = False
+
             lat_model, lon_model, time_model, prior_vars = utils.get_env_vars(
                 prior_filesdict, rename_vars=rename_vars,
                 useLib=useLib, calc_anomaly=calc_anomaly, ref_period=ref_period,

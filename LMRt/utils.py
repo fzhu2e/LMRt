@@ -1368,16 +1368,14 @@ def linear_regression(proxy_time, proxy_value, ref_time, ref_value, seasons, ver
         ref_var_avg = ref_value[season_tag]
         yr_ann = ref_time
 
-        df = pd.DataFrame({'time': proxy_time, 'y': proxy_value})
-        df.columns = ['variable', 'y']
-        frame = pd.DataFrame({'variable': yr_ann, 'Temperature': ref_var_avg})
-        df = df.merge(frame, how='outer', on='variable')
-        df.set_index(df.columns[0], drop=True, inplace=True)
-        df.index.name = 'time'
+        df = pd.DataFrame({'time': proxy_time, 'Proxy': proxy_value})
+        frame = pd.DataFrame({'time': yr_ann, 'Temperature': ref_var_avg})
+        df = df.merge(frame, how='outer', on='time')
+        df.set_index('time', drop=True, inplace=True)
         df.sort_index(inplace=True)
         df.astype(np.float)
         try:
-            reg_res = smf.ols(formula='y ~ Temperature', data=df).fit()
+            reg_res = smf.ols(formula='Proxy ~ Temperature', data=df).fit()
             R2_adj = reg_res.rsquared_adj
             nobs = int(reg_res.nobs)
             if verbose:
@@ -1428,18 +1426,16 @@ def bilinear_regression(proxy_time, proxy_value,
             yr_ann_1 = ref_time_1
             yr_ann_2 = ref_time_2
 
-            df = pd.DataFrame({'time': proxy_time, 'y': proxy_value})
-            df.columns = ['variable', 'y']
-            frameT = pd.DataFrame({'variable': yr_ann_1, 'Temperature': ref_var_avg_1})
-            df = df.merge(frameT, how='outer', on='variable')
-            frameP = pd.DataFrame({'variable': yr_ann_2, 'Moisture': ref_var_avg_2})
-            df = df.merge(frameP, how='outer', on='variable')
-            df.set_index(df.columns[0], drop=True, inplace=True)
-            df.index.name = 'Time'
+            df = pd.DataFrame({'time': proxy_time, 'Proxy': proxy_value})
+            frameT = pd.DataFrame({'time': yr_ann_1, 'Temperature': ref_var_avg_1})
+            df = df.merge(frameT, how='outer', on='time')
+            frameP = pd.DataFrame({'time': yr_ann_2, 'Moisture': ref_var_avg_2})
+            df = df.merge(frameP, how='outer', on='time')
+            df.set_index('time', drop=True, inplace=True)
             df.sort_index(inplace=True)
             df.astype(np.float)
             try:
-                reg_res = smf.ols(formula='y ~ Temperature + Moisture', data=df).fit()
+                reg_res = smf.ols(formula='Proxy ~ Temperature + Moisture', data=df).fit()
                 nobs = int(reg_res.nobs)
                 R2_adj = reg_res.rsquared_adj
                 if verbose:
