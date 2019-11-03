@@ -2,7 +2,7 @@
 '''
 __author__ = 'Feng Zhu'
 __email__ = 'fengzhu@usc.edu'
-__version__ = '0.5.4'
+__version__ = '0.6.0'
 
 import yaml
 import os
@@ -18,6 +18,7 @@ from scipy import stats
 
 from . import utils
 from . import visual
+from . import nn
 
 ProxyManager = namedtuple(
     'ProxyManager',

@@ -1679,3 +1679,62 @@ def plot_linreg_residual(mdl, figsize=[20, 15], title=None,
     return fig, ax
 
 
+def plot_nn_loss(history_dict, font_scale=1.5, figsize=[10, 4], lw=2,
+                 calib_color=sns.xkcd_rgb['denim blue'], valid_color=sns.xkcd_rgb['orange']):
+
+    sns.set(style='ticks', font_scale=font_scale)
+    loss_calib = history_dict['loss']
+    loss_valid = history_dict['val_loss']
+
+    nepochs = np.size(loss_calib)
+
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.set_xlabel('Epochs')
+    ax.set_ylabel('Loss')
+    ax.plot(np.arange(nepochs)+1, loss_calib, '-', label='calibration', lw=lw, color=calib_color)
+    ax.plot(np.arange(nepochs)+1, loss_valid, '-', label='validation', lw=lw, color=valid_color)
+
+    calib_min_idx = np.argmin(loss_calib)
+    valid_min_idx = np.argmin(loss_valid)
+    calib_min_loss = loss_calib[calib_min_idx]
+    valid_min_loss = loss_valid[valid_min_idx]
+
+    label_best_calib = f'({calib_min_idx+1}, {calib_min_loss:.2f})'
+    label_best_valid = f'({valid_min_idx+1}, {valid_min_loss:.2f})'
+    ax.scatter(calib_min_idx+1, calib_min_loss, marker='o', color=calib_color, label=label_best_calib)
+    ax.scatter(valid_min_idx+1, valid_min_loss, marker='o', color=valid_color, label=label_best_valid)
+
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.legend(frameon=False, ncol=2)
+
+    return fig, ax
+
+
+def plot_nn_predicts(mod_eval_res_dict, data_dict, ref_label='proxy', xlim=[1901, 2000]):
+    sns.set(style='ticks', font_scale=1.5)
+    fig, ax = plt.subplots(figsize=[10, 6])
+    ax.plot(data_dict['time'], data_dict['y'], label=ref_label, color=sns.xkcd_rgb['grey'], lw=5, alpha=0.5)
+
+    clrs = [
+        sns.xkcd_rgb['denim blue'],
+        sns.xkcd_rgb['medium green'],
+        sns.xkcd_rgb['pale red'],
+        sns.xkcd_rgb['orange'],
+        sns.xkcd_rgb['purple'],
+    ]
+
+    i = 0
+    for k, v in mod_eval_res_dict.items():
+        ax.plot(data_dict['time_calib'], v['predict_calib'], label=f'{k} calib', color=clrs[i], lw=3)
+        ax.plot(data_dict['time_valid'], v['predict_valid'], ':', label=f'{k} valid', color=clrs[i], lw=3)
+        i += 1
+
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.legend(frameon=False, ncol=1, bbox_to_anchor=[1.3, 1], loc='upper right')
+    ax.set_xlabel('Time')
+    ax.set_xlim(xlim)
+    ax.set_ylabel('Value')
+
+    return fig, ax

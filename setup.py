@@ -30,5 +30,8 @@ setup(
     install_requires=[
         'dotmap',
         'pyyaml',
+        'scikit-learn',
+        'keras',
+        'tensorflow',
     ],
 )

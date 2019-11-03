@@ -17,6 +17,7 @@ Ultimately, it aims to provide following features:
     + Easy setup for different priors, proxies, and Proxy System Models (PSMs) included in [PRYSM API](https://github.com/fzhu2e/prysm-api)
 + Faster speed
     + Easy parallel computing with multiprocessing and other techniques
++ Leveraging the power of Machine Learning (added in v0.6.0)
 
 ## Results
 
@@ -35,8 +36,10 @@ Ultimately, it aims to provide following features:
 + [netCDF4](https://github.com/Unidata/netcdf4-python): the python interface for netCDF4 format (`conda install netCDF4`)
 + [pyspharm](https://code.google.com/archive/p/pyspharm/): an  object-oriented python interface to the NCAR SPHEREPACK library (`conda install -c conda-forge pyspharm`)
 + [pyyaml](https://github.com/yaml/pyyaml): The next generation YAML parser and emitter for Python (`pip install pyyaml`).
-+ [scikit-learn](https://scikit-learn.org/stable/index.html): Machine Learning in Python (`pip install -U scikit-learn`).
 + [cartopy](https://scitools.org.uk/cartopy/docs/latest/): a Python package designed for geospatial data processing in order to produce maps and other geospatial data analyses (`conda install -c conda-forge cartopy`).
++ [scikit-learn](https://scikit-learn.org/stable/index.html): Machine Learning in Python (`pip install -U scikit-learn`).
++ [keras](http://keras.io/): Deep Learning for humans (`pip install keras`).
++ [tensorflow](https://github.com/tensorflow/tensorflow): An Open Source Machine Learning Framework for Everyone (`pip install tensorflow` or `pip install tensorflow-gpu`).
 
 ## How to install
 Once the above dependencies are installed, simply
