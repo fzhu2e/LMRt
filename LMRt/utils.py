@@ -1875,7 +1875,7 @@ def regrid_sphere_field(nlat, nlon, var_field, ntrunc):
 
     # transform each ensemble member, one at a time
     var_regridded = []
-    for i in range(np.shape(var_field[0])):
+    for i in range(np.shape(var_field)[0]):
         var_regridded.append(
             regrid(specob_lmr, specob_new, var_field, ntrunc=nlat_new-1, smooth=None)
         )
@@ -4297,6 +4297,7 @@ def calc_corr_between_fields(
         field1_on_field2 = []
         for i in ind1:
             field1_on_field2_each_yr = regrid(specob1, specob2, field1_inside[i], ntrunc=None, smooth=None)
+            field1_on_field2.append(field1_on_field2_each_yr)
 
         field1_on_field2 = np.asarray(field1_on_field2)
 
