@@ -2478,8 +2478,8 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath, dtype
 
         # compress to float32
         gm_ens = np.array(gm_ens, dtype=dtype)
-        nhm_ens = np.array(gm_ens, dtype=dtype)
-        shm_ens = np.array(gm_ens, dtype=dtype)
+        nhm_ens = np.array(nhm_ens, dtype=dtype)
+        shm_ens = np.array(shm_ens, dtype=dtype)
 
         output_dict[f'{name}_gm_ens'] = (('year', 'ens'), gm_ens)
         output_dict[f'{name}_nhm_ens'] = (('year', 'ens'), nhm_ens)
