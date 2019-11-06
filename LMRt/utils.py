@@ -79,7 +79,7 @@ def get_prior(filepath, datatype, cfg, anom_reference_period=(1951, 1980), verbo
         if cfg.core.recon_timescale == 1:
             avgInterval = {'annual': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
         elif cfg.core.recon_timescale > 1:
-            avgInterval = {'multiyaer': [cfg.core.recon_timescale]}
+            avgInterval = {'multiyear': [cfg.core.recon_timescale]}
         else:
             print('ERROR in config.: unrecognized job.cfg.core.recon_timescale!')
             raise SystemExit()
@@ -3924,7 +3924,7 @@ def rotate_lon(field, lon):
 
 
 def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980],
-                       sort_lon=True, outfreq='annual'):
+                       sort_lon=True, avgInterval=list(range(1, 13))):
     load_func = {
         'GISTEMP': load_gridded_data.read_gridded_data_GISTEMP,
         'HadCRUT': load_gridded_data.read_gridded_data_HadCRUT,
@@ -3960,47 +3960,65 @@ def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), 
     for name, path in ana_pathdict.items():
         print(f'Loading {name}: {path} ...')
         if name in ['ERA20-20C', '20CR-V2']:
+            # load_gridded_data.read_gridded_data_CMIP5_model
             dd = load_func[name](
                 os.path.dirname(path),
                 os.path.basename(path),
                 calib_vars[name],
-                outtimeavg=list(range(1, 13)),
+                outtimeavg=avgInterval,
                 anom_ref=ref_period,
             )
             time_grid = dd['tas_sfc_Amon']['years']
             lat_grid = dd['tas_sfc_Amon']['lat'][:, 0]
             lon_grid = dd['tas_sfc_Amon']['lon'][0, :]
             anomaly_grid = dd['tas_sfc_Amon']['value']
+
         elif name == 'GPCC':
+            # load_gridded_data.read_gridded_data_GPCC
             time_grid, lat_grid, lon_grid, anomaly_grid = load_func[name](
                 os.path.dirname(path),
                 os.path.basename(path),
                 calib_vars[name],
                 True,
                 ref_period,
-                outfreq,
+                avgInterval,
             )
 
         elif name == 'PREC':
+            # get_env_vars
             lat_grid, lon_grid, time_grid, vars_grid = load_func[name](
                 {'precip': path},
                 calc_anomaly=True,
                 ref_period=ref_period,
             )
             prate = vars_grid['precip']/24/3600  # convert from mm/day to kg/m^2/s
-            anomaly_grid, time_grid = annualize_var(prate, time_grid)
+            if avgInterval == list(range(1, 13)):
+                anomaly_grid, time_grid = annualize_var(vars_grid['prate'], time_grid)
+            else:
+                anomaly_grid, time_grid = seasonal_var(vars_grid['prate'], time_grid, avgMonths=avgInterval)
             time_grid = year_float2datetime(time_grid)
 
         elif name == '20CR-V2C':
+            # get_env_vars
             lat_grid, lon_grid, time_grid, vars_grid = load_func[name](
                 {'prate': path},
                 calc_anomaly=True,
                 ref_period=ref_period,
             )
-            anomaly_grid, time_grid = annualize_var(vars_grid['prate'], time_grid)
+            if avgInterval == list(range(1, 13)):
+                anomaly_grid, time_grid = annualize_var(vars_grid['prate'], time_grid)
+            else:
+                anomaly_grid, time_grid = seasonal_var(vars_grid['prate'], time_grid, avgMonths=avgInterval)
+
             time_grid = year_float2datetime(time_grid)
 
         else:
+            # GISTEMP, MLOST, HadCRUT, BerkeleyEarth
+            if avgInterval == list(range(1, 13)):
+                outfreq = 'annual'
+            else:
+                outfreq = 'monthly'
+
             time_grid, lat_grid, lon_grid, anomaly_grid = load_func[name](
                 os.path.dirname(path),
                 os.path.basename(path),
@@ -4008,6 +4026,12 @@ def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), 
                 outfreq=outfreq,
                 ref_period=ref_period,
             )
+            year_float = datetime2year_float(time_grid)
+
+            if outfreq == 'monthly':
+                anomaly_grid, time_grid = seasonal_var(anomaly_grid, year_float, avgMonths=avgInterval)
+                time_grid = year_float2datetime(time_grid)
+
 
         if sort_lon:
             anomaly_grid, lon_grid = rotate_lon(anomaly_grid, lon_grid)
@@ -4049,7 +4073,7 @@ def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), 
 
 
 def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980],
-                            valid_frac=0.5, var_name='tas_sfc_Amon', detrend=False, detrend_kws={}):
+                            valid_frac=0.5, var_name='tas_sfc_Amon', avgInterval=list(range(1, 13)), detrend=False, detrend_kws={}):
     ''' Calculate corr and CE between LMR and instrumental fields
 
     Note: The time axis of the LMR field is assumed to fully cover the range of verif_yrs
@@ -4068,7 +4092,7 @@ def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 200
     field_lmr = field_em[mask] - np.nanmean(field_em[mask_ref, :, :], axis=0)  # remove the mean w.r.t. the ref_period
 
     inst_field, inst_time, inst_lat, inst_lon = load_inst_analyses(
-        ana_pathdict, var='field', verif_yrs=verif_yrs, ref_period=ref_period)
+        ana_pathdict, var='field', verif_yrs=verif_yrs, ref_period=ref_period, avgInterval=avgInterval)
 
     nlat_lmr = np.size(lat)
     nlon_lmr = np.size(lon)
