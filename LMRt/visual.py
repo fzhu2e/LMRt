@@ -370,8 +370,8 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                    title=None, title_size=20, title_weight='normal', figsize=[10, 8],
                    site_lats=None, site_lons=None, site_marker='o',
                    site_markersize=50, site_color=sns.xkcd_rgb['amber'],
-                   projection=ccrs.Robinson, transform=ccrs.PlateCarree(),
-                   central_longitude=0, latlon_range=None,
+                   projection='Robinson', transform=ccrs.PlateCarree(),
+                   proj_args={}, latlon_range=None,
                    lon_ticks=[60, 120, 180, 240, 300], lat_ticks=[-90, -45, 0, 45, 90],
                    land_color=sns.xkcd_rgb['light grey'], ocean_color=sns.xkcd_rgb['light grey'],
                    land_zorder=None, ocean_zorder=None, signif_values=None, signif_range=[0.05, 9999], hatch='..',
@@ -419,7 +419,43 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
     sns.set(style='ticks', font_scale=font_scale)
     fig = plt.figure(figsize=figsize)
 
-    projection = projection(central_longitude=central_longitude)
+    projection_dict = {
+        'Robinson': ccrs.Robinson,
+        'NorthPolarStereo': ccrs.NorthPolarStereo,
+        'SouthPolarStereo': ccrs.SouthPolarStereo,
+        'PlateCarree': ccrs.PlateCarree,
+        'AlbersEqualArea': ccrs.AlbersEqualArea,
+        'AzimuthalEquidistant': ccrs.AzimuthalEquidistant,
+        'EquidistantConic': ccrs.EquidistantConic,
+        'LambertConformal': ccrs.LambertConformal,
+        'LambertCylindrical': ccrs.LambertCylindrical,
+        'Mercator': ccrs.Mercator,
+        'Miller': ccrs.Miller,
+        'Mollweide': ccrs.Mollweide,
+        'Orthographic': ccrs.Orthographic,
+        'Sinusoidal': ccrs.Sinusoidal,
+        'Stereographic': ccrs.Stereographic,
+        'TransverseMercator': ccrs.TransverseMercator,
+        'UTM': ccrs.UTM,
+        'InterruptedGoodeHomolosine': ccrs.InterruptedGoodeHomolosine,
+        'RotatedPole': ccrs.RotatedPole,
+        'OSGB': ccrs.OSGB,
+        'EuroPP': ccrs.EuroPP,
+        'Geostationary': ccrs.Geostationary,
+        'NearsidePerspective': ccrs.NearsidePerspective,
+        'EckertI': ccrs.EckertI,
+        'EckertII': ccrs.EckertII,
+        'EckertIII': ccrs.EckertIII,
+        'EckertIV': ccrs.EckertIV,
+        'EckertV': ccrs.EckertV,
+        'EckertVI': ccrs.EckertVI,
+        'EqualEarth': ccrs.EqualEarth,
+        'Gnomonic': ccrs.Gnomonic,
+        'LambertAzimuthalEqualArea': ccrs.LambertAzimuthalEqualArea,
+        'OSNI': ccrs.OSNI,
+    }
+
+    projection = projection_dict[projection](**proj_args)
     ax = plt.subplot(projection=projection)
 
     if title:
@@ -975,8 +1011,8 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[10, 6], signif_fonts
 def plot_sea_field_map(field_var, field_signif_lb, field_signif_ub, lat, lon,
                        levels=50, add_cyclic_point=True,
                        title=None, title_size=20, title_weight='normal', figsize=[10, 8],
-                       projection=ccrs.Robinson, transform=ccrs.PlateCarree(),
-                       central_longitude=0, latlon_range=None,
+                       projection='Robinson', transform=ccrs.PlateCarree(),
+                       proj_args={}, latlon_range=None,
                        land_alpha=1, ocean_alpha=1,
                        land_color=sns.xkcd_rgb['silver'], ocean_color=sns.xkcd_rgb['silver'],
                        land_zorder=None, ocean_zorder=None, hatch_lb='..', hatch_ub='///',
@@ -997,7 +1033,43 @@ def plot_sea_field_map(field_var, field_signif_lb, field_signif_ub, lat, lon,
     sns.set(style='ticks', font_scale=font_scale)
     fig = plt.figure(figsize=figsize)
 
-    projection = projection(central_longitude=central_longitude)
+    projection_dict = {
+        'Robinson': ccrs.Robinson,
+        'Orthographic': ccrs.Orthographic,
+        'NorthPolarStereo': ccrs.NorthPolarStereo,
+        'SouthPolarStereo': ccrs.SouthPolarStereo,
+        'PlateCarree': ccrs.PlateCarree,
+        'AlbersEqualArea': ccrs.AlbersEqualArea,
+        'AzimuthalEquidistant': ccrs.AzimuthalEquidistant,
+        'EquidistantConic': ccrs.EquidistantConic,
+        'LambertConformal': ccrs.LambertConformal,
+        'LambertCylindrical': ccrs.LambertCylindrical,
+        'Mercator': ccrs.Mercator,
+        'Miller': ccrs.Miller,
+        'Mollweide': ccrs.Mollweide,
+        'Sinusoidal': ccrs.Sinusoidal,
+        'Stereographic': ccrs.Stereographic,
+        'TransverseMercator': ccrs.TransverseMercator,
+        'UTM': ccrs.UTM,
+        'InterruptedGoodeHomolosine': ccrs.InterruptedGoodeHomolosine,
+        'RotatedPole': ccrs.RotatedPole,
+        'OSGB': ccrs.OSGB,
+        'EuroPP': ccrs.EuroPP,
+        'Geostationary': ccrs.Geostationary,
+        'NearsidePerspective': ccrs.NearsidePerspective,
+        'EckertI': ccrs.EckertI,
+        'EckertII': ccrs.EckertII,
+        'EckertIII': ccrs.EckertIII,
+        'EckertIV': ccrs.EckertIV,
+        'EckertV': ccrs.EckertV,
+        'EckertVI': ccrs.EckertVI,
+        'EqualEarth': ccrs.EqualEarth,
+        'Gnomonic': ccrs.Gnomonic,
+        'LambertAzimuthalEqualArea': ccrs.LambertAzimuthalEqualArea,
+        'OSNI': ccrs.OSNI,
+    }
+
+    projection = projection_dict[projection](**proj_args)
     ax = plt.subplot(projection=projection)
 
     if title:
