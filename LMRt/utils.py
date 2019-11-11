@@ -4072,7 +4072,7 @@ def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), 
         return inst_shm, inst_time
 
 
-def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980],
+def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980], field='LMR',
                             valid_frac=0.5, var_name='tas_sfc_Amon', avgInterval=list(range(1, 13)), detrend=False, detrend_kws={}):
     ''' Calculate corr and CE between LMR and instrumental fields
 
@@ -4081,11 +4081,21 @@ def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 200
     if not os.path.exists(exp_dir):
         raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
 
-    field_em, year, lat, lon = load_field_from_jobs(exp_dir, var=var_name)
+    if field == 'LMR':
+        field_em, year, lat, lon = load_field_from_jobs(exp_dir, var=var_name)
+    else:
+        filepath = exp_dir
+        filesdict = {
+            var_name: filepath,
+        }
+        lat, lon, time_model, prior_vars = get_env_vars(filesdict, calc_anomaly=False)
+        var_model =  prior_vars[var_name]
+        field_em, year = seasonal_var(var_model, time_model, avgMonths=avgInterval)
+
     syear, eyear = verif_yrs[0], verif_yrs[-1]
 
     if syear < np.min(year) or eyear > np.max(year):
-        raise ValueError('ERROR: The time axis of the LMR field is not fully covering the range of verif_yrs!!!')
+        raise ValueError(f'ERROR: The time axis of the {field} field is not fully covering the range of verif_yrs!!!')
 
     mask = (year >= syear) & (year <= eyear)
     mask_ref = (year >= ref_period[0]) & (year <= ref_period[-1])
@@ -4104,7 +4114,7 @@ def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 200
         mask_ref = (inst_time[name] >= ref_period[0]) & (inst_time[name] <= ref_period[-1])
         inst_field[name] -= np.nanmean(inst_field[name][mask_ref, :, :], axis=0)  # remove the mean w.r.t. the ref_period
 
-        print(f'Regridding LMR onto {name} ...')
+        print(f'Regridding {field} onto {name} ...')
 
         nlat_inst = np.size(inst_lat[name])
         nlon_inst = np.size(inst_lon[name])
