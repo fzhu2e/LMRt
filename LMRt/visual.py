@@ -984,8 +984,14 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[10, 6], signif_fonts
     sns.set(style=style, font_scale=font_scale)
     fig, ax = plt.subplots(figsize=figsize)
 
-    ax.plot(res['composite_yr'], res['composite_qs'][1], ls, color=color)
-    ax.fill_between(res['composite_yr'], res['composite_qs'][0], res['composite_qs'][-1], color=color, alpha=shade_alpha)
+    if 'composite_qs' in res.keys():
+        ax.plot(res['composite_yr'], res['composite_qs'][1], ls, color=color)
+        ax.fill_between(res['composite_yr'], res['composite_qs'][0], res['composite_qs'][-1], color=color, alpha=shade_alpha)
+    else:
+        ax.plot(res['composite_yr'], res['composite'], ls, color=color)
+
+    if 'qs_signif' not in res.keys():
+        plot_signif = False
 
     if plot_signif:
         for i, qs_v in enumerate(res['qs_signif']):

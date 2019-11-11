@@ -4453,30 +4453,32 @@ def butterworth(x,fc,fs=1, filter_order=3,pad='reflect',reflect_type='odd',param
     return xf
 
 
-def sea(X, events, start_yr=0, before=3, after=10, highpass=False):
+def sea(X, events, start_yr=0, preyr=3, postyr=10, qs=[0.05, 0.5, 0.95], highpass=False, verbose=False):
     '''Applies superposed Epoch Analysis to N-dim array X, at indices 'events',
-        and on a window [-before,after]
+        and on a window [-preyr,postyr]
     Inputs:
         - X: numpy array [time assumed to be the first dimension]
         - events: indices of events of interest
         - start_yr (int): the start year of X
-        - before: # years over which the pre-event mean is computed
-        - after: length of post-event window
+        - preyr: # years over which the pre-event mean is computed
+        - postyr: length of post-event window
 
     Outputs:
-        - Xevents : X lined up on events; removes mean of "before" years
-        - Xcomp  : composite of Xevents (same dimensions as X, minus the first one)
+        - Xevents : X lined up on events; removes mean of "preyr" years in shape of (time, ensemble, events)
+        - Xcomp  : composite of Xevents (same dimensions as X, minus the last one)
         - tcomp  : the time axis relative to events
 
     by Julien Emile-Geay
     '''
 
-    # exception handling : the first extreme year must not happen within the "before" indices
-    if any(np.isin(events,np.arange(0,before)+start_yr)) or any(events+after>=X.shape[0]+start_yr):
-        print("event outside range (either before 'tmin-before' or after 'tmax + after')")
+    events = np.array(events)
+
+    # exception handling : the first extreme year must not happen within the "preyr" indices
+    if any(np.isin(events,np.arange(0,preyr)+start_yr)) or any(events+postyr>=X.shape[0]+start_yr):
+        print("event outside range (either before 'tmin-preyr' or after 'tmax+postyr')")
         sys.exit()
 
-    tcomp = np.arange(-before,after+1) # time axis
+    tcomp = np.arange(-preyr,postyr+1) # time axis
     # reshape X to 2d
     if highpass:
         # high-pass filter X along first axis
@@ -4498,16 +4500,41 @@ def sea(X, events, start_yr=0, before=3, after=10, highpass=False):
     # define array shape
     sh = list(Xhp.shape)
     sh.append(n_events) # add number of events
-    sh[0] = before+after+1  # replace time axis by time relative to window
+    sh[0] = preyr+postyr+1  # replace time axis by time relative to window
     Xevents = np.empty(sh) # define empty array to hold the result
 
 
     for i in range(n_events):
-        Xevents[...,i] = Xhp[events[i]-before-start_yr:events[i]+after+1-start_yr,...]
-        Xevents[...,i] -= np.mean(Xevents[0:before,...,i],axis=0) # remove mean over "before" of window
+        Xevents[...,i] = Xhp[events[i]-preyr-start_yr:events[i]+postyr+1-start_yr,...]
+        Xevents[...,i] -= np.mean(Xevents[0:preyr,...,i],axis=0) # remove mean over "preyr" of window
 
     Xcomp = np.mean(Xevents,axis=Xevents.ndim-1) # compute composite
-    return Xevents, Xcomp, tcomp
+    #  return Xevents, Xcomp, tcomp
+
+    composite = Xcomp
+    ndim = len(np.shape(composite))
+    if ndim > 1:
+        composite_qs = mquantiles(composite, qs, axis=-1).T # to make it consistent with the output from sea_dbl()
+
+        res = {
+            'events': events,
+            'composite': composite,
+            'qs': qs,
+            'composite_qs': composite_qs,
+            'composite_yr': tcomp,
+        }
+    else:
+        res = {
+            'events': events,
+            'composite': composite,
+            'composite_yr': tcomp,
+        }
+
+    if verbose:
+        print(f'SEA >>> shape(composite): {np.shape(composite)}')
+        print(f'SEA >>> res.keys(): {list(res.keys())}')
+
+    return res
 
 
 def sea_dbl(time, value, events, preyr=5, postyr=15, seeds=None, nsample=10,
