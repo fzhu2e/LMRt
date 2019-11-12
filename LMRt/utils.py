@@ -4508,13 +4508,15 @@ def sea(X, events, start_yr=0, preyr=3, postyr=10, qs=[0.05, 0.5, 0.95], highpas
         Xevents[...,i] = Xhp[events[i]-preyr-start_yr:events[i]+postyr+1-start_yr,...]
         Xevents[...,i] -= np.mean(Xevents[0:preyr,...,i],axis=0) # remove mean over "preyr" of window
 
-    Xcomp = np.mean(Xevents,axis=Xevents.ndim-1) # compute composite
-    #  return Xevents, Xcomp, tcomp
+    if verbose:
+        print('SEA >>> shape(Xevents):', np.shape(Xevents))
 
-    composite = Xcomp
+    Xcomp = np.mean(Xevents, axis=-1) # compute composite
+
+    composite = Xcomp.T
     ndim = len(np.shape(composite))
     if ndim > 1:
-        composite_qs = mquantiles(composite, qs, axis=-1).T # to make it consistent with the output from sea_dbl()
+        composite_qs = mquantiles(composite, qs, axis=0)
 
         res = {
             'events': events,

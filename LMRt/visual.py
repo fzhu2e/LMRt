@@ -976,7 +976,7 @@ def plot_volc_composites(gmt, event_yrs, start_yr=0, before=3, after=10, highpas
     return fig
 
 
-def plot_sea_res(res, style='ticks', font_scale=2, figsize=[10, 6], signif_fontsize=15, ls='-o', color='k',
+def plot_sea_res(res, style='ticks', font_scale=2, figsize=[6, 6], signif_fontsize=15, ls='-o', lw=3, color='k', label=None,
                  shade_alpha=0.3, signif_alpha=0.3, signif_color='k', signif_text_loc_fix=(0.1, -0.01),
                  xticks=None, title=None, plot_signif=True):
     ''' Plot SEA results
@@ -985,10 +985,10 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[10, 6], signif_fonts
     fig, ax = plt.subplots(figsize=figsize)
 
     if 'composite_qs' in res.keys():
-        ax.plot(res['composite_yr'], res['composite_qs'][1], ls, color=color)
+        ax.plot(res['composite_yr'], res['composite_qs'][1], ls, color=color, label=label, lw=lw)
         ax.fill_between(res['composite_yr'], res['composite_qs'][0], res['composite_qs'][-1], color=color, alpha=shade_alpha)
     else:
-        ax.plot(res['composite_yr'], res['composite'], ls, color=color)
+        ax.plot(res['composite_yr'], res['composite'], ls, color=color, label=label, lw=lw)
 
     if 'qs_signif' not in res.keys():
         plot_signif = False
