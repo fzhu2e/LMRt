@@ -36,6 +36,9 @@ from sklearn import preprocessing
 
 from . import load_gridded_data  # original file from LMR
 
+import warnings
+warnings.filterwarnings(action='ignore', module='pandas', category=FutureWarning)
+
 Proxy = namedtuple(
     'Proxy',
     ['id', 'type', 'start_yr', 'end_yr', 'lat', 'lon', 'elev', 'seasonality', 'values', 'time', 'psm_obj']
