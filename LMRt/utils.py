@@ -5089,3 +5089,39 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
     sos = butter_bandpass(lowcut, highcut, fs, order=order)
     y = signal.sosfilt(sos, data)
     return y
+
+# -----------------------------------------------
+#  linear regression analysis
+# -----------------------------------------------
+def calc_autocorr(series):
+    ''' Return the autocorrelations from a pandas series
+
+    Args:
+        series (Series): the pandas series
+    Returns:
+        autocorr (array): the array of autocorrelations
+    '''
+    n = len(series)
+    data = np.asarray(series)
+    mean = np.mean(data)
+    c0 = np.sum((data - mean) ** 2) / float(n)
+    def r(h):
+        return ((data[: n - h] - mean) * (data[h:] - mean)).sum() / float(n) / c0
+    x = np.arange(n) + 1
+    autocorr = np.array([r(loc) for loc in x])
+
+    return autocorr
+
+
+def get_autocorrs_from_calib_data(calib_data):
+    autocorrs = {}
+    for k, v in tqdm(calib_data.items()):
+        ptype, pid = k
+        resid = v['PSMresid']
+        autocorr = calc_autocorr(resid)
+        if ptype not in autocorrs.keys():
+            autocorrs[ptype] = [autocorr]
+        else:
+            autocorrs[ptype].append(autocorr)
+
+    return autocorrs
