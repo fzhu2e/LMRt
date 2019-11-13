@@ -1816,3 +1816,75 @@ def plot_nn_predicts(mod_eval_res_dict, data_dict, ref_label='proxy', xlim=[1901
     ax.set_ylabel('Value')
 
     return fig, ax
+
+
+def plot_autocorrs(autocorrs_dict, plot_types=None, nlag=10,
+                  panelsize=[4, 3], font_scale=1.5, ncol=2,
+                  wsp=0.5, hsp=0.5):
+    p = PAGES2k()
+    ptype_dict = {
+        'Bivalve_d18O': 'bivalve_d18O',
+        'Corals and Sclerosponges_SrCa': 'coral_SrCa',
+        'Corals and Sclerosponges_d18O': 'coral_d18O',
+        'Corals and Sclerosponges_Rates': 'coral_rates',
+        'Ice Cores_d18O': 'ice_d18O',
+        'Ice Cores_dD': 'ice_dD',
+        'Ice Cores_MeltFeature': 'ice_melt',
+        'Lake Cores_Misc': 'lake_misc',
+        'Lake Cores_Varve': 'lake_varve',
+        'Tree Rings_WidthPages2': 'tree_TRW',
+        'Tree Rings_WoodDensity': 'tree_MXD',
+    }
+
+    if plot_types is None:
+        row_types = autocorrs_dict.keys()
+        plot_types = []
+        for rt in row_types:
+            plot_types.append(ptype_dict[rt])
+
+    ntypes = len(plot_types)
+
+
+    sns.set(style='ticks', font_scale=font_scale)
+    nrow = ntypes//ncol
+    if ntypes%ncol > 0:
+        nrow += 1
+
+    figsize = [(panelsize[0]+wsp)*ncol, (panelsize[1]+hsp)*nrow]
+    fig = plt.figure(figsize=figsize)
+    gs = gridspec.GridSpec(nrow, ncol)
+    gs.update(wspace=wsp, hspace=hsp)
+
+    ax = {}
+    i = 0
+    z95 = 1.959963984540054
+    z99 = 2.5758293035489004
+    for ptype, autocorrs in autocorrs_dict.items():
+        if ptype_dict[ptype] in plot_types:
+            print(f'Plotting {ptype}...')
+            nrec = len(autocorrs)
+            autocorr_array = np.ndarray((nrec, nlag))
+            lags = np.arange(1, nlag+1)
+            for j, autocorr in enumerate(autocorrs):
+                autocorr_array[j] = autocorr[:nlag]
+
+            df = pd.DataFrame(data=autocorr_array, columns=lags)
+
+            # plot
+            ax[i] = plt.subplot(gs[i])
+            sns.boxplot(data=df, color=p.colors_dict[ptype])
+            ax[i].set_xlim([-1, 10])
+            ax[i].set_ylim([-0.4, 1])
+            ax[i].spines['right'].set_visible(False)
+            ax[i].spines['top'].set_visible(False)
+            ax[i].set_title(f'{ptype_dict[ptype]} (n={len(df)})')
+            ax[i].set_ylabel('Autocorrelation')
+            ax[i].set_xlabel('Lag')
+            ax[i].axhline(y=z99 / np.sqrt(nrec), linestyle='--', color='grey')
+            ax[i].axhline(y=z95 / np.sqrt(nrec), color='grey')
+            ax[i].axhline(y=0.0, color='black')
+            ax[i].axhline(y=-z95 / np.sqrt(nrec), color='grey')
+            ax[i].axhline(y=-z99 / np.sqrt(nrec), linestyle='--', color='grey')
+            i += 1
+
+    return fig, ax
