@@ -2993,6 +2993,20 @@ def rolling_std(ts, ys, win_len, rolling_kws={}):
     return ts_out, ys_out
 
 
+def weighted_ma(ys, weights):
+    nt = np.size(ys)
+    ys_wma = np.empty(nt)
+
+    nw = np.size(weights)
+    for i in range(nw-1):
+        ys_wma[i] = ys[i]
+
+    for i in range(nw-1, nt):
+        ys_wma[i] = np.average(ys[i-nw+1:i+1], weights=weights)
+
+    return ys_wma
+
+
 def get_distance(lon_pt, lat_pt, lon_ref, lat_ref):
     """
     Vectorized calculation the great circle distances between lat-lon points
