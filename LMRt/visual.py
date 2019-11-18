@@ -1820,7 +1820,7 @@ def plot_nn_predicts(mod_eval_res_dict, data_dict, ref_label='proxy', xlim=[1901
 
 def plot_autocorrs(autocorrs_dict, plot_types=None, nlag=10,
                   panelsize=[4, 3], font_scale=1.5, ncol=2,
-                  wsp=0.5, hsp=0.5):
+                  wsp=0.5, hsp=0.5, ylabel='Autocorrelation'):
     p = PAGES2k()
     ptype_dict = {
         'Bivalve_d18O': 'bivalve_d18O',
@@ -1878,7 +1878,7 @@ def plot_autocorrs(autocorrs_dict, plot_types=None, nlag=10,
             ax[i].spines['right'].set_visible(False)
             ax[i].spines['top'].set_visible(False)
             ax[i].set_title(f'{ptype_dict[ptype]} (n={len(df)})')
-            ax[i].set_ylabel('Autocorrelation')
+            ax[i].set_ylabel(ylabel)
             ax[i].set_xlabel('Lag')
             ax[i].axhline(y=z99 / np.sqrt(nrec), linestyle='--', color='grey')
             ax[i].axhline(y=z95 / np.sqrt(nrec), color='grey')
