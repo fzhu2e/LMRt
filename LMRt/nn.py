@@ -5,6 +5,8 @@ import pandas as pd
 import pickle
 import os
 import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from statsmodels.tsa import stattools as st
 
 from . import utils
 
@@ -20,6 +22,11 @@ def norm(values, time=None, ref_period=None):
         values -= np.mean(values[mask])
         values /= np.std(values[mask])
     return values
+
+
+def mean_squared(values):
+    res = np.mean(values**2)
+    return res
 
 
 def prep_data(time_endog, endog, time_exog, exog, lookback=0,
@@ -171,6 +178,74 @@ def run_LSTM(data_dict, neurons=[5], activations=['relu'], dropouts=[0], epochs=
     return model, history.history
 
 
+def clean_df(df):
+    for col in df.columns:
+        df.dropna(subset=[col], inplace=True)
+    return df
+
+
+def OLSp(time_endog, endog, time_exog, exog, p=0, fit_args={},
+         auto_choose_p=False, pacf_threshold=0.2, verbose=False):
+    ''' Perform OLS with lags on exog
+
+    Args:
+        time_endog (array): time axis of the endogenous timeseries, assuming evenly-spaced
+        endog (array): endogenous timeseries (i.e., dependent variable), assuming evenly-spaced
+        time_exog (array): time axis of the exogenous timeseries, assuming evenly-spaced
+        exog (array): exogenous timeseries (i.e., independent variable), assuming evenly-spaced
+        p (int): lag order; 0 means no lag and perform normal OLS
+        fit_args (dict): the keyword arguments for OLS fitting
+        auto_choose_p (bool): if True, will choose p based on PACF of endog
+        pacf_threshold (float): include lag p if its pacf is larger than pacf_threshold
+        verbose (bool): if True, print verbose information
+
+    Returns:
+        mdl (obj): the model return from statsmodels
+    '''
+    df = pd.DataFrame({'time': time_endog, 'endog': endog})
+    frame = pd.DataFrame({'time': time_exog, 'exog': exog})
+    df = df.merge(frame, how='outer', on='time')
+    df = clean_df(df)
+
+    if auto_choose_p:
+        endog_pacf = st.pacf(df['endog'].values)[1:]
+        for i, acf in enumerate(endog_pacf):
+            if np.abs(acf) >= pacf_threshold:
+                p = i + 1
+            else:
+                break
+        if verbose:
+            print(f'The lag order p choosed automatically: {p}')
+    else:
+        endog_pacf = np.nan
+
+    if p > 0:
+        for k in range(1, p+1):
+            frame = pd.DataFrame({'time': time_exog[k:], f'exog_lag{k}': exog[:-k]})
+            df = df.merge(frame, how='outer', on='time')
+
+    df.set_index('time', drop=True, inplace=True)
+    df.sort_index(inplace=True)
+    df.astype(np.float)
+    df = clean_df(df)
+
+    formula_spell = 'endog ~ exog'
+    for col in df.columns:
+        if col not in ['endog', 'exog']:
+            formula_spell += f'+ {col}'
+
+    mdl = smf.ols(formula=formula_spell, data=df).fit(**fit_args)
+
+    res_dict = {
+        'df': df,
+        'mdl': mdl,
+        'endog_pacf': endog_pacf,
+        'p': p,
+    }
+
+    return res_dict
+
+
 def evaluate_model(model, data_dict, name='LSTM',
                    calib_col='Calibration', valid_col='Validation',
                    calib_range=None, valid_range=None):
@@ -199,8 +274,8 @@ def evaluate_model(model, data_dict, name='LSTM',
 
     resid_calib = data_dict['y_calib'] - predict_calib
     resid_valid = data_dict['y_valid'] - predict_valid
-    mse_calib = np.mean(resid_calib**2)
-    mse_valid = np.mean(resid_valid**2)
+    mse_calib = mean_squared(resid_calib)
+    mse_valid = mean_squared(resid_valid)
 
     yw_calib = sm.regression.yule_walker(resid_calib, order=1)
     yw_valid = sm.regression.yule_walker(resid_valid, order=1)
