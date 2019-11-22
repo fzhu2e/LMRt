@@ -165,7 +165,7 @@ class ReconJob:
                 'seasons_T': [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]],
                 'seasons_M': [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]],
             },
-        }, nproc=4, nobs_lb=25, verbose=False):
+        }, nproc=4, nobs_lb=25, verbose=False, output_optimal_reg=False):
         ''' Build precalibration files for linear/bilinear PSMs
 
         Args:
@@ -234,7 +234,7 @@ class ReconJob:
         precalib_dict = utils.calibrate_psm(self.proxy_manager, ptypes, psm_name,
                                             precalc_avg, calib_period=calib_period,
                                             seasonality=seasonality, nproc=nproc,
-                                            verbose=verbose, nobs_lb=nobs_lb)
+                                            verbose=verbose, nobs_lb=nobs_lb, output_optimal_reg=output_optimal_reg)
 
         with open(precalib_savepath, 'wb') as f:
             pickle.dump(precalib_dict, f)

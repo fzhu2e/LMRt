@@ -1192,7 +1192,7 @@ def calibrate_psm(
             'seasons_T': [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]],
             'seasons_M': [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]],
         },
-    }, nproc=4, nobs_lb=25, verbose=False):
+    }, nproc=4, nobs_lb=25, verbose=False, output_optimal_reg=False):
     ''' Calibrate linear/bilinear PSMs
 
     Args:
@@ -1297,8 +1297,11 @@ def calibrate_psm(
                         'fitR2adj': optimal_reg.rsquared_adj,
                         'PSMresid': optimal_reg.resid,
                         'SNR': std_proxy / np.sqrt(np.mean(optimal_reg.resid**2)),
-                        #  'linreg': optimal_reg,
                     }
+
+                    if output_optimal_reg:
+                        precalib_dict_pobj['optimal_reg'] = optimal_reg
+
                     if verbose:
                         pprint(precalib_dict_pobj)
 

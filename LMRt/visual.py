@@ -38,6 +38,8 @@ class PAGES2k(object):
         'Lake Cores_Varve': sns.xkcd_rgb['dark blue'],
         'Tree Rings_WidthPages2': sns.xkcd_rgb['green'],
         'Tree Rings_WoodDensity': sns.xkcd_rgb['forest green'],
+        'tas': sns.xkcd_rgb['pale red'],
+        'pr': sns.xkcd_rgb['aqua'],
     }
 
     markers_dict = {
@@ -1820,7 +1822,8 @@ def plot_nn_predicts(mod_eval_res_dict, data_dict, ref_label='proxy', xlim=[1901
 
 def plot_autocorrs(autocorrs_dict, plot_types=None, nlag=10,
                   panelsize=[4, 3], font_scale=1.5, ncol=2,
-                  wsp=0.5, hsp=0.5, ylabel='Autocorrelation'):
+                  wsp=0.5, hsp=0.5, ylabel='Autocorrelation',
+                  title=None):
     p = PAGES2k()
     ptype_dict = {
         'Bivalve_d18O': 'bivalve_d18O',
@@ -1840,10 +1843,12 @@ def plot_autocorrs(autocorrs_dict, plot_types=None, nlag=10,
         row_types = autocorrs_dict.keys()
         plot_types = []
         for rt in row_types:
+            if rt not in ptype_dict:
+                ptype_dict[rt] = rt
+
             plot_types.append(ptype_dict[rt])
 
     ntypes = len(plot_types)
-
 
     sns.set(style='ticks', font_scale=font_scale)
     nrow = ntypes//ncol
@@ -1877,7 +1882,10 @@ def plot_autocorrs(autocorrs_dict, plot_types=None, nlag=10,
             ax[i].set_ylim([-0.4, 1])
             ax[i].spines['right'].set_visible(False)
             ax[i].spines['top'].set_visible(False)
-            ax[i].set_title(f'{ptype_dict[ptype]} (n={len(df)})')
+            if title is None:
+                ax[i].set_title(f'{ptype_dict[ptype]} (n={len(df)})')
+            else:
+                ax[i].set_title(f'{title}')
             ax[i].set_ylabel(ylabel)
             ax[i].set_xlabel('Lag')
             ax[i].axhline(y=z99 / np.sqrt(nrec), linestyle='--', color='grey')
