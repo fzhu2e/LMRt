@@ -3863,11 +3863,13 @@ def calc_ens_calib_ratio(pobjs, ye_filepath, calc_period=[1850, 2000], verbose=F
 # Correlation and coefficient Efficiency (CE)
 # -----------------------------------------------
 def load_ts_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='tas_sfc_Amon_gm_ens', ref_period=[1951, 1980],
-                      return_MC_mean=False):
+                      return_MC_mean=False, load_num=None):
     if not os.path.exists(exp_dir):
         raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
 
     paths = sorted(glob.glob(os.path.join(exp_dir, 'job_r*')))
+    if load_num is not None:
+        paths = paths[:load_num]
 
     with xr.open_dataset(paths[0]) as ds:
         ts_tmp = ds[var].values
@@ -3898,11 +3900,13 @@ def load_ts_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='tas_sfc_Amon_gm_ens', 
     return ts_qs, year
 
 
-def load_field_from_jobs(exp_dir, var='tas_sfc_Amon', average_iter=True):
+def load_field_from_jobs(exp_dir, var='tas_sfc_Amon', average_iter=True, load_num=None):
     if not os.path.exists(exp_dir):
         raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
 
     paths = sorted(glob.glob(os.path.join(exp_dir, 'job_r*')))
+    if load_num is not None:
+        paths = paths[:load_num]
 
     field_ens_mean = []
     for i, path in enumerate(paths):
@@ -4096,7 +4100,7 @@ def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), 
         return inst_shm, inst_time
 
 
-def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980], field='LMR',
+def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980], field='LMR', load_num=None,
                             valid_frac=0.5, var_name='tas_sfc_Amon', avgInterval=list(range(1, 13)), detrend=False, detrend_kws={}):
     ''' Calculate corr and CE between LMR and instrumental fields
 
@@ -4106,7 +4110,7 @@ def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 200
         raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
 
     if field == 'LMR':
-        field_em, year, lat, lon = load_field_from_jobs(exp_dir, var=var_name)
+        field_em, year, lat, lon = load_field_from_jobs(exp_dir, var=var_name, load_num=load_num)
     else:
         filepath = exp_dir
         filesdict = {
