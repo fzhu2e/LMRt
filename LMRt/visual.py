@@ -1824,6 +1824,8 @@ def plot_autocorrs(autocorrs_dict, plot_types=None, nlag=10,
                   panelsize=[4, 3], font_scale=1.5, ncol=2,
                   wsp=0.5, hsp=0.5, ylabel='Autocorrelation',
                   title=None):
+    ''' Plot the autocorrelation boxplot, adapted from statsmodels
+    '''
     p = PAGES2k()
     ptype_dict = {
         'Bivalve_d18O': 'bivalve_d18O',

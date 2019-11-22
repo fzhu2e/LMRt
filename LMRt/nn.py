@@ -184,7 +184,7 @@ def clean_df(df):
     return df
 
 
-def OLSp(time_endog, endog, time_exog, exog, p=0, fit_args={},
+def OLSp(time_endog, endog, time_exog, exog, p=0, fit_args={}, time_exog2=None, exog2=None,
          auto_choose_p=False, pacf_threshold=0.2, verbose=False):
     ''' Perform OLS with lags on exog
 
@@ -205,6 +205,10 @@ def OLSp(time_endog, endog, time_exog, exog, p=0, fit_args={},
     df = pd.DataFrame({'time': time_endog, 'endog': endog})
     frame = pd.DataFrame({'time': time_exog, 'exog': exog})
     df = df.merge(frame, how='outer', on='time')
+    if exog2 is not None:
+        frame = pd.DataFrame({'time': time_exog2, 'exog2': exog2})
+        df = df.merge(frame, how='outer', on='time')
+
     df = clean_df(df)
 
     if auto_choose_p:
@@ -229,9 +233,13 @@ def OLSp(time_endog, endog, time_exog, exog, p=0, fit_args={},
     df.astype(np.float)
     df = clean_df(df)
 
-    formula_spell = 'endog ~ exog'
+    if exog2 is not None:
+        formula_spell = 'endog ~ exog + exog2'
+    else:
+        formula_spell = 'endog ~ exog'
+
     for col in df.columns:
-        if col not in ['endog', 'exog']:
+        if col not in ['endog', 'exog', 'exog2']:
             formula_spell += f'+ {col}'
 
     mdl = smf.ols(formula=formula_spell, data=df).fit(**fit_args)
