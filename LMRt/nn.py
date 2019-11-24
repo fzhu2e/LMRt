@@ -15,12 +15,12 @@ def norm(values, time=None, ref_period=None):
     ''' normalize a timeseries w.r.t the ref_period
     '''
     if time is None or ref_period is None:
-        values -= np.mean(values)
-        values /= np.std(values)
+        values -= np.nanmean(values)
+        values /= np.nanstd(values)
     else:
         mask = (time >= ref_period[0]) & (time <= ref_period[1])
-        values -= np.mean(values[mask])
-        values /= np.std(values[mask])
+        values -= np.nanmean(values[mask])
+        values /= np.nanstd(values[mask])
     return values
 
 
@@ -183,28 +183,38 @@ def clean_df(df):
         df.dropna(subset=[col], inplace=True)
     return df
 
+
 def normalize_df(df):
     df_out = (df-df.mean()) / df.std()
     return df
+
 
 def calc_pacf(values):
     pacf = st.pacf(values)[1:]
     return pacf
 
-def gen_arx(ar_args, exog, err_mean=0, err_std=1, seed=0, add_noise=False):
+
+def gen_arx(ar_args, exog, add_noise=False, seed=0, SNR=1, debug=False):
     nt = np.size(exog)
     endog = np.empty_like(exog)
     p = np.size(ar_args)  # the lag order
 
-    np.random.seed(seed)
     if add_noise:
-        wn = np.random.normal(loc=err_mean, scale=err_std, size=nt)
+        np.random.seed(seed)
+        wn = np.random.normal(loc=0, scale=1, size=nt)
+        wn /= np.std(wn)
+
+        signal_std = np.std(exog)
+        noise_std = signal_std / SNR
+        wn *= noise_std
     else:
         wn = np.zeros(nt)
 
     padded_endog = np.pad(endog, (p, 0), mode='constant', constant_values=0)
     for i in range(nt):
         padded_endog[i+p] = exog[i] + np.dot(ar_args, padded_endog[i:i+p]) + wn[i]
+        if debug:
+            print(f'Loop {i}: {padded_endog[i+p]} = {exog[i]} + {np.dot(ar_args, padded_endog[i:i+p])} + {wn[i]}')
 
     endog = padded_endog[p:]
     return endog
