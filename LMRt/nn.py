@@ -183,6 +183,32 @@ def clean_df(df):
         df.dropna(subset=[col], inplace=True)
     return df
 
+def normalize_df(df):
+    df_out = (df-df.mean()) / df.std()
+    return df
+
+def calc_pacf(values):
+    pacf = st.pacf(values)[1:]
+    return pacf
+
+def gen_arx(ar_args, exog, err_mean=0, err_std=1, seed=0, add_noise=False):
+    nt = np.size(exog)
+    endog = np.empty_like(exog)
+    p = np.size(ar_args)  # the lag order
+
+    np.random.seed(seed)
+    if add_noise:
+        wn = np.random.normal(loc=err_mean, scale=err_std, size=nt)
+    else:
+        wn = np.zeros(nt)
+
+    padded_endog = np.pad(endog, (p, 0), mode='constant', constant_values=0)
+    for i in range(nt):
+        padded_endog[i+p] = exog[i] + np.dot(ar_args, padded_endog[i:i+p]) + wn[i]
+
+    endog = padded_endog[p:]
+    return endog
+
 
 def OLSp(time_endog, endog, time_exog, exog, p=0, fit_args={}, time_exog2=None, exog2=None,
          auto_choose_p=False, pacf_threshold=0.2, verbose=False):
@@ -212,7 +238,7 @@ def OLSp(time_endog, endog, time_exog, exog, p=0, fit_args={}, time_exog2=None, 
     df = clean_df(df)
 
     if auto_choose_p:
-        endog_pacf = st.pacf(df['endog'].values)[1:]
+        endog_pacf = calc_pacf(df['endog'].values)
         for i, acf in enumerate(endog_pacf):
             if np.abs(acf) >= pacf_threshold:
                 p = i + 1
