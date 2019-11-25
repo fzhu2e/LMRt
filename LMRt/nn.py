@@ -178,9 +178,15 @@ def run_LSTM(data_dict, neurons=[5], activations=['relu'], dropouts=[0], epochs=
     return model, history.history
 
 
-def clean_df(df):
+def clean_df(df, mask=None):
     for col in df.columns:
         df.dropna(subset=[col], inplace=True)
+
+    if mask is not None:
+        df_cleaned = df.loc[mask]
+    else:
+        df_cleaned = df
+
     return df
 
 
@@ -221,7 +227,7 @@ def gen_arx(ar_args, exog, add_noise=False, seed=0, SNR=1, debug=False):
 
 
 def OLSp(time_endog, endog, time_exog, exog, p=0, fit_args={}, time_exog2=None, exog2=None,
-         auto_choose_p=False, pacf_threshold=0.2, verbose=False):
+         calib_period=[1850, 2015], auto_choose_p=False, pacf_threshold=0.2, verbose=False):
     ''' Perform OLS with lags on exog
 
     Args:
@@ -245,10 +251,12 @@ def OLSp(time_endog, endog, time_exog, exog, p=0, fit_args={}, time_exog2=None, 
         frame = pd.DataFrame({'time': time_exog2, 'exog2': exog2})
         df = df.merge(frame, how='outer', on='time')
 
-    df = clean_df(df)
+    mask = (df['time']>=calib_period[0]) & (df['time']<=calib_period[1])
+    df = clean_df(df, mask=mask)
 
     if auto_choose_p:
-        endog_pacf = calc_pacf(df['endog'].values)
+        mask = (time_endog>=calib_period[0]) & (time_endog<=calib_period[1])
+        endog_pacf = calc_pacf(endog[mask])
         for i, acf in enumerate(endog_pacf):
             if np.abs(acf) >= pacf_threshold:
                 p = i + 1

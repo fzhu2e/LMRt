@@ -191,6 +191,45 @@ class PAGES2k_ptype(object):
             colors_dict[ptype] = sns.xkcd_rgb['light brown']
 
 
+
+class CartopySettings:
+    projection_dict = {
+        'Robinson': ccrs.Robinson,
+        'NorthPolarStereo': ccrs.NorthPolarStereo,
+        'SouthPolarStereo': ccrs.SouthPolarStereo,
+        'PlateCarree': ccrs.PlateCarree,
+        'AlbersEqualArea': ccrs.AlbersEqualArea,
+        'AzimuthalEquidistant': ccrs.AzimuthalEquidistant,
+        'EquidistantConic': ccrs.EquidistantConic,
+        'LambertConformal': ccrs.LambertConformal,
+        'LambertCylindrical': ccrs.LambertCylindrical,
+        'Mercator': ccrs.Mercator,
+        'Miller': ccrs.Miller,
+        'Mollweide': ccrs.Mollweide,
+        'Orthographic': ccrs.Orthographic,
+        'Sinusoidal': ccrs.Sinusoidal,
+        'Stereographic': ccrs.Stereographic,
+        'TransverseMercator': ccrs.TransverseMercator,
+        'UTM': ccrs.UTM,
+        'InterruptedGoodeHomolosine': ccrs.InterruptedGoodeHomolosine,
+        'RotatedPole': ccrs.RotatedPole,
+        'OSGB': ccrs.OSGB,
+        'EuroPP': ccrs.EuroPP,
+        'Geostationary': ccrs.Geostationary,
+        'NearsidePerspective': ccrs.NearsidePerspective,
+        'EckertI': ccrs.EckertI,
+        'EckertII': ccrs.EckertII,
+        'EckertIII': ccrs.EckertIII,
+        'EckertIV': ccrs.EckertIV,
+        'EckertV': ccrs.EckertV,
+        'EckertVI': ccrs.EckertVI,
+        'EqualEarth': ccrs.EqualEarth,
+        'Gnomonic': ccrs.Gnomonic,
+        'LambertAzimuthalEqualArea': ccrs.LambertAzimuthalEqualArea,
+        'OSNI': ccrs.OSNI,
+    }
+
+
 def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_col='type', time_col='time',
                  title=None, title_weight='normal', font_scale=1.5, rc=PAGES2k(),
                  plot_timespan=None,  plot_xticks=[850, 1000, 1200, 1400, 1600, 1800, 2000],
@@ -325,12 +364,6 @@ def plot_proxy_age_map(df, lon_col='lon', lat_col='lat', type_col='type', time_c
     cmap.set_under(sns.xkcd_rgb['cream'])
     cmap.set_over('black')
 
-    ages = []
-    for idx, row in df.iterrows():
-        ages.append(1950-np.min(row['time']))
-
-    df[time_col].values
-
     # plot markers by archive types
     s_plots = []
     type_names = []
@@ -342,6 +375,10 @@ def plot_proxy_age_map(df, lon_col='lon', lat_col='lat', type_col='type', time_c
         type_names.append(f'{ptype} (n={max_count[-1]})')
         lons = list(df[selector][lon_col])
         lats = list(df[selector][lat_col])
+        ages = []
+        for idx, row in df[selector].iterrows():
+            ages.append(1950-np.min(row['time']))
+
         if marker_color is None:
             s_plots.append(
                 ax_map.scatter(
@@ -421,43 +458,7 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
     sns.set(style='ticks', font_scale=font_scale)
     fig = plt.figure(figsize=figsize)
 
-    projection_dict = {
-        'Robinson': ccrs.Robinson,
-        'NorthPolarStereo': ccrs.NorthPolarStereo,
-        'SouthPolarStereo': ccrs.SouthPolarStereo,
-        'PlateCarree': ccrs.PlateCarree,
-        'AlbersEqualArea': ccrs.AlbersEqualArea,
-        'AzimuthalEquidistant': ccrs.AzimuthalEquidistant,
-        'EquidistantConic': ccrs.EquidistantConic,
-        'LambertConformal': ccrs.LambertConformal,
-        'LambertCylindrical': ccrs.LambertCylindrical,
-        'Mercator': ccrs.Mercator,
-        'Miller': ccrs.Miller,
-        'Mollweide': ccrs.Mollweide,
-        'Orthographic': ccrs.Orthographic,
-        'Sinusoidal': ccrs.Sinusoidal,
-        'Stereographic': ccrs.Stereographic,
-        'TransverseMercator': ccrs.TransverseMercator,
-        'UTM': ccrs.UTM,
-        'InterruptedGoodeHomolosine': ccrs.InterruptedGoodeHomolosine,
-        'RotatedPole': ccrs.RotatedPole,
-        'OSGB': ccrs.OSGB,
-        'EuroPP': ccrs.EuroPP,
-        'Geostationary': ccrs.Geostationary,
-        'NearsidePerspective': ccrs.NearsidePerspective,
-        'EckertI': ccrs.EckertI,
-        'EckertII': ccrs.EckertII,
-        'EckertIII': ccrs.EckertIII,
-        'EckertIV': ccrs.EckertIV,
-        'EckertV': ccrs.EckertV,
-        'EckertVI': ccrs.EckertVI,
-        'EqualEarth': ccrs.EqualEarth,
-        'Gnomonic': ccrs.Gnomonic,
-        'LambertAzimuthalEqualArea': ccrs.LambertAzimuthalEqualArea,
-        'OSNI': ccrs.OSNI,
-    }
-
-    projection = projection_dict[projection](**proj_args)
+    projection = CartopySettings.projection_dict[projection](**proj_args)
     ax = plt.subplot(projection=projection)
 
     if title:
@@ -527,6 +528,72 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                            zorder=99, transform=transform)
 
     return fig, ax
+
+
+def plot_scatter_map(df, lon_col='lon', lat_col='lat', type_col='type', value_col='value',
+                     vmin=None, vmax=None, cmap_str='viridis_r',
+                     title=None, title_weight='normal', font_scale=1.5,
+                     projection='Robinson', transform=ccrs.PlateCarree(), proj_args={},
+                     figsize=[12, 10], markersize=150, num_color=10,
+                     plot_cbar=True, cbar_title=None, cbar_ticks=None, cbar_ticklabels=None,
+                     cbar_extend_mode='neither', add_legend=True, lgd_args={'frameon': False}):
+
+    sns.set(style='ticks', font_scale=font_scale)
+    fig = plt.figure(figsize=figsize)
+
+    projection = CartopySettings.projection_dict[projection](**proj_args)
+    ax_map = plt.subplot(projection=projection)
+
+    if title:
+        ax_map.set_title(title, fontweight=title_weight)
+
+    ax_map.set_global()
+    ax_map.add_feature(cfeature.LAND, facecolor='gray', alpha=0.3)
+
+    if vmin is None:
+        vmin = np.min(df[value_col].values)
+    if vmax is None:
+        vmax = np.min(df[value_col].values)
+
+    color_norm = Normalize(vmin=vmin, vmax=vmax)
+
+    cmap = cm.get_cmap(cmap_str, num_color)
+    cmap.set_under(sns.xkcd_rgb['cream'])
+    cmap.set_over('black')
+
+    # plot markers by archive types
+    s_plots = []
+    type_names = []
+    type_set = np.unique(df[type_col])
+    max_count = []
+    for ptype in type_set:
+        selector = df[type_col] == ptype
+        max_count.append(len(df[selector]))
+        type_names.append(f'{ptype} (n={max_count[-1]})')
+        lons = list(df[selector][lon_col])
+        lats = list(df[selector][lat_col])
+        values = list(df[selector][value_col])
+        s_plots.append(
+            ax_map.scatter(
+                lons, lats, marker=PAGES2k.markers_dict[ptype], cmap=cmap, norm=color_norm,
+                c=values, edgecolor='k', s=markersize, transform=ccrs.Geodetic(), label=ptype,
+            )
+        )
+
+    if add_legend:
+        ax_map.legend(**lgd_args)
+
+    if plot_cbar:
+        cbar_lm = plt.colorbar(s_plots[0], orientation='vertical',
+                               pad=0.05, aspect=10, extend=cbar_extend_mode,
+                               ax=ax_map, fraction=0.05, shrink=0.5)
+
+        cbar_lm.ax.set_title(cbar_title, y=1.05)
+        cbar_lm.set_ticks(cbar_ticks)
+        if cbar_ticklabels is not None:
+            cbar_lm.set_ticklabels(cbar_ticklabels)
+
+    return fig, ax_map
 
 
 def plot_gmt_vs_inst(gmt_qs, year, ana_pathdict,
