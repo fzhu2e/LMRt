@@ -1281,7 +1281,9 @@ def calibrate_psm(
                     return None
                 else:
                     t1, y1, t2, y2 = overlap_ts(pobj.time[mask], pobj.values.values[mask], optimal_reg.resid.index, optimal_reg.resid.values)
-                    std_proxy = np.nanstd(y1)
+                    std_ye = np.std(optimal_reg.predict())
+                    std_resid = np.std(optimal_reg.resid)
+                    SNR = std_ye / std_resid
                     precalib_dict_pobj = {
                         'lat': pobj.lat,
                         'lon': pobj.lon,
@@ -1296,7 +1298,7 @@ def calibrate_psm(
                         'fitBIC': optimal_reg.bic,
                         'fitR2adj': optimal_reg.rsquared_adj,
                         'PSMresid': optimal_reg.resid,
-                        'SNR': std_proxy / np.sqrt(np.mean(optimal_reg.resid**2)),
+                        'SNR': SNR,
                     }
 
                     if output_optimal_reg:
@@ -1320,7 +1322,9 @@ def calibrate_psm(
                     return None
                 else:
                     t1, y1, t2, y2 = overlap_ts(pobj.time[mask], pobj.values.values[mask], optimal_reg.resid.index, optimal_reg.resid.values)
-                    std_proxy = np.nanstd(y1)
+                    std_ye = np.std(optimal_reg.predict())
+                    std_resid = np.std(optimal_reg.resid)
+                    SNR = std_ye / std_resid
                     precalib_dict_pobj = {
                         'lat': pobj.lat,
                         'lon': pobj.lon,
@@ -1336,9 +1340,11 @@ def calibrate_psm(
                         'fitBIC': optimal_reg.bic,
                         'fitR2adj': optimal_reg.rsquared_adj,
                         'PSMresid': optimal_reg.resid,
-                        'SNR': std_proxy / np.sqrt(np.mean(optimal_reg.resid**2)),
-                        #  'linreg': optimal_reg,
+                        'SNR': SNR,
                     }
+
+                    if output_optimal_reg:
+                        precalib_dict_pobj['optimal_reg'] = optimal_reg
 
                     if verbose:
                         pprint(precalib_dict_pobj)
