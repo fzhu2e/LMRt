@@ -24,6 +24,7 @@ import pandas as pd
 import statsmodels as sm
 from statsmodels.graphics.gofplots import ProbPlot
 from pandas.plotting import autocorrelation_plot
+from tqdm import tqdm
 
 class PAGES2k(object):
     colors_dict = {
@@ -1963,5 +1964,95 @@ def plot_autocorrs(autocorrs_dict, plot_types=None, nlag=10,
             ax[i].axhline(y=-z95 / np.sqrt(nrec), color='grey')
             ax[i].axhline(y=-z99 / np.sqrt(nrec), linestyle='--', color='grey')
             i += 1
+
+    return fig, ax
+
+
+def plot_SNR_dist(calib_filepath, ptypes=None, bins=None, xticks=None,
+                  make_subplots=False, panel_size=[5, 4],
+                  nrow=1, ncol=None, grid_ws=0.5, grid_hs=0.5,
+                  lgd_args={'fontsize': 15, 'frameon': False}, font_scale=1.5,
+                  use_PAGES2k_color=False):
+
+    sns.set(style='ticks', font_scale=font_scale)
+
+    print('>>> Loading calibration data ...')
+    with open(calib_filepath, 'rb') as f:
+        calib_data = pickle.load(f)
+
+    lat_list = []
+    lon_list = []
+    type_list = []
+    SNR_list = []
+
+    ptype_list = []
+    if ptypes is not None:
+        ptype_list = ptypes
+
+    for k, v in tqdm(calib_data.items(), desc='extracting calibration data'):
+        ptype, pid = k
+        if ptypes is None and ptype not in ptype_list:
+            ptype_list.append(ptype)
+
+        lat, lon = v['lat'], v['lon']
+        SNR = v['SNR']
+        lat_list.append(lat)
+        lon_list.append(lon)
+        type_list.append(ptype)
+        SNR_list.append(SNR)
+
+    df = pd.DataFrame({
+        'lat': lat_list,
+        'lon': lon_list,
+        'type': type_list,
+        'SNR': SNR_list,
+    })
+
+    print('>>> Plotting SNR ...')
+    if make_subplots:
+        ntypes = len(ptype_list)
+        if ncol is None:
+            ncol = ntypes // nrow
+            if ntypes % nrow > 0:
+                ncol += 1
+
+        fig = plt.figure(figsize=[panel_size[0]*ncol, panel_size[1]*nrow])
+        gs = gridspec.GridSpec(nrow, ncol)
+        gs.update(wspace=grid_ws, hspace=grid_hs)
+
+        ax = {}
+        for i, ptype in enumerate(ptype_list):
+            ax[i] = plt.subplot(gs[i])
+            df_target = df[df['type'] == ptype]
+            if use_PAGES2k_color:
+                sns.distplot(df_target['SNR'].values, label=ptype, kde=False, ax=ax[i],
+                             bins=bins, color=PAGES2k.colors_dict[ptype])
+            else:
+                sns.distplot(df_target['SNR'].values, label=ptype, kde=False, ax=ax[i],
+                             bins=bins)
+
+            ax[i].set_xlabel('SNR')
+            ax[i].set_ylabel('number of records')
+            ax[i].spines['right'].set_visible(False)
+            ax[i].spines['top'].set_visible(False)
+            ax[i].set_title(ptype)
+            if xticks is not None:
+                ax[i].set_xticks(xticks)
+    else:
+        fig, ax = plt.subplots(figsize=panel_size)
+        for i, ptype in enumerate(ptype_list):
+            df_target = df[df['type'] == ptype]
+            if use_PAGES2k_color:
+                sns.distplot(df_target['SNR'].values, label=ptype, kde=False, ax=ax,
+                             bins=bins, color=PAGES2k.colors_dict[ptype])
+            else:
+                sns.distplot(df_target['SNR'].values, label=ptype, kde=False, ax=ax,
+                             bins=bins)
+            ax.legend(**lgd_args)
+            ax.set_xlabel('SNR')
+            ax.set_ylabel('number of records')
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
+            ax.set_title('SNR distribution')
 
     return fig, ax
