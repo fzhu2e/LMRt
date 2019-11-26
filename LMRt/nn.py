@@ -226,7 +226,7 @@ def gen_arx(ar_args, exog, add_noise=False, seed=0, SNR=1, debug=False):
     return endog
 
 
-def OLSp(time_endog, endog, time_exog, exog, p=0, fit_args={}, time_exog2=None, exog2=None,
+def OLSp(time_endog, endog, time_exog, exog, p=0, p_max=4, fit_args={}, time_exog2=None, exog2=None,
          calib_period=[1850, 2015], auto_choose_p=False, pacf_threshold=0.2, verbose=False):
     ''' Perform OLS with lags on exog
 
@@ -262,6 +262,7 @@ def OLSp(time_endog, endog, time_exog, exog, p=0, fit_args={}, time_exog2=None, 
                 p = i + 1
             else:
                 break
+        p = np.min([p, p_max])
         if verbose:
             print(f'The lag order p choosed automatically: {p}')
     else:
