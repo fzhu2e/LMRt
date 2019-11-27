@@ -1968,22 +1968,22 @@ def plot_autocorrs(autocorrs_dict, plot_types=None, nlag=10,
     return fig, ax
 
 
-def plot_SNR_dist(calib_filepath, ptypes=None, bins=None, xticks=None,
-                  make_subplots=False, panel_size=[5, 4],
-                  nrow=1, ncol=None, grid_ws=0.5, grid_hs=0.5,
-                  lgd_args={'fontsize': 15, 'frameon': False}, font_scale=1.5,
-                  use_PAGES2k_color=False):
+def plot_calib_dist(calib_filepath, var='SNR', ptypes=None, bins=None, xticks=None,
+                    make_subplots=False, panel_size=[5, 4],
+                    nrow=1, ncol=None, grid_ws=0.5, grid_hs=0.5,
+                    lgd_args={'fontsize': 15, 'frameon': False}, font_scale=1.5,
+                    use_PAGES2k_color=False, verbose=False):
 
     sns.set(style='ticks', font_scale=font_scale)
 
-    print('>>> Loading calibration data ...')
+    print('>>> Loading calibration data')
     with open(calib_filepath, 'rb') as f:
         calib_data = pickle.load(f)
 
     lat_list = []
     lon_list = []
     type_list = []
-    SNR_list = []
+    value_list = []
 
     ptype_list = []
     if ptypes is not None:
@@ -1995,20 +1995,23 @@ def plot_SNR_dist(calib_filepath, ptypes=None, bins=None, xticks=None,
             ptype_list.append(ptype)
 
         lat, lon = v['lat'], v['lon']
-        SNR = v['SNR']
+        value = v[var]
         lat_list.append(lat)
         lon_list.append(lon)
         type_list.append(ptype)
-        SNR_list.append(SNR)
+        value_list.append(value)
 
     df = pd.DataFrame({
         'lat': lat_list,
         'lon': lon_list,
         'type': type_list,
-        'SNR': SNR_list,
+        var: value_list,
     })
 
-    print('>>> Plotting SNR ...')
+    if verbose:
+        print(df)
+
+    print(f'>>> Plotting {var}')
     if make_subplots:
         ntypes = len(ptype_list)
         if ncol is None:
@@ -2025,13 +2028,13 @@ def plot_SNR_dist(calib_filepath, ptypes=None, bins=None, xticks=None,
             ax[i] = plt.subplot(gs[i])
             df_target = df[df['type'] == ptype]
             if use_PAGES2k_color:
-                sns.distplot(df_target['SNR'].values, label=ptype, kde=False, ax=ax[i],
+                sns.distplot(df_target[var].values, label=ptype, kde=False, ax=ax[i],
                              bins=bins, color=PAGES2k.colors_dict[ptype])
             else:
-                sns.distplot(df_target['SNR'].values, label=ptype, kde=False, ax=ax[i],
+                sns.distplot(df_target[var].values, label=ptype, kde=False, ax=ax[i],
                              bins=bins)
 
-            ax[i].set_xlabel('SNR')
+            ax[i].set_xlabel(var)
             ax[i].set_ylabel('number of records')
             ax[i].spines['right'].set_visible(False)
             ax[i].spines['top'].set_visible(False)
@@ -2043,16 +2046,18 @@ def plot_SNR_dist(calib_filepath, ptypes=None, bins=None, xticks=None,
         for i, ptype in enumerate(ptype_list):
             df_target = df[df['type'] == ptype]
             if use_PAGES2k_color:
-                sns.distplot(df_target['SNR'].values, label=ptype, kde=False, ax=ax,
+                median = np.median(df_target[var].values)
+                sns.distplot(df_target[var].values, label=f'{ptype} (median={median:.2f})', kde=False, ax=ax,
                              bins=bins, color=PAGES2k.colors_dict[ptype])
             else:
-                sns.distplot(df_target['SNR'].values, label=ptype, kde=False, ax=ax,
+                median = np.median(df_target[var].values)
+                sns.distplot(df_target[var].values, label=f'{ptype} (median={median:.2f})', kde=False, ax=ax,
                              bins=bins)
             ax.legend(**lgd_args)
-            ax.set_xlabel('SNR')
+            ax.set_xlabel(var)
             ax.set_ylabel('number of records')
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
-            ax.set_title('SNR distribution')
+            ax.set_title(f'{var} distribution')
 
     return fig, ax

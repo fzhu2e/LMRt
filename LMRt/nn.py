@@ -245,11 +245,11 @@ def OLSp(time_endog, endog, time_exog, exog, p=0, p_max=4, fit_args={}, time_exo
         mdl (obj): the model return from statsmodels
     '''
     df = pd.DataFrame({'time': time_endog, 'endog': endog})
-    frame = pd.DataFrame({'time': time_exog, 'exog': exog})
-    df = df.merge(frame, how='outer', on='time')
+    frame_exog = pd.DataFrame({'time': time_exog, 'exog': exog})
+    df = df.merge(frame_exog, how='outer', on='time')
     if exog2 is not None:
-        frame = pd.DataFrame({'time': time_exog2, 'exog2': exog2})
-        df = df.merge(frame, how='outer', on='time')
+        frame_exog2 = pd.DataFrame({'time': time_exog2, 'exog2': exog2})
+        df = df.merge(frame_exog2, how='outer', on='time')
 
     mask = (df['time']>=calib_period[0]) & (df['time']<=calib_period[1])
     df = clean_df(df, mask=mask)
@@ -270,8 +270,8 @@ def OLSp(time_endog, endog, time_exog, exog, p=0, p_max=4, fit_args={}, time_exo
 
     if p > 0:
         for k in range(1, p+1):
-            frame = pd.DataFrame({'time': time_exog[k:], f'exog_lag{k}': exog[:-k]})
-            df = df.merge(frame, how='outer', on='time')
+            frame_lag = pd.DataFrame({'time': time_exog[k:], f'exog_lag{k}': exog[:-k]})
+            df = df.merge(frame_lag, how='outer', on='time')
 
     df.set_index('time', drop=True, inplace=True)
     df.sort_index(inplace=True)

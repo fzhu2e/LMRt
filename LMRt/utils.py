@@ -1974,7 +1974,7 @@ def find_closest_loc(lat, lon, target_lat, target_lon, mode=None, verbose=False)
         return lat_ind[0], lon_ind[0]
 
 
-def search_nearest_not_nan(field, lat_ind, lon_ind, distance=3):
+def search_nearest_not_nan(field, lat_ind, lon_ind, distance=3, verbose=False):
     fix_sum = []
     lat_fix_list = []
     lon_fix_list = []
@@ -1993,7 +1993,8 @@ def search_nearest_not_nan(field, lat_ind, lon_ind, distance=3):
         if np.all(np.isnan(target)):
             continue
         else:
-            print(f'Found not nan with (lat_fix, lon_fix): ({lat_fix}, {lon_fix})')
+            if verbose:
+                print(f'Found not nan with (lat_fix, lon_fix): ({lat_fix}, {lon_fix})')
             return target, lat_fix, lon_fix
 
     print(f'Fail to find value not nan!')
@@ -4009,13 +4010,20 @@ def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), 
 
         elif name == 'GPCC':
             # load_gridded_data.read_gridded_data_GPCC
+            if avgInterval == list(range(1, 13)):
+                outfreq = 'annual'
+            else:
+                outfreq = 'monthly'
+
+            print(f'outfreq: {outfreq}')
+
             time_grid, lat_grid, lon_grid, anomaly_grid = load_func[name](
                 os.path.dirname(path),
                 os.path.basename(path),
                 calib_vars[name],
                 True,
                 ref_period,
-                avgInterval,
+                outfreq,
             )
 
         elif name == 'PREC':
