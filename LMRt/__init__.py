@@ -15,6 +15,7 @@ import pandas as pd
 import xarray as xr
 import random
 from scipy import stats
+import statsmodels.api as sm
 
 from . import utils
 from . import visual
@@ -146,6 +147,7 @@ class ReconJob:
 
     def calibrate_OLSp(self, seasonal_inst_filesdict, precalib_savepath, seasonality=None,
                        calib_period=[1850, 2015], auto_choose_p=True, p=0, p_max=4,
+                       p_dict=None, seasonality_dict=None,
                        metric='fitR2adj', search_distance=3,
                        verbose=False, pacf_threshold_dict=None, fit_args={}, print_OLSp_args=True,
                        ye_savepath=None, seasonal_GCM_filesdict=None, nobs_lb=25):
@@ -203,11 +205,23 @@ class ReconJob:
             if auto_choose_p:
                 OLSp_args['pacf_threshold'] = pacf_threshold_dict[pobj.type]
 
+            if p_dict is not None:
+                OLSp_args['p'] = p_dict[pobj.id]
+
+            if seasonality_dict is not None:
+                optimal_season_tag_tas, optimal_season_tag_pr = seasonality_dict[pobj.id]
+            else:
+                optimal_season_tag_tas, optimal_season_tag_pr = None, None
+
             res_dict_list = []
             season_tag_list = []
             R2_adj_list = []
             mse_list = []
+
             for season_tag_tas in season_tags['tas']:
+                if optimal_season_tag_tas is not None and season_tag_tas != optimal_season_tag_tas:
+                    continue
+
                 tas_sub = seasonal_avg['tas'][season_tag_tas][:, lat_ind['tas'], lon_ind['tas']]
                 if np.all(np.isnan(tas_sub)):
                     tas_sub, _, _ = utils.search_nearest_not_nan(
@@ -217,6 +231,8 @@ class ReconJob:
                 if 'pr' in season_tags.keys():
                     # bivariate linear regression
                     for season_tag_pr in season_tags['pr']:
+                        if optimal_season_tag_pr is not None and season_tag_pr != optimal_season_tag_pr:
+                            continue
                         pr_sub = seasonal_avg['pr'][season_tag_pr][:, lat_ind['pr'], lon_ind['pr']]
                         if np.all(np.isnan(pr_sub)):
                             pr_sub, _, _ = utils.search_nearest_not_nan(
@@ -279,6 +295,7 @@ class ReconJob:
                     'PSMmse': optimal_mse,
                     'fitR2adj': optimal_R2_adj,
                     'SNR': SNR,
+                    'p': optimal_reg['p'],
                 }
                 optimal_reg_dict[pobj.id] = optimal_reg
             else:
@@ -712,6 +729,87 @@ class ReconJob:
             df_proxies_new.to_pickle(proxies_savepath)
 
         return df_metadata_new, df_proxies_new
+
+    def build_pseudoproxies_from_ye(self, db_proxies_filepath, db_metadata_filepath,
+                                    precalib_filepath, ye_filepath,
+                                    proxies_savepath=None, metadata_savepath=None,
+                                    timespan=[850, 2005], add_noise=True,
+                                    SNR=None, noise_type='white', g=None):
+        df_proxies = pd.read_pickle(db_proxies_filepath)
+        df_metadata = pd.read_pickle(db_metadata_filepath)
+        pid_selected = []
+        for pobj in self.proxy_manager.all_proxies:
+            pid = pobj.id
+            pid_selected.append(pid)
+
+        with open(precalib_filepath, 'rb') as f:
+            precalib_dict = pickle.load(f)
+
+        seasonality_dict = {}
+        SNR_dict = {}
+        resid_dict = {}
+        for k, v in precalib_dict.items():
+            ptype, pid = k
+            seasonality_dict[pid] = v['Seasonality']
+            SNR_dict[pid] = v['SNR']
+            resid_dict[pid] = v['PSMresid']
+
+        df_metadata_out =  df_metadata.loc[df_metadata['Proxy ID'].isin(pid_selected)]
+        df_proxies_out =  pd.DataFrame({'Year C.E.': np.arange(timespan[0], timespan[1]+1)})
+        df_proxies_out.set_index('Year C.E.', drop=True, inplace=True)
+
+        for pid in pid_selected:
+            df_proxies_out[pid] = np.nan
+
+        for idx, row in df_metadata_out.iterrows():
+            df_metadata_out.at[idx, 'Seasonality'] = seasonality_dict[row['Proxy ID']]
+
+        ye_data = np.load(ye_filepath, allow_pickle=True)
+        pid_idx_map = ye_data['pid_index_map'][()]
+        ye_vals = ye_data['ye_vals']
+
+        for i, pobj in tqdm(enumerate(self.proxy_manager.all_proxies), total=len(self.proxy_manager.all_proxies)):
+            pid = pobj.id
+            lat_obs, lon_obs = pobj.lat, pobj.lon
+            oldest_yr, youngest_yr = timespan
+            df_metadata_out.at[df_metadata_out['Proxy ID']==pid, 'Oldest (C.E.)'] = oldest_yr
+            df_metadata_out.at[df_metadata_out['Proxy ID']==pid, 'Youngest (C.E.)'] = youngest_yr
+
+            idx = pid_idx_map[pid]
+            signal = ye_vals[idx]  # no noise
+            if SNR is None:
+                SNR = SNR_dict[pid]
+
+            if noise_type=='white':
+                noise = np.random.normal(0, 1, np.size(signal))
+            elif noise_type=='AR1':
+                if g is None:
+                    ar1_mod = sm.tsa.AR(resid_dict[pid].values, missing='drop').fit(maxlag=1)
+                    g = ar1_mod.params[1]
+
+                ar = np.r_[1, -g]
+                ma = np.r_[1, 0.0]
+                noise = sm.tsa.arma_generate_sample(ar=ar, ma=ma, nsample=np.size(signal), burnin=50)
+            else:
+                raise ValueError(f'Wrong noise type {noise_type}; should be "white" or "AR1"')
+
+            noise /= np.std(noise)
+            signal_std = np.std(signal)
+            noise_std = signal_std / SNR
+            noise *= noise_std
+            pseudo_value = signal + noise
+
+            df_proxies_out[pid] = pseudo_value
+
+        if metadata_savepath:
+            df_metadata_out.to_pickle(metadata_savepath)
+            print(f'\npid={os.getpid()} >>> Saving metadata to {metadata_savepath}')
+
+        if proxies_savepath:
+            df_proxies_out.to_pickle(proxies_savepath)
+            print(f'\npid={os.getpid()} >>> Saving proxies to {proxies_savepath}')
+
+        return df_metadata_out, df_proxies_out
 
     def build_proxies_from_df(self, df, exclude_list=None, time_year=np.arange(1, 2020),
                               time_col='year', value_col='paleoData_values',
