@@ -227,7 +227,7 @@ def gen_arx(ar_args, exog, add_noise=False, seed=0, SNR=1, debug=False):
 
 
 def OLSp(time_endog, endog, time_exog, exog, p=0, p_max=4, fit_args={}, time_exog2=None, exog2=None,
-         calib_period=[1850, 2015], auto_choose_p=False, pacf_threshold=0.2, verbose=False):
+         calib_period=[1850, 2015], auto_choose_p=False, pacf_threshold=0.2, verbose=False, nobs_lb=25):
     ''' Perform OLS with lags on exog
 
     Args:
@@ -287,7 +287,12 @@ def OLSp(time_endog, endog, time_exog, exog, p=0, p_max=4, fit_args={}, time_exo
         if col not in ['endog', 'exog', 'exog2']:
             formula_spell += f'+ {col}'
 
-    mdl = smf.ols(formula=formula_spell, data=df).fit(**fit_args)
+    nobs = len(df)
+    if nobs < nobs_lb:
+        print(f'The number of overlapped data points is {nobs} < {nobs_lb}. Skipping ...')
+        mdl = None
+    else:
+        mdl = smf.ols(formula=formula_spell, data=df).fit(**fit_args)
 
     res_dict = {
         'df': df,

@@ -2061,3 +2061,4 @@ def plot_calib_dist(calib_filepath, var='SNR', ptypes=None, bins=None, xticks=No
             ax.set_title(f'{var} distribution')
 
     return fig, ax
+

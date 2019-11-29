@@ -184,6 +184,7 @@ class ReconJob:
             'p': p,
             'fit_args': fit_args,
             'verbose': verbose,
+            'nobs_lb': nobs_lb,
         }
 
         if print_OLSp_args:
@@ -242,8 +243,7 @@ class ReconJob:
 
                         res_dict = nn.OLSp(proxy_time, proxy_value, year_ann['tas'], tas_sub,
                                            time_exog2=year_ann['pr'], exog2=pr_sub, **OLSp_args)
-                        nobs = res_dict['mdl'].nobs
-                        if nobs >= nobs_lb:
+                        if res_dict['mdl'] is not None:
                             mdl_resid = res_dict['mdl'].resid
                             mse = nn.mean_squared(mdl_resid)
                             mse_list.append(mse)
@@ -257,8 +257,7 @@ class ReconJob:
                 else:
                     # univariate linear regression
                     res_dict = nn.OLSp(proxy_time, proxy_value, year_ann['tas'], tas_sub, **OLSp_args)
-                    nobs = res_dict['mdl'].nobs
-                    if nobs >= nobs_lb:
+                    if res_dict['mdl'] is not None:
                         mdl_resid = res_dict['mdl'].resid
                         mse = nn.mean_squared(mdl_resid)
                         mse_list.append(mse)
@@ -300,8 +299,8 @@ class ReconJob:
                 optimal_reg_dict[pobj.id] = optimal_reg
             else:
                 print(f'optimal_reg is None for {pobj.id} due to nobs < {nobs_lb}')
-                precalib_dict[(pobj.type, pobj.id)] = None
-                optimal_reg_dict[pobj.id] = None
+                #  precalib_dict[(pobj.type, pobj.id)] = None
+                #  optimal_reg_dict[pobj.id] = None
 
         with open(precalib_savepath, 'wb') as f:
             pickle.dump(precalib_dict, f)
@@ -321,36 +320,36 @@ class ReconJob:
                 seasonal_avg[varname], year_ann[varname], lat[varname], lon[varname] = pd.read_pickle(filepath)
 
             pid_map = {}
-            nproxy = len(self.proxy_manager.all_proxies)
+            nproxy = len(precalib_dict)
             ye_out = np.ndarray((nproxy, np.size(year_ann['tas'])))
-            for i, pobj in tqdm(enumerate(self.proxy_manager.all_proxies), desc='Calculating Ye', total=nproxy):
-                pid_map[pobj.id] = i
-                optimal_reg = optimal_reg_dict[pobj.id]
-                if optimal_reg is not None:
-                    p = optimal_reg['p']
-                    season_tag_tas, season_tag_pr = precalib_dict[(pobj.type, pobj.id)]['Seasonality']
+            i = 0
+            for k, v in tqdm(precalib_dict.items(), desc='Calculating Ye', total=nproxy):
+                ptype, pid = k
+                pid_map[pid] = i
+                optimal_reg = optimal_reg_dict[pid]
+                p = optimal_reg['p']
+                season_tag_tas, season_tag_pr = v['Seasonality']
 
-                    lat_obs = pobj.lat
-                    lon_obs = pobj.lon
-                    lat_ind = {}
-                    lon_ind = {}
-                    for varname in lat.keys():
-                        lat_ind[varname], lon_ind[varname] = utils.find_closest_loc(lat[varname], lon[varname], lat_obs, lon_obs)
+                lat_obs = v['lat']
+                lon_obs = v['lon']
+                lat_ind = {}
+                lon_ind = {}
+                for varname in lat.keys():
+                    lat_ind[varname], lon_ind[varname] = utils.find_closest_loc(lat[varname], lon[varname], lat_obs, lon_obs)
 
-                    exog_dict = {}
-                    tas_sub = seasonal_avg['tas'][season_tag_tas][:, lat_ind['tas'], lon_ind['tas']]
-                    exog_dict['exog'] = tas_sub
-                    if p > 0:
-                        for k in range(1, p+1):
-                            exog_dict[f'exog_lag{k}'] = np.pad(tas_sub[:-k], (k, 0), 'edge')
+                exog_dict = {}
+                tas_sub = seasonal_avg['tas'][season_tag_tas][:, lat_ind['tas'], lon_ind['tas']]
+                exog_dict['exog'] = tas_sub
+                if p > 0:
+                    for k in range(1, p+1):
+                        exog_dict[f'exog_lag{k}'] = np.pad(tas_sub[:-k], (k, 0), 'edge')
 
-                    if season_tag_pr is not None:
-                        pr_sub = seasonal_avg['pr'][season_tag_pr][:, lat_ind['pr'], lon_ind['pr']]
-                        exog_dict['exog2'] = pr_sub
+                if season_tag_pr is not None:
+                    pr_sub = seasonal_avg['pr'][season_tag_pr][:, lat_ind['pr'], lon_ind['pr']]
+                    exog_dict['exog2'] = pr_sub
 
-                    ye_out[i] = optimal_reg['mdl'].predict(exog=exog_dict)
-                else:
-                    ye_out[i, :] = np.nan
+                ye_out[i] = optimal_reg['mdl'].predict(exog=exog_dict)
+                i += 1
 
             np.savez(ye_savepath, pid_index_map=pid_map, ye_vals=ye_out)
             print(f'\npid={os.getpid()} >>> Saving Ye to {ye_savepath}')
@@ -573,162 +572,6 @@ class ReconJob:
 
         np.savez(ye_savepath, pid_index_map=pid_map, ye_vals=ye_out)
         print(f'\npid={os.getpid()} >>> Saving Ye to {ye_savepath}')
-
-    def build_pseudoproxies(self, metadata_df_filepath, proxies_df_filepath,
-                            ye_filesdict, exclude_list=None,
-			    years=np.arange(850, 2006),
-                            add_noise=False, noise_type='white', SNR=1, g=0.5,
-                            metadata_savepath=None, proxies_savepath=None,
-                            real_time_axis=False, seed=0):
-        ''' Build pseudoproxies from Ye files with metadata of real obs.
-
-        Args:
-            g (float): autocorrelation of the AR1 noise
-            noise_type (str): available options include ['white', 'AR1'],
-                              if not set, white noise will be applied
-        '''
-        random.seed(seed)
-        years = np.array(years, dtype=np.float)
-
-        df = pd.read_pickle(metadata_df_filepath)
-        df_val = pd.read_pickle(proxies_df_filepath)
-
-        df_metadata_new = pd.DataFrame()
-        df_proxies_new = pd.DataFrame(index=years)
-
-        for ptype, filepath in ye_filesdict.items():
-            precalc_ye = np.load(ye_filesdict[ptype])
-            pid_idx_map = precalc_ye['pid_index_map'][()]
-            precalc_vals = precalc_ye['ye_vals']
-            for pid in pid_idx_map.keys():
-
-                if pid in list(df['Proxy ID']) and pid not in exclude_list:
-                    idx = pid_idx_map[pid]
-                    vals = precalc_vals[idx]
-
-                    if add_noise:
-                        sig_std = np.nanstd(vals)
-                        noise_std = sig_std / SNR
-                        if noise_type == 'AR1':
-                            noise = utils.ar1_noise(years, vals, g=g, seed=seed)
-                            n_std = np.nanstd(noise)
-                            noise = noise * noise_std/n_std
-
-                        else:
-                            noise = np.random.normal(0, np.sqrt(noise_var), size=np.size(vals))
-
-                        vals = vals + noise
-
-                    if real_time_axis:
-                        df_pid = df_val[pid].dropna()
-                        real_years = df_pid.index.values
-                        for y in years:
-                            if y not in real_years:
-                                idx = list(years).index(y)
-                                vals[idx] = np.nan
-
-                    df_proxies_new[pid] = vals
-
-                    series = df[df['Proxy ID']==pid]
-                    archive_str = series['Archive type'].values[0]
-                    proxy_str = series['Proxy measurement'].values[0]
-                    if proxy_str == 'thickness':
-                        proxy_str = 'Varve'
-                    elif proxy_str == 'density' or proxy_str == 'MXD':
-                        proxy_str = 'WoodDensity'
-                    elif proxy_str == 'trsgi':
-                        proxy_str = 'WidthPages2'
-                    series['type'] = f'{archive_str}_{proxy_str}'
-                    df_metadata_new = df_metadata_new.append(series, ignore_index=True)
-
-        if metadata_savepath:
-            df_metadata_new.to_pickle(metadata_savepath)
-
-        if proxies_savepath:
-            df_proxies_new.to_pickle(proxies_savepath)
-
-        return df_metadata_new, df_proxies_new
-
-    def build_pseudoproxies_from_df(self, metadata_df_filepath, proxies_df_filepath,
-                                    df_pp, exclude_list=None,
-                                    years=np.arange(850, 2006), value_col='pseudo_value',
-                                    add_noise=False, noise_type='white', SNR=1, g=0.5,
-                                    metadata_savepath=None, proxies_savepath=None,
-                                    real_time_axis=False, seed=0):
-        ''' Build pseudoproxies from Ye files with metadata of real obs.
-
-        Args:
-            df_pp (DataFrame): the DataFrame of the pseudoproxies
-            g (float): autocorrelation of the AR1 noise
-            noise_type (str): available options include ['white', 'AR1'],
-                              if not set, white noise will be applied
-        '''
-        random.seed(seed)
-        years = np.array(years, dtype=np.float)
-
-        df = pd.read_pickle(metadata_df_filepath)
-        df_val = pd.read_pickle(proxies_df_filepath)
-
-        df_metadata_new = pd.DataFrame()
-        df_proxies_new = pd.DataFrame(index=years)
-
-        # translate from paleoData_pages2kID to pobj.id in LMR
-        id_map = {}
-        for i, row in df_pp.iterrows():
-            p2k_id = row['paleoData_pages2kID']
-            for pid in df['Proxy ID'].values:
-                if p2k_id in pid:
-                    id_map[p2k_id] = pid
-
-
-        for p2k_id, pid in tqdm(id_map.items()):
-            if exclude_list is None or pid not in exclude_list or p2k_id not in exclude_list:
-                series_pp = df_pp[df_pp['paleoData_pages2kID']==p2k_id]
-                vals = np.array(series_pp[value_col].values[0])
-
-                if add_noise:
-                    sig_std = np.nanstd(vals)
-                    noise_std = sig_std / SNR
-                    if noise_type == 'AR1':
-                        noise = utils.ar1_noise(years, vals, g=g, seed=seed)
-                        n_std = np.nanstd(noise)
-                        noise = noise * noise_std/n_std
-
-                    else:
-                        noise = np.random.normal(0, np.sqrt(noise_var), size=np.size(vals))
-
-                    vals = vals + noise
-
-                if real_time_axis:
-                    df_pid = df_val[pid].dropna()
-                    real_years = df_pid.index.values
-                    for y in years:
-                        if y not in real_years:
-                            idx = list(years).index(y)
-                            vals[idx] = np.nan
-
-                df_proxies_new[pid] = vals
-
-                series = df[df['Proxy ID']==pid]
-                archive_str = series['Archive type'].values[0]
-                proxy_str = series['Proxy measurement'].values[0]
-                if proxy_str == 'thickness':
-                    proxy_str = 'Varve'
-                elif proxy_str == 'density' or proxy_str == 'MXD':
-                    proxy_str = 'WoodDensity'
-                elif proxy_str == 'trsgi':
-                    proxy_str = 'WidthPages2'
-                series['type'] = f'{archive_str}_{proxy_str}'
-                series['Seasonality'] = series_pp['seasonality']
-                df_metadata_new = df_metadata_new.append(series, ignore_index=True)
-
-        if metadata_savepath:
-            df_metadata_new.to_pickle(metadata_savepath)
-
-        if proxies_savepath:
-            df_proxies_new.to_pickle(proxies_savepath)
-
-        return df_metadata_new, df_proxies_new
 
     def build_pseudoproxies_from_ye(self, db_proxies_filepath, db_metadata_filepath,
                                     precalib_filepath, ye_filepath,

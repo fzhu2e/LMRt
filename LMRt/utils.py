@@ -33,6 +33,7 @@ from pathos.multiprocessing import ProcessingPool as Pool
 import itertools
 from scipy.stats import pearsonr
 from sklearn import preprocessing
+import nitime.algorithms as tsa
 
 from . import load_gridded_data  # original file from LMR
 
@@ -4562,6 +4563,7 @@ def sea(X, events, start_yr=0, preyr=3, postyr=10, qs=[0.05, 0.5, 0.95], highpas
 
         res = {
             'events': events,
+            'Xevents': Xevents,
             'composite': composite,
             'qs': qs,
             'composite_qs': composite_qs,
@@ -4570,6 +4572,7 @@ def sea(X, events, start_yr=0, preyr=3, postyr=10, qs=[0.05, 0.5, 0.95], highpas
     else:
         res = {
             'events': events,
+            'Xevents': Xevents,
             'composite': composite,
             'composite_yr': tcomp,
         }
