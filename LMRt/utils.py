@@ -256,8 +256,9 @@ def regrid_prior(cfg, X, verbose=False):
     return Xb_one, Xb_one_coords, new_state_info
 
 
-def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict=None, verbose=False,
-              exclude_list=None, select_box_lf=None, select_box_ur=None):
+def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict=None,
+              exclude_list=None, select_box_lf=None, select_box_ur=None,
+              detrend_proxy=False, detrend_method=None, detrend_kws={}, verbose=False):
 
     db_proxies = pd.read_pickle(proxies_df_filepath)
     db_metadata = pd.read_pickle(metadata_df_filepath)
@@ -329,6 +330,10 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
             raise ValueError('ERROR: No obs in specified time range!')
         if proxy_db_cfg[db_name].proxy_timeseries_kind == 'anom':
             values = values - np.mean(values)
+
+        if detrend_proxy:
+            detrended_values = detrend(values.values, method=detrend_method, detrend_kws=detrend_kws)
+            values = pd.Series(index=time, data=detrended_values)
 
         try:
             pmeasure = site_meta['Proxy measurement'].iloc[0]
@@ -3734,6 +3739,20 @@ def pobjs2df(pobjs,
             df.loc[i, name] = entry
 
     return df
+
+
+def detrend(y, method='hht', detrend_kws={}):
+    if method == 'hht':
+        imfs = EMD(y).decompose()
+        if np.shape(imfs)[0] == 1:
+            trend = np.zeros(np.size(y))
+        else:
+            trend = imfs[-1]
+        y_detrend = y - trend
+    else:
+        y_detrended = signal.detrend(y, **detrend_kws)
+
+    return y_detrended
 
 
 def compare_ts(t1, y1, t2, y2, stats=['corr', 'ce', 'rmse'], valid_frac=0.5, mask_period=None,

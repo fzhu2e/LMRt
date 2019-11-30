@@ -54,12 +54,16 @@ class ReconJob:
 
     def load_proxies(self, proxies_df_filepath, metadata_df_filepath, precalib_filesdict=None,
                      select_box_lf=None, select_box_ur=None, exclude_list=None,
-                     seed=0, verbose=False, print_assim_proxy_count=False, print_proxy_type_list=False):
+                     seed=0, verbose=False, print_assim_proxy_count=False, print_proxy_type_list=False,
+                      detrend_proxy=False, detrend_method=None, detrend_kws={}):
 
-        all_proxy_ids, all_proxies = utils.get_proxy(self.cfg, proxies_df_filepath, metadata_df_filepath,
-                                                     select_box_lf=select_box_lf, select_box_ur=select_box_ur,
-                                                     precalib_filesdict=precalib_filesdict,
-                                                     exclude_list=exclude_list, verbose=verbose)
+        all_proxy_ids, all_proxies = utils.get_proxy(
+            self.cfg, proxies_df_filepath, metadata_df_filepath,
+            select_box_lf=select_box_lf, select_box_ur=select_box_ur,
+            precalib_filesdict=precalib_filesdict,
+            exclude_list=exclude_list,
+            detrend_proxy=detrend_proxy, detrend_method=detrend_method, detrend_kws=detrend_kws,
+            verbose=verbose)
 
         ind_assim, ind_eval = utils.generate_proxy_ind(self.cfg, len(all_proxy_ids), seed=seed)
 
@@ -150,8 +154,8 @@ class ReconJob:
                        p_dict=None, seasonality_dict=None,
                        metric='fitR2adj', search_distance=3,
                        verbose=False, pacf_threshold_dict=None, fit_args={}, print_OLSp_args=True,
-                       ye_savepath=None, seasonal_GCM_filesdict=None, nobs_lb=25, normalize_proxy=False,
-                       optimal_reg_savepath=None):
+                       ye_savepath=None, seasonal_GCM_filesdict=None, nobs_lb=25,
+                       optimal_reg_savepath=None, normalize_proxy=False, detrend_proxy=False):
         ''' Calibrate the OLSp PSM and generate precalib & Ye files
 
         Args:
@@ -198,6 +202,9 @@ class ReconJob:
             proxy_value = pobj.values.values
             if normalize_proxy:
                 proxy_value = nn.norm(proxy_value)
+
+            if detrend_proxy:
+                proxy_value = utils.detrend(proxy_value)
 
             proxy_time = pobj.time
             lat_obs = pobj.lat
