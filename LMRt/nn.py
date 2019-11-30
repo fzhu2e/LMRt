@@ -252,7 +252,7 @@ def OLSp(time_endog, endog, time_exog, exog, p=0, p_max=4, fit_args={}, time_exo
         df = df.merge(frame_exog2, how='outer', on='time')
 
     mask = (df['time']>=calib_period[0]) & (df['time']<=calib_period[1])
-    df = clean_df(df, mask=mask)
+    #  df = clean_df(df, mask=mask)
 
     if auto_choose_p:
         mask = (time_endog>=calib_period[0]) & (time_endog<=calib_period[1])

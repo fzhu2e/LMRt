@@ -150,7 +150,8 @@ class ReconJob:
                        p_dict=None, seasonality_dict=None,
                        metric='fitR2adj', search_distance=3,
                        verbose=False, pacf_threshold_dict=None, fit_args={}, print_OLSp_args=True,
-                       ye_savepath=None, seasonal_GCM_filesdict=None, nobs_lb=25):
+                       ye_savepath=None, seasonal_GCM_filesdict=None, nobs_lb=25, normalize_proxy=False,
+                       optimal_reg_savepath=None):
         ''' Calibrate the OLSp PSM and generate precalib & Ye files
 
         Args:
@@ -195,6 +196,9 @@ class ReconJob:
         optimal_reg_dict = {}
         for pobj in tqdm(self.proxy_manager.all_proxies, desc='Calibrating OLSp'):
             proxy_value = pobj.values.values
+            if normalize_proxy:
+                proxy_value = nn.norm(proxy_value)
+
             proxy_time = pobj.time
             lat_obs = pobj.lat
             lon_obs = pobj.lon
@@ -289,6 +293,7 @@ class ReconJob:
                     'lat': pobj.lat,
                     'lon': pobj.lon,
                     'elev': pobj.elev,
+                    'ptype': pobj.type,
                     'Seasonality': optimal_seasonality_tag,
                     'PSMresid': optimal_reg['mdl'].resid,
                     'PSMmse': optimal_mse,
@@ -296,7 +301,7 @@ class ReconJob:
                     'SNR': SNR,
                     'p': optimal_reg['p'],
                 }
-                optimal_reg_dict[pobj.id] = optimal_reg
+                optimal_reg_dict[(pobj.type, pobj.id)] = optimal_reg
             else:
                 print(f'optimal_reg is None for {pobj.id} due to nobs < {nobs_lb}')
                 #  precalib_dict[(pobj.type, pobj.id)] = None
@@ -306,6 +311,12 @@ class ReconJob:
             pickle.dump(precalib_dict, f)
 
         print(f'\npid={os.getpid()} >>> Saving calibration results to {precalib_savepath}')
+
+        if optimal_reg_savepath is not None:
+            with open(optimal_reg_savepath, 'wb') as f:
+                pickle.dump(optimal_reg_dict, f)
+
+            print(f'\npid={os.getpid()} >>> Saving optimal_reg_dict to {optimal_reg_savepath}')
 
         # Calculate Ye
         if ye_savepath is not None:
@@ -326,7 +337,7 @@ class ReconJob:
             for k, v in tqdm(precalib_dict.items(), desc='Calculating Ye', total=nproxy):
                 ptype, pid = k
                 pid_map[pid] = i
-                optimal_reg = optimal_reg_dict[pid]
+                optimal_reg = optimal_reg_dict[k]
                 p = optimal_reg['p']
                 season_tag_tas, season_tag_pr = v['Seasonality']
 
