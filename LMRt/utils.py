@@ -36,6 +36,7 @@ from sklearn import preprocessing
 import nitime.algorithms as tsa
 
 from . import load_gridded_data  # original file from LMR
+from . import nn
 
 import warnings
 warnings.filterwarnings(action='ignore', module='pandas', category=FutureWarning)
@@ -4399,7 +4400,7 @@ def calc_corr_between_fields(
 
     corr = np.ndarray((nlat2, nlon2))
 
-    for i in range(nlat2):
+    for i in tqdm(range(nlat2)):
         for j in range(nlon2):
             ts1 = field1_on_field2[ind1, i, j]
             ts2 = field2_inside[ind2, i, j]
@@ -5186,3 +5187,25 @@ def get_autocorrs_from_calib_data(calib_data):
             autocorrs[ptype].append(autocorr)
 
     return autocorrs
+
+# -----------------------------------------------
+#  spectral analysis
+# -----------------------------------------------
+def calc_psd_from_proxyDB(proxy_manager, ptype, normalize=False, ntau=11):
+    import p2k
+    psd = {}
+    freqs = {}
+
+    for pobj in tqdm(proxy_manager.all_proxies, total=len(proxy_manager.all_proxies)):
+        ptype = pobj.type
+        proxy_value = pobj.values
+        proxy_time = pobj.time
+
+        if normalize:
+            proxy_value = nn.norm(proxy_value)
+
+        if ptype == ptype:
+            psd[pobj.id], freqs[pobj.id] = p2k.calc_plot_psd(proxy_value, proxy_time, plot_fig=False, ntau=ntau)
+
+    return psd, freqs
+

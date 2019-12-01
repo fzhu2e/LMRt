@@ -2062,3 +2062,35 @@ def plot_calib_dist(calib_filepath, var='SNR', ptypes=None, bins=None, xticks=No
 
     return fig, ax
 
+
+def plot_psd_from_proxyDB(psd_dict, freqs_dict, period_ticks=[2, 5, 10, 20, 50, 100, 200, 500],
+                          alpha=0.3, title=None, lw=1, ptype=None):
+    sns.set(style='ticks', font_scale=1.5)
+
+    fig, ax = plt.subplots(figsize=[5, 5])
+    if title:
+        ax.set_title(title)
+
+    if ptype:
+        clr = PAGES2k.colors_dict[ptype]
+    else:
+        clr = None
+
+    for pid, psd in psd_dict.items():
+        freqs = freqs_dict[pid]
+        ax.loglog(1/freqs, psd, lw=lw, color=clr, alpha=alpha)
+
+    ax.set_xticks(period_ticks)
+    ax.get_xaxis().set_major_formatter(ScalarFormatter())
+    ax.xaxis.set_major_formatter(FormatStrFormatter('%g'))
+    ax.invert_xaxis()
+    ax.set_ylabel('Spectral Density')
+    ax.set_xlabel('Period (years)')
+
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.set_ylim([1e-2, 1e3])
+    ax.set_xlim([500, 2])
+    ax.legend(frameon=False)
+
+    return fig, ax
