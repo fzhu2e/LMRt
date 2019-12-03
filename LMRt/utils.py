@@ -3641,6 +3641,27 @@ def global_hemispheric_means(field, lat):
     return gm, nhm, shm
 
 
+def geo_mean(field_value, field_lat, field_lon, lats, lons):
+    ''' Calculate the average value of the given field over a list of lat/lon locations
+    '''
+    value_list = []
+    weight_list = []
+
+    tot_weight = 0
+    for lat, lon in tqdm(zip(lats, lons), total=len(lats)):
+        lat_ind, lon_ind = find_closest_loc(field_lat, field_lon, lat, lon)
+
+        lat_weight = np.cos(np.deg2rad(lat))
+        weight_list.append(lat_weight)
+
+        value = field_value[:, lat_ind, lon_ind]
+        value_list.append(value)
+
+    value_array = np.array(value_list)
+    value_avg = np.average(value_array, axis=0, weights=weight_list)
+    return value_avg
+
+
 def nino_indices(sst, lats, lons):
     ''' Calculate Nino indices
 
