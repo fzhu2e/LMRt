@@ -1056,7 +1056,7 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[6, 6], signif_fontsi
 
     if 'composite_qs' in res.keys():
         ax.plot(res['composite_yr'], res['composite_qs'][1], ls, color=color, label=label, lw=lw)
-        ax.fill_between(res['composite_yr'], res['composite_qs'][0], res['composite_qs'][-1], color=color, alpha=shade_alpha)
+        ax.fill_between(res['composite_yr'], res['composite_qs'][0], res['composite_qs'][-1], facecolor=color, alpha=shade_alpha)
     else:
         ax.plot(res['composite_yr'], res['composite'], ls, color=color, label=label, lw=lw)
 
