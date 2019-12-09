@@ -416,8 +416,9 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                    land_color=sns.xkcd_rgb['light grey'], ocean_color=sns.xkcd_rgb['light grey'],
                    land_zorder=None, ocean_zorder=None, signif_values=None, signif_range=[0.05, 9999], hatch='..',
                    clim=None, cmap='RdBu_r', cmap_under=None, cmap_over=None, extend='both', mode='latlon', add_gridlines=False,
-                   cbar_labels=None, cbar_pad=0.05, cbar_orientation='vertical', cbar_aspect=10,
-                   cbar_fraction=0.15, cbar_shrink=0.5, cbar_title=None, font_scale=1.5):
+                   make_cbar=True, cbar_labels=None, cbar_pad=0.05, cbar_orientation='vertical', cbar_aspect=10,
+                   cbar_fraction=0.15, cbar_shrink=0.5, cbar_title=None, font_scale=1.5,
+                   fig=None, ax=None):
 
     if add_cyclic_point:
         if mode == 'latlon':
@@ -456,11 +457,12 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
         if signif_values is not None:
             signif_values_c = signif_values
 
-    sns.set(style='ticks', font_scale=font_scale)
-    fig = plt.figure(figsize=figsize)
+    if ax is None or fig is None:
+        sns.set(style='ticks', font_scale=font_scale)
+        fig = plt.figure(figsize=figsize)
 
-    projection = CartopySettings.projection_dict[projection](**proj_args)
-    ax = plt.subplot(projection=projection)
+        projection = CartopySettings.projection_dict[projection](**proj_args)
+        ax = plt.subplot(projection=projection)
 
     if title:
         plt.title(title, fontsize=title_size, fontweight=title_weight)
@@ -510,14 +512,15 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
     if signif_values is not None:
         ax.contourf(lon_c, lat_c, signif_values_c, signif_range, transform=transform, hatches=[hatch], colors='none')
 
-    cbar = fig.colorbar(im, ax=ax, orientation=cbar_orientation, pad=cbar_pad, aspect=cbar_aspect, extend=extend,
+    if make_cbar:
+        cbar = fig.colorbar(im, ax=ax, orientation=cbar_orientation, pad=cbar_pad, aspect=cbar_aspect, extend=extend,
                         fraction=cbar_fraction, shrink=cbar_shrink)
 
-    if cbar_labels is not None:
-        cbar.set_ticks(cbar_labels)
+        if cbar_labels is not None:
+            cbar.set_ticks(cbar_labels)
 
-    if cbar_title:
-        cbar.ax.set_title(cbar_title)
+        if cbar_title:
+            cbar.ax.set_title(cbar_title)
 
     if site_lats is not None and site_lons is not None:
         if type(site_lats) is not dict:
