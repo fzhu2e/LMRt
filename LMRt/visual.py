@@ -230,6 +230,20 @@ class CartopySettings:
         'OSNI': ccrs.OSNI,
     }
 
+def setlabel(ax, label, loc=2, borderpad=0.6, **kwargs):
+    ''' Enumerate plots
+
+    Reference: https://stackoverflow.com/questions/22508590/enumerate-plots-in-matplotlib-figure
+    '''
+    legend = ax.get_legend()
+    if legend:
+        ax.add_artist(legend)
+    line, = ax.plot(np.NaN, np.NaN,color='none',label=label)
+    label_legend = ax.legend(handles=[line],loc=loc,handlelength=0,handleheight=0,handletextpad=0,borderaxespad=0,borderpad=borderpad,frameon=False,**kwargs)
+    label_legend.remove()
+    ax.add_artist(label_legend)
+    line.remove()
+
 
 def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_col='type', time_col='time',
                  title=None, title_weight='normal', font_scale=1.5, rc=PAGES2k(),
@@ -1894,23 +1908,22 @@ def plot_nn_predicts(mod_eval_res_dict, data_dict, ref_label='proxy', xlim=[1901
 def plot_autocorrs(autocorrs_dict, plot_types=None, nlag=10,
                   panelsize=[4, 3], font_scale=1.5, ncol=2,
                   wsp=0.5, hsp=0.5, ylabel='Autocorrelation',
-                  title=None):
+                  title=None, ptype_dict={
+                    'Bivalve_d18O': 'bivalve_d18O',
+                    'Corals and Sclerosponges_SrCa': 'coral_SrCa',
+                    'Corals and Sclerosponges_d18O': 'coral_d18O',
+                    'Corals and Sclerosponges_Rates': 'coral_rates',
+                    'Ice Cores_d18O': 'ice_d18O',
+                    'Ice Cores_dD': 'ice_dD',
+                    'Ice Cores_MeltFeature': 'ice_melt',
+                    'Lake Cores_Misc': 'lake_misc',
+                    'Lake Cores_Varve': 'lake_varve',
+                    'Tree Rings_WidthPages2': 'tree_TRW',
+                    'Tree Rings_WoodDensity': 'tree_MXD',
+                  }):
     ''' Plot the autocorrelation boxplot, adapted from statsmodels
     '''
     p = PAGES2k()
-    ptype_dict = {
-        'Bivalve_d18O': 'bivalve_d18O',
-        'Corals and Sclerosponges_SrCa': 'coral_SrCa',
-        'Corals and Sclerosponges_d18O': 'coral_d18O',
-        'Corals and Sclerosponges_Rates': 'coral_rates',
-        'Ice Cores_d18O': 'ice_d18O',
-        'Ice Cores_dD': 'ice_dD',
-        'Ice Cores_MeltFeature': 'ice_melt',
-        'Lake Cores_Misc': 'lake_misc',
-        'Lake Cores_Varve': 'lake_varve',
-        'Tree Rings_WidthPages2': 'tree_TRW',
-        'Tree Rings_WoodDensity': 'tree_MXD',
-    }
 
     if plot_types is None:
         row_types = autocorrs_dict.keys()
@@ -1934,9 +1947,9 @@ def plot_autocorrs(autocorrs_dict, plot_types=None, nlag=10,
     gs.update(wspace=wsp, hspace=hsp)
 
     ax = {}
-    i = 0
     z95 = 1.959963984540054
     z99 = 2.5758293035489004
+    i = 0
     for ptype, autocorrs in autocorrs_dict.items():
         if ptype_dict[ptype] in plot_types:
             print(f'Plotting {ptype}...')
@@ -1949,23 +1962,23 @@ def plot_autocorrs(autocorrs_dict, plot_types=None, nlag=10,
             df = pd.DataFrame(data=autocorr_array, columns=lags)
 
             # plot
-            ax[i] = plt.subplot(gs[i])
+            ax[ptype] = plt.subplot(gs[i])
             sns.boxplot(data=df, color=p.colors_dict[ptype])
-            ax[i].set_xlim([-1, 10])
-            ax[i].set_ylim([-0.4, 1])
-            ax[i].spines['right'].set_visible(False)
-            ax[i].spines['top'].set_visible(False)
+            ax[ptype].set_xlim([-1, 10])
+            ax[ptype].set_ylim([-0.4, 1])
+            ax[ptype].spines['right'].set_visible(False)
+            ax[ptype].spines['top'].set_visible(False)
             if title is None:
-                ax[i].set_title(f'{ptype_dict[ptype]} (n={len(df)})')
+                ax[ptype].set_title(f'{ptype_dict[ptype]} (n={len(df)})')
             else:
-                ax[i].set_title(f'{title}')
-            ax[i].set_ylabel(ylabel)
-            ax[i].set_xlabel('Lag')
-            ax[i].axhline(y=z99 / np.sqrt(nrec), linestyle='--', color='grey')
-            ax[i].axhline(y=z95 / np.sqrt(nrec), color='grey')
-            ax[i].axhline(y=0.0, color='black')
-            ax[i].axhline(y=-z95 / np.sqrt(nrec), color='grey')
-            ax[i].axhline(y=-z99 / np.sqrt(nrec), linestyle='--', color='grey')
+                ax[ptype].set_title(f'{title}')
+            ax[ptype].set_ylabel(ylabel)
+            ax[ptype].set_xlabel('Lag')
+            ax[ptype].axhline(y=z99 / np.sqrt(nrec), linestyle='--', color='grey')
+            ax[ptype].axhline(y=z95 / np.sqrt(nrec), color='grey')
+            ax[ptype].axhline(y=0.0, color='black')
+            ax[ptype].axhline(y=-z95 / np.sqrt(nrec), color='grey')
+            ax[ptype].axhline(y=-z99 / np.sqrt(nrec), linestyle='--', color='grey')
             i += 1
 
     return fig, ax
