@@ -259,7 +259,8 @@ def regrid_prior(cfg, X, verbose=False):
 
 def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict=None,
               exclude_list=None, select_box_lf=None, select_box_ur=None,
-              detrend_proxy=False, detrend_method=None, detrend_kws={}, verbose=False):
+              detrend_proxy=False, detrend_method=None, detrend_kws={}, verbose=False,
+              NH_only=False, SH_only=False):
 
     db_proxies = pd.read_pickle(proxies_df_filepath)
     db_metadata = pd.read_pickle(metadata_df_filepath)
@@ -389,6 +390,18 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
                 ur_lon = np.mod(ur_lon, 360)
                 p_lon = np.mod(pobj.lon, 360)
                 if pobj.lat < lf_lat or pobj.lat > ur_lat or p_lon < lf_lon or p_lon > ur_lon:
+                    picked_proxies.pop(idx)
+                    picked_proxy_ids.pop(idx)
+
+        if NH_only:
+            for idx, pobj in enumerate(picked_proxies):
+                if pobj.lat < 0:
+                    picked_proxies.pop(idx)
+                    picked_proxy_ids.pop(idx)
+
+        if SH_only:
+            for idx, pobj in enumerate(picked_proxies):
+                if pobj.lat > 0:
                     picked_proxies.pop(idx)
                     picked_proxy_ids.pop(idx)
 

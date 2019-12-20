@@ -53,13 +53,14 @@ class ReconJob:
             print(f'pid={os.getpid()} >>> job.cfg updated')
 
     def load_proxies(self, proxies_df_filepath, metadata_df_filepath, precalib_filesdict=None,
-                     select_box_lf=None, select_box_ur=None, exclude_list=None,
+                     select_box_lf=None, select_box_ur=None, exclude_list=None, NH_only=False, SH_only=False,
                      seed=0, verbose=False, print_assim_proxy_count=False, print_proxy_type_list=False,
-                      detrend_proxy=False, detrend_method=None, detrend_kws={}):
+                     detrend_proxy=False, detrend_method=None, detrend_kws={}):
 
         all_proxy_ids, all_proxies = utils.get_proxy(
             self.cfg, proxies_df_filepath, metadata_df_filepath,
             select_box_lf=select_box_lf, select_box_ur=select_box_ur,
+            NH_only=NH_only, SH_only=SH_only,
             precalib_filesdict=precalib_filesdict,
             exclude_list=exclude_list,
             detrend_proxy=detrend_proxy, detrend_method=detrend_method, detrend_kws=detrend_kws,
