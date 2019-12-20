@@ -249,7 +249,8 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
                  title=None, title_weight='normal', font_scale=1.5, rc=PAGES2k(),
                  plot_timespan=None,  plot_xticks=[850, 1000, 1200, 1400, 1600, 1800, 2000],
                  figsize=[8, 10], projection=ccrs.Robinson, central_longitude=0, markersize=50, plot_count=True,
-                 lgd_ncol=1, lgd_anchor_upper=(1, -0.1), lgd_anchor_lower=(1, -0.05),lgd_frameon=False):
+                 lgd_ncol=1, lgd_anchor_upper=(1, -0.1), lgd_anchor_lower=(1, -0.05),lgd_frameon=False,
+                 enumerate_ax=False, enumerate_prop={'weight': 'bold', 'size': 30}, enumerate_anchor=[0, 1]):
 
     sns.set(style='darkgrid', font_scale=font_scale)
     fig = plt.figure(figsize=figsize)
@@ -335,6 +336,10 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
             ax_count.set_xticks(plot_xticks)
         handles, labels = ax_count.get_legend_handles_labels()
         ax_count.legend(handles[::-1], labels[::-1], frameon=lgd_frameon, bbox_to_anchor=lgd_anchor_lower, loc='lower left')
+
+        if enumerate_ax:
+            setlabel(ax_map, '(a)', prop=enumerate_prop, bbox_to_anchor=enumerate_anchor)
+            setlabel(ax_count, '(b)', prop=enumerate_prop, bbox_to_anchor=enumerate_anchor)
 
     return fig
 
