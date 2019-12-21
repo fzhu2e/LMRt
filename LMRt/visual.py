@@ -248,7 +248,7 @@ def setlabel(ax, label, loc=2, borderpad=0.6, **kwargs):
 def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_col='type', time_col='time',
                  title=None, title_weight='normal', font_scale=1.5, rc=PAGES2k(),
                  plot_timespan=None,  plot_xticks=[850, 1000, 1200, 1400, 1600, 1800, 2000],
-                 figsize=[8, 10], projection=ccrs.Robinson, central_longitude=0, markersize=50, plot_count=True,
+                 figsize=[8, 10], projection='Robinson', proj_args={}, central_longitude=0, markersize=50, plot_count=True,
                  lgd_ncol=1, lgd_anchor_upper=(1, -0.1), lgd_anchor_lower=(1, -0.05),lgd_frameon=False,
                  enumerate_ax=False, enumerate_prop={'weight': 'bold', 'size': 30}, enumerate_anchor=[0, 1]):
 
@@ -263,7 +263,7 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
     gs = gridspec.GridSpec(nrow, 1)
     gs.update(wspace=0, hspace=0.1)
 
-    projection = projection(central_longitude=central_longitude)
+    projection = CartopySettings.projection_dict[projection](**proj_args)
     ax_map = plt.subplot(gs[0], projection=projection)
 
     if title:
@@ -430,7 +430,7 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                    site_lats=None, site_lons=None, site_marker='o',
                    site_markersize=50, site_color=sns.xkcd_rgb['amber'],
                    projection='Robinson', transform=ccrs.PlateCarree(),
-                   proj_args={}, latlon_range=None,
+                   proj_args={}, latlon_range=None, central_longitude=0,
                    lon_ticks=[60, 120, 180, 240, 300], lat_ticks=[-90, -45, 0, 45, 90],
                    land_color=sns.xkcd_rgb['light grey'], ocean_color=sns.xkcd_rgb['light grey'],
                    land_zorder=None, ocean_zorder=None, signif_values=None, signif_range=[0.05, 9999], hatch='..',
@@ -2077,6 +2077,8 @@ def plot_calib_dist(calib_filepath, var='SNR', ptypes=None, bins=None, xticks=No
                 sns.distplot(df_target[var].values, label=f'{ptype} (median={median:.2f})', kde=False, ax=ax,
                              bins=bins)
             ax.legend(**lgd_args)
+            if xticks is not None:
+                ax.set_xticks(xticks)
             ax.set_xlabel(var)
             ax.set_ylabel('number of records')
             ax.spines['right'].set_visible(False)
