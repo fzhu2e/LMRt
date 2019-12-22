@@ -246,33 +246,40 @@ def setlabel(ax, label, loc=2, borderpad=0.6, **kwargs):
 
 
 def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_col='type', time_col='time',
-                 title=None, title_weight='normal', font_scale=1.5, rc=PAGES2k(),
+                 title=None, title_weight='normal', font_scale=1.5, markers_dict=None, colors_dict=None,
                  plot_timespan=None,  plot_xticks=[850, 1000, 1200, 1400, 1600, 1800, 2000],
-                 figsize=[8, 10], projection='Robinson', proj_args={}, central_longitude=0, markersize=50, plot_count=True,
+                 figsize=[8, 10], projection='Robinson', proj_args={}, central_longitude=0, markersize=50,
+                 plot_count=True, nrow=2, ncol=1, wspace=0.5, hspace=0.1,
                  lgd_ncol=1, lgd_anchor_upper=(1, -0.1), lgd_anchor_lower=(1, -0.05),lgd_frameon=False,
-                 enumerate_ax=False, enumerate_prop={'weight': 'bold', 'size': 30}, enumerate_anchor=[0, 1]):
+                 enumerate_ax=False, enumerate_prop={'weight': 'bold', 'size': 30},
+                 enumerate_anchor_map=[0, 1], enumerate_anchor_count=[0, 1], map_grid_idx=0, count_grid_idx=-1):
 
     sns.set(style='darkgrid', font_scale=font_scale)
     fig = plt.figure(figsize=figsize)
 
-    if plot_count:
-        nrow = 2
-    else:
+    if not plot_count:
         nrow = 1
+        ncol = 1
 
-    gs = gridspec.GridSpec(nrow, 1)
-    gs.update(wspace=0, hspace=0.1)
+    gs = gridspec.GridSpec(nrow, ncol)
+    gs.update(wspace=wspace, hspace=hspace)
 
     projection = CartopySettings.projection_dict[projection](**proj_args)
-    ax_map = plt.subplot(gs[0], projection=projection)
+    ax = {}
+    ax['map'] = plt.subplot(gs[map_grid_idx], projection=projection)
 
     if title:
-        ax_map.set_title(title, fontweight=title_weight)
+        ax['map'].set_title(title, fontweight=title_weight)
 
-    ax_map.set_global()
-    ax_map.add_feature(cfeature.LAND, facecolor='gray', alpha=0.3)
+    ax['map'].set_global()
+    ax['map'].add_feature(cfeature.LAND, facecolor='gray', alpha=0.3)
 
     # plot markers by archive types
+    if markers_dict is None:
+        markers_dict = PAGES2k.markers_dict
+    if colors_dict is None:
+        colors_dict = PAGES2k.markers_dict
+
     s_plots = []
     type_names = []
     type_set = np.unique(df[type_col])
@@ -284,13 +291,13 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
         lons = list(df[selector][lon_col])
         lats = list(df[selector][lat_col])
         s_plots.append(
-            ax_map.scatter(
-                lons, lats, marker=rc.markers_dict[ptype],
-                c=rc.colors_dict[ptype], edgecolor='k', s=markersize, transform=ccrs.Geodetic()
+            ax['map'].scatter(
+                lons, lats, marker=markers_dict[ptype],
+                c=colors_dict[ptype], edgecolor='k', s=markersize, transform=ccrs.Geodetic()
             )
         )
 
-    ax_map.legend(
+    ax['map'].legend(
         s_plots, type_names,
         scatterpoints=1,
         bbox_to_anchor=lgd_anchor_upper,
@@ -300,7 +307,7 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
     )
 
     if plot_count:
-        ax_count = plt.subplot(gs[1])
+        ax['count'] = plt.subplot(gs[count_grid_idx])
         proxy_count = {}
         for index, row in df.iterrows():
             ptype = row[type_col]
@@ -321,27 +328,27 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
         idx = np.argsort(max_count)
         for ptype in type_set[idx]:
             cumu_count += proxy_count[ptype]
-            ax_count.fill_between(
+            ax['count'].fill_between(
                 year, cumu_last, cumu_count,
-                color=rc.colors_dict[ptype],
+                color=colors_dict[ptype],
                 label=f'{ptype}',
                 alpha=0.8,
             )
             cumu_last = np.copy(cumu_count)
 
-        ax_count.set_xlabel('Year (AD)')
-        ax_count.set_ylabel('number of proxies')
+        ax['count'].set_xlabel('Year (AD)')
+        ax['count'].set_ylabel('number of proxies')
         if plot_timespan is not None:
-            ax_count.set_xlim(plot_timespan)
-            ax_count.set_xticks(plot_xticks)
-        handles, labels = ax_count.get_legend_handles_labels()
-        ax_count.legend(handles[::-1], labels[::-1], frameon=lgd_frameon, bbox_to_anchor=lgd_anchor_lower, loc='lower left')
+            ax['count'].set_xlim(plot_timespan)
+            ax['count'].set_xticks(plot_xticks)
+        handles, labels = ax['count'].get_legend_handles_labels()
+        ax['count'].legend(handles[::-1], labels[::-1], frameon=lgd_frameon, bbox_to_anchor=lgd_anchor_lower, loc='lower left')
 
         if enumerate_ax:
-            setlabel(ax_map, '(a)', prop=enumerate_prop, bbox_to_anchor=enumerate_anchor)
-            setlabel(ax_count, '(b)', prop=enumerate_prop, bbox_to_anchor=enumerate_anchor)
+            setlabel(ax['map'], '(a)', prop=enumerate_prop, bbox_to_anchor=enumerate_anchor_map)
+            setlabel(ax['count'], '(b)', prop=enumerate_prop, bbox_to_anchor=enumerate_anchor_count)
 
-    return fig
+    return fig, ax
 
 
 def plot_proxy_age_map(df, lon_col='lon', lat_col='lat', type_col='type', time_col='time',
@@ -1927,19 +1934,18 @@ def plot_autocorrs(autocorrs_dict, plot_types=None, nlag=10,
                     'Lake Cores_Varve': 'lake_varve',
                     'Tree Rings_WidthPages2': 'tree_TRW',
                     'Tree Rings_WoodDensity': 'tree_MXD',
-                  }):
+                  }, colors_dict=None):
     ''' Plot the autocorrelation boxplot, adapted from statsmodels
     '''
-    p = PAGES2k()
+    row_types = autocorrs_dict.keys()
+    plot_types = []
+    for rt in row_types:
+        if rt not in ptype_dict:
+            ptype_dict[rt] = rt
 
-    if plot_types is None:
-        row_types = autocorrs_dict.keys()
-        plot_types = []
-        for rt in row_types:
-            if rt not in ptype_dict:
-                ptype_dict[rt] = rt
+        plot_types.append(ptype_dict[rt])
 
-            plot_types.append(ptype_dict[rt])
+    print(plot_types)
 
     ntypes = len(plot_types)
 
@@ -1957,6 +1963,9 @@ def plot_autocorrs(autocorrs_dict, plot_types=None, nlag=10,
     z95 = 1.959963984540054
     z99 = 2.5758293035489004
     i = 0
+    if colors_dict is None:
+        colors_dict = PAGES2k.colors_dict
+
     for ptype, autocorrs in autocorrs_dict.items():
         if ptype_dict[ptype] in plot_types:
             print(f'Plotting {ptype}...')
@@ -1970,7 +1979,8 @@ def plot_autocorrs(autocorrs_dict, plot_types=None, nlag=10,
 
             # plot
             ax[ptype] = plt.subplot(gs[i])
-            sns.boxplot(data=df, color=p.colors_dict[ptype])
+            sns.boxplot(data=df, color=colors_dict[ptype])
+
             ax[ptype].set_xlim([-1, 10])
             ax[ptype].set_ylim([-0.4, 1])
             ax[ptype].spines['right'].set_visible(False)
