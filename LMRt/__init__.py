@@ -840,7 +840,8 @@ class ReconJob:
         self.res = Results(field_ens)
         print(f'\npid={os.getpid()} >>> job.res created')
 
-    def save_results(self, save_dirpath, seed=0, recon_years=None, dtype=np.float32):
+    def save_results(self, save_dirpath, seed=0, recon_years=None, dtype=np.float32,
+                     output_geo_mean=False, target_lats=[], target_lons=[]):
         if recon_years is None:
             yr_start = self.cfg.core.recon_period[0]
             yr_end = self.cfg.core.recon_period[-1]
@@ -853,6 +854,9 @@ class ReconJob:
                 seed,
                 save_dirpath,
                 dtype=dtype,
+                output_geo_mean=output_geo_mean,
+                target_lats=target_lats,
+                target_lons=target_lons,
             )
 
         save_path = os.path.join(save_dirpath, f'job_r{seed:02d}.nc')
@@ -864,6 +868,7 @@ class ReconJob:
             recon_years=None, seed=0, precalib_filesdict=None, ye_filesdict=None,
             anom_reference_period=(1951, 1980), avgInterval=None,
             select_box_lf=None, select_box_ur=None, exclude_list=None,
+            output_geo_mean=False, target_lats=[], target_lons=[],
             verbose=False, print_proxy_type_list=False, print_assim_proxy_count=False, save_dirpath=None, mode='normal'):
 
         self.load_prior(prior_filepath, prior_datatype,
@@ -882,4 +887,5 @@ class ReconJob:
         self.run_da(recon_years=recon_years, mode=mode, verbose=verbose)
 
         if save_dirpath:
-            self.save_results(save_dirpath, seed=seed, recon_years=recon_years)
+            self.save_results(save_dirpath, seed=seed, recon_years=recon_years,
+                              output_geo_mean=output_geo_mean, target_lats=target_lats, target_lons=target_lons)

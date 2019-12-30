@@ -2486,7 +2486,8 @@ def Kalman_optimal(Y, vR, Ye, Xb, loc_rad=None, nsvs=None, transform_only=False,
     return xam, Xap, SVD
 
 
-def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath, dtype=np.float32):
+def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath, dtype=np.float32,
+                   output_geo_mean=False, target_lats=[], target_lons=[]):
     grid = make_grid(prior)
     lats = grid.lat
     lons = grid.lon
@@ -2543,6 +2544,10 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath, dtype
             # calculate tripole index (TPI)
             tpi = calc_tpi(field_ens_save[name], lats, lons)
             output_dict['tpi'] = (('year', 'ens'), tpi)
+
+        if output_geo_mean:
+            geo_mean_ts = geo_mean(field_ens_save[name], lats, lons, target_lats, target_lons)
+            output_dict['geo_mean'] = (('year', 'ens'), geo_mean_ts)
 
     os.makedirs(save_dirpath, exist_ok=True)
     save_path = os.path.join(save_dirpath, f'job_r{seed:02d}.nc')
@@ -3647,7 +3652,7 @@ def geo_mean(field_value, field_lat, field_lon, lats, lons):
         lat_weight = np.cos(np.deg2rad(lat))
         weight_list.append(lat_weight)
 
-        value = field_value[:, lat_ind, lon_ind]
+        value = field_value[..., lat_ind, lon_ind]
         value_list.append(value)
 
     value_array = np.array(value_list)
