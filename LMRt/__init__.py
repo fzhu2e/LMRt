@@ -841,7 +841,9 @@ class ReconJob:
         print(f'\npid={os.getpid()} >>> job.res created')
 
     def save_results(self, save_dirpath, seed=0, recon_years=None, dtype=np.float32,
-                     output_geo_mean=False, target_lats=[], target_lons=[]):
+                     output_geo_mean=False, target_lats=[], target_lons=[],
+                     compress_dict={'zlib': True, 'least_significant_digit': 1, 'complevel': 9},
+                     output_full_ens=False):
         if recon_years is None:
             yr_start = self.cfg.core.recon_period[0]
             yr_end = self.cfg.core.recon_period[-1]
@@ -857,6 +859,8 @@ class ReconJob:
                 output_geo_mean=output_geo_mean,
                 target_lats=target_lats,
                 target_lons=target_lons,
+                compress_dict=compress_dict,
+                output_full_ens=output_full_ens,
             )
 
         save_path = os.path.join(save_dirpath, f'job_r{seed:02d}.nc')
@@ -869,7 +873,9 @@ class ReconJob:
             anom_reference_period=(1951, 1980), avgInterval=None,
             select_box_lf=None, select_box_ur=None, exclude_list=None,
             output_geo_mean=False, target_lats=[], target_lons=[],
-            verbose=False, print_proxy_type_list=False, print_assim_proxy_count=False, save_dirpath=None, mode='normal'):
+            compress_dict={'zlib': True, 'least_significant_digit': 1, 'complevel': 9},
+            print_proxy_type_list=False, print_assim_proxy_count=False,
+            output_full_ens=False, verbose=False, save_dirpath=None, mode='normal'):
 
         self.load_prior(prior_filepath, prior_datatype,
                         anom_reference_period=anom_reference_period,
@@ -888,4 +894,5 @@ class ReconJob:
 
         if save_dirpath:
             self.save_results(save_dirpath, seed=seed, recon_years=recon_years,
-                              output_geo_mean=output_geo_mean, target_lats=target_lats, target_lons=target_lons)
+                              output_geo_mean=output_geo_mean, target_lats=target_lats, target_lons=target_lons,
+                              output_full_ens=output_full_ens, compress_dict=compress_dict)

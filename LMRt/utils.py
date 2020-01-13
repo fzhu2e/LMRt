@@ -2487,7 +2487,9 @@ def Kalman_optimal(Y, vR, Ye, Xb, loc_rad=None, nsvs=None, transform_only=False,
 
 
 def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath, dtype=np.float32,
-                   output_geo_mean=False, target_lats=[], target_lons=[]):
+                   output_geo_mean=False, target_lats=[], target_lons=[],
+                   compress_dict={'zlib': True, 'least_significant_digit': 1, 'complevel': 9},
+                   output_full_ens=False):
     grid = make_grid(prior)
     lats = grid.lat
     lons = grid.lon
@@ -2497,57 +2499,64 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath, dtype
 
     var_names = prior.trunc_state_info.keys()
 
-    field_ens_mean = {}
-    for name in var_names:
-        field_ens_mean[name] = np.average(field_ens_save[name], axis=1)
-
     output_dict = {}
-    for name in var_names:
-        field_tmp = np.array(field_ens_mean[name], dtype=dtype)
-        output_dict[name] = (('year', 'lat', 'lon'), field_tmp)
+    if output_full_ens:
+        # output full ensemble for field
+        for name in var_names:
+            output_dict[name] = (('year', 'ens', 'lat', 'lon'), field_ens_save[name])
 
-        gm_ens = np.zeros((nyr, nens))
-        nhm_ens = np.zeros((nyr, nens))
-        shm_ens = np.zeros((nyr, nens))
+    else:
+        # output ensemble means for field and full ensemble for timeseries
+        field_ens_mean = {}
+        for name in var_names:
+            field_ens_mean[name] = np.average(field_ens_save[name], axis=1)
 
-        for k in range(nens):
-            gm_ens[:, k], nhm_ens[:, k], shm_ens[:, k] = global_hemispheric_means(
-                field_ens_save[name][:, k, :, :], lats)
+        for name in var_names:
+            field_tmp = np.array(field_ens_mean[name], dtype=dtype)
+            output_dict[name] = (('year', 'lat', 'lon'), field_tmp)
 
-        # compress to float32
-        gm_ens = np.array(gm_ens, dtype=dtype)
-        nhm_ens = np.array(nhm_ens, dtype=dtype)
-        shm_ens = np.array(shm_ens, dtype=dtype)
+            gm_ens = np.zeros((nyr, nens))
+            nhm_ens = np.zeros((nyr, nens))
+            shm_ens = np.zeros((nyr, nens))
 
-        output_dict[f'{name}_gm_ens'] = (('year', 'ens'), gm_ens)
-        output_dict[f'{name}_nhm_ens'] = (('year', 'ens'), nhm_ens)
-        output_dict[f'{name}_shm_ens'] = (('year', 'ens'), shm_ens)
+            for k in range(nens):
+                gm_ens[:, k], nhm_ens[:, k], shm_ens[:, k] = global_hemispheric_means(
+                    field_ens_save[name][:, k, :, :], lats)
 
-        if name == 'tas_sfc_Amon':
-            # calculate NINO indices
-            nino_ind = nino_indices(field_ens_save[name], lats, lons)
-            nino12 = nino_ind['nino1+2']
-            nino3 = nino_ind['nino3']
-            nino34 = nino_ind['nino3.4']
-            nino4 = nino_ind['nino4']
+            # compress to float32
+            gm_ens = np.array(gm_ens, dtype=dtype)
+            nhm_ens = np.array(nhm_ens, dtype=dtype)
+            shm_ens = np.array(shm_ens, dtype=dtype)
 
-            nino12 = np.array(nino12, dtype=dtype)
-            nino3 = np.array(nino3, dtype=dtype)
-            nino34 = np.array(nino34, dtype=dtype)
-            nino4 = np.array(nino4, dtype=dtype)
+            output_dict[f'{name}_gm_ens'] = (('year', 'ens'), gm_ens)
+            output_dict[f'{name}_nhm_ens'] = (('year', 'ens'), nhm_ens)
+            output_dict[f'{name}_shm_ens'] = (('year', 'ens'), shm_ens)
 
-            output_dict['nino1+2'] = (('year', 'ens'), nino12)
-            output_dict['nino3'] = (('year', 'ens'), nino3)
-            output_dict['nino3.4'] = (('year', 'ens'), nino34)
-            output_dict['nino4'] = (('year', 'ens'), nino4)
+            if name == 'tas_sfc_Amon':
+                # calculate NINO indices
+                nino_ind = nino_indices(field_ens_save[name], lats, lons)
+                nino12 = nino_ind['nino1+2']
+                nino3 = nino_ind['nino3']
+                nino34 = nino_ind['nino3.4']
+                nino4 = nino_ind['nino4']
 
-            # calculate tripole index (TPI)
-            tpi = calc_tpi(field_ens_save[name], lats, lons)
-            output_dict['tpi'] = (('year', 'ens'), tpi)
+                nino12 = np.array(nino12, dtype=dtype)
+                nino3 = np.array(nino3, dtype=dtype)
+                nino34 = np.array(nino34, dtype=dtype)
+                nino4 = np.array(nino4, dtype=dtype)
 
-        if output_geo_mean:
-            geo_mean_ts = geo_mean(field_ens_save[name], lats, lons, target_lats, target_lons)
-            output_dict['geo_mean'] = (('year', 'ens'), geo_mean_ts)
+                output_dict['nino1+2'] = (('year', 'ens'), nino12)
+                output_dict['nino3'] = (('year', 'ens'), nino3)
+                output_dict['nino3.4'] = (('year', 'ens'), nino34)
+                output_dict['nino4'] = (('year', 'ens'), nino4)
+
+                # calculate tripole index (TPI)
+                tpi = calc_tpi(field_ens_save[name], lats, lons)
+                output_dict['tpi'] = (('year', 'ens'), tpi)
+
+            if output_geo_mean:
+                geo_mean_ts = geo_mean(field_ens_save[name], lats, lons, target_lats, target_lons)
+                output_dict['geo_mean'] = (('year', 'ens'), geo_mean_ts)
 
     os.makedirs(save_dirpath, exist_ok=True)
     save_path = os.path.join(save_dirpath, f'job_r{seed:02d}.nc')
@@ -2559,10 +2568,16 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath, dtype
             'lat': lats,
             'lon': lons,
             'ens': np.arange(nens)
-        },
-    )
+        })
 
-    ds.to_netcdf(save_path)
+    if compress_dict is not None:
+        encoding_dict = {}
+        for k in output_dict.keys():
+            encoding_dict[k] = compress_dict
+
+        ds.to_netcdf(save_path, encoding=encoding_dict)
+    else:
+        ds.to_netcdf(save_path)
 
 # ===============================================
 #  Time axis handling
