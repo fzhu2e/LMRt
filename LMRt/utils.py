@@ -2488,7 +2488,7 @@ def Kalman_optimal(Y, vR, Ye, Xb, loc_rad=None, nsvs=None, transform_only=False,
 
 def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath, dtype=np.float32,
                    output_geo_mean=False, target_lats=[], target_lons=[],
-                   compress_dict={'zlib': True, 'least_significant_digit': 1, 'complevel': 9},
+                   compress_dict={'zlib': True, 'least_significant_digit': 1},
                    output_full_ens=False):
     grid = make_grid(prior)
     lats = grid.lat
@@ -3924,6 +3924,81 @@ def calc_ens_calib_ratio(pobjs, ye_filepath, calc_period=[1850, 2000], verbose=F
 # -----------------------------------------------
 # Correlation and coefficient Efficiency (CE)
 # -----------------------------------------------
+def get_ts_from_jobs(exp_dir, var='tas_sfc_Amon', load_num=None, calc_list=['gm_ens'],
+                     target_lats=None, target_lons=None):
+
+    paths = sorted(glob.glob(os.path.join(exp_dir, 'job_r*')))
+    if load_num is not None:
+        paths = paths[:load_num]
+
+    with xr.open_dataset(paths[0]) as ds:
+        ts_tmp = ds[var]
+        year = ds['year'].values
+        lats = ds['lat'].values
+        lons = ds['lon'].values
+
+    nMC = len(paths)
+    nt = np.shape(ts_tmp)[0]
+    nEN = np.shape(ts_tmp)[1]
+
+    res_dict = {'year': year}
+    if 'gm_ens' in calc_list:
+        gm_ens = np.zeros((nt, nEN, nMC))
+        nhm_ens = np.zeros((nt, nEN, nMC))
+        shm_ens = np.zeros((nt, nEN, nMC))
+
+    if 'nino' in calc_list:
+        nino12 = np.zeros((nt, nEN, nMC))
+        nino3 = np.zeros((nt, nEN, nMC))
+        nino34 = np.zeros((nt, nEN, nMC))
+        nino4 = np.zeros((nt, nEN, nMC))
+
+    if 'tpi' in calc_list:
+        tpi = np.zeros((nt, nEN, nMC))
+
+    if 'geo_mean' in calc_list:
+        geo_mean_ts = np.zeros((nt, nEN, nMC))
+
+    for j in tqdm(range(nMC)):
+        with xr.open_dataset(paths[j]) as ds:
+            ts_tmp = ds[var].values
+
+        if 'gm_ens' in calc_list:
+            for i in range(nEN):
+                gm_ens[:,i,j], nhm_ens[:,i,j], shm_ens[:,i,j] = global_hemispheric_means(ts_tmp[:,i,:,:], lats)
+
+        if 'nino' in calc_list:
+            nino_ind = nino_indices(ts_tmp, lats, lons)
+            nino12[:,:,j] = nino_ind['nino1+2']
+            nino3[:,:,j] = nino_ind['nino3']
+            nino34[:,:,j] = nino_ind['nino3.4']
+            nino4[:,:,j] = nino_ind['nino4']
+        if 'tpi' in calc_list:
+            tpi[:,:,j] = calc_tpi(ts_tmp, lats, lons)
+
+        if 'geo_mean' in calc_list:
+            geo_mean_ts[:,:,j] = geo_mean(ts_tmp, lats, lons, target_lats, target_lons)
+
+    if 'gm_ens' in calc_list:
+        res_dict['gm_ens'] = gm_ens
+        res_dict['nhm_ens'] = nhm_ens
+        res_dict['shm_ens'] = shm_ens
+
+    if 'nino' in calc_list:
+        res_dict['nino12'] = nino12
+        res_dict['nino3'] = nino3
+        res_dict['nino34'] = nino34
+        res_dict['nino4'] = nino4
+
+    if 'tpi' in calc_list:
+        res_dict['tpi'] = tpi
+
+    if 'geo_mean' in calc_list:
+        res_dict['geo_mean'] = geo_mean_ts
+
+    return res_dict
+
+
 def load_ts_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='tas_sfc_Amon_gm_ens', ref_period=[1951, 1980],
                       return_MC_mean=False, load_num=None):
     if not os.path.exists(exp_dir):
