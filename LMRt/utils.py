@@ -2640,13 +2640,21 @@ def year_float2datetime(year_float, resolution='day'):
 def seasonal_var_xarray(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]):
     ''' Annualize a variable array based on seasonality
 
-    Args:
-        var (ndarray): the target variable array with 1st dim to be year
-        year_float (1-D array): the time axis of the variable array
+    Parameters
+    ----------
+    var : ndarray
+        The target variable array with 1st dim to be year
+    year_float : array
+        The time axis of the variable array
+    avgMonths : list, optional
+        The list of months to be averaged
 
-    Returns:
-        var_ann (ndarray): the annualized variable array
-        year_ann (1-D array): the time axis of the annualized variable array
+    Returns
+    -------
+    var_ann : ndarray
+        The annualized variable array
+    year_ann : array
+        The time axis of the annualized variable array
     '''
     var = np.array(var)
     year_float = np.array(year_float)
