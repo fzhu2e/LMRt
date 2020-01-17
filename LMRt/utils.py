@@ -2230,26 +2230,22 @@ def haversine(lon1, lat1, lon2, lat2):
 
 def enkf_update_array(Xb, obvalue, Ye, ob_err, loc=None, inflate=None, output_details=False):
     """ Function to do the ensemble square-root filter (EnSRF) update
+
     (ref: Whitaker and Hamill, Mon. Wea. Rev., 2002)
 
-    Originator: G. J. Hakim, with code borrowed from L. Madaus
-                Dept. Atmos. Sciences, Univ. of Washington
+    Originator:
+        G. J. Hakim, with code borrowed from L. Madaus Dept. Atmos. Sciences, Univ. of Washington
 
     Revisions:
+        1 September 2017: changed varye = np.var(Ye) to varye = np.var(Ye,ddof=1) for an unbiased calculation of the variance. (G. Hakim - U. Washington)
 
-    1 September 2017:
-                    - changed varye = np.var(Ye) to varye = np.var(Ye,ddof=1)
-                    for an unbiased calculation of the variance.
-                    (G. Hakim - U. Washington)
-
-    -----------------------------------------------------------------
-     Inputs:
-          Xb: background ensemble estimates of state (Nx x Nens)
-     obvalue: proxy value
-          Ye: background ensemble estimate of the proxy (Nens x 1)
-      ob_err: proxy error variance
-         loc: localization vector (Nx x 1) [optional]
-     inflate: scalar inflation factor [optional]
+    Args:
+        Xb: background ensemble estimates of state (Nx x Nens)
+        obvalue: proxy value
+        Ye: background ensemble estimate of the proxy (Nens x 1)
+        ob_err: proxy error variance
+        loc: localization vector (Nx x 1) [optional]
+        inflate: scalar inflation factor [optional]
     """
 
     # Get ensemble size from passed array: Xb has dims [state vect.,ens. members]
@@ -2640,21 +2636,14 @@ def year_float2datetime(year_float, resolution='day'):
 def seasonal_var_xarray(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]):
     ''' Annualize a variable array based on seasonality
 
-    Parameters
-    ----------
-    var : ndarray
-        The target variable array with 1st dim to be year
-    year_float : array
-        The time axis of the variable array
-    avgMonths : list, optional
-        The list of months to be averaged
+    Args:
+        var(ndarray): the target variable array with 1st dim to be year
+        year_float (array): the time axis of the variable array
+        avgMonths (list, optional): the list of months to be averaged
 
-    Returns
-    -------
-    var_ann : ndarray
-        The annualized variable array
-    year_ann : array
-        The time axis of the annualized variable array
+    Returns:
+        var_ann (ndarray): the annualized variable array
+        year_ann (array): the time axis of the annualized variable array
     '''
     var = np.array(var)
     year_float = np.array(year_float)
@@ -3074,17 +3063,19 @@ def get_distance(lon_pt, lat_pt, lon_ref, lat_ref):
     Vectorized calculation the great circle distances between lat-lon points
     on the Earth (lat/lon are specified in decimal degrees)
 
-    Input:
-    lon_pt , lat_pt  : longitude, latitude of site w.r.t. which distances
+    Args:
+        lon_pt , lat_pt  : longitude, latitude of site w.r.t. which distances
                        are to be calculated. Both should be scalars.
-    lon_ref, lat_ref : longitudes, latitudes of reference field
+        lon_ref, lat_ref : longitudes, latitudes of reference field
                        (e.g. calibration dataset, reconstruction grid)
                        May be scalar, 1D arrays, or 2D arrays.
 
-    Output: Returns array containing distances between (lon_pt, lat_pt) and all other points
+    Returns:
+        km: returns array containing distances between (lon_pt, lat_pt) and all other points
             in (lon_ref,lat_ref). Array has dimensions [dim(lon_ref),dim(lat_ref)].
 
-    Originator: R. Tardif, Atmospheric sciences, U. of Washington, January 2016
+    Originator:
+        R. Tardif, Atmospheric sciences, U. of Washington, January 2016
 
     """
 
@@ -3214,20 +3205,22 @@ def ts_matching(time_target, value_target, time_ref, value_ref, match_std=True, 
     return res_dict
 
 
-def compute_annual_means(time_raw,data_raw,valid_frac,year_type):
-    """
-    Computes annual-means from raw data.
-    Inputs:
+def compute_annual_means(time_raw, data_raw, valid_frac,year_type):
+    ''' Computes annual-means from raw data.
+
+    Args:
         time_raw   : Original time axis
         data_raw   : Original data
         valid_frac : The fraction of sub-annual data necessary to create annual mean.  Otherwise NaN.
         year_type  : "calendar year" (Jan-Dec) or "tropical year" (Apr-Mar)
 
-    Outputs: time_annual, data_annual
+    Returns:
+        time_annual
+        data_annual
 
-    Authors: R. Tardif, Univ. of Washington; M. Erb, Univ. of Southern California
-
-    """
+    Authors:
+        R. Tardif, Univ. of Washington; M. Erb, Univ. of Southern California
+    '''
 
     # Check if dealing with multiple chronologies in one data stream (for NCDC files)
     array_shape = data_raw.shape
@@ -3568,12 +3561,14 @@ def global_hemispheric_means(field, lat):
     """ Adapted from LMR_utils.py by Greg Hakim & Robert Tardif | U. of Washington
 
      compute global and hemispheric mean valuee for all times in the input (i.e. field) array
-     input:  field[ntime,nlat,nlon] or field[nlat,nlon]
-             lat[nlat,nlon] in degrees
+     Args:
+        field[ntime,nlat,nlon] or field[nlat,nlon]
+        lat[nlat,nlon] in degrees
 
-     output: gm : global mean of "field"
-            nhm : northern hemispheric mean of "field"
-            shm : southern hemispheric mean of "field"
+     Retruns:
+        gm : global mean of "field"
+        nhm : northern hemispheric mean of "field"
+        shm : southern hemispheric mean of "field"
     """
 
     # Originator: Greg Hakim
@@ -5023,6 +5018,7 @@ def corr_ttest(y1, y2, alpha=0.05):
 
 def corr_isopersist(y1, y2, alpha=0.05, nsim=1000):
     ''' Computes correlation between two timeseries, and their significance.
+
     The latter is gauged via a non-parametric (Monte Carlo) simulation of
     correlations with nsim AR(1) processes with identical persistence
     properties as x and y ; the measure of which is the lag-1 autocorrelation (g).
@@ -5033,16 +5029,16 @@ def corr_isopersist(y1, y2, alpha=0.05, nsim=1000):
         nsim (int): number of simulations [default: 1000]
 
     Returns:
-        r (real) - correlation between x and y \n
-        signif (boolean) - true (1) if significant; false (0) otherwise \n
-        pval (real) - test p-value (the probability of the test statstic exceeding the observed one by chance alone)
+        r (real): correlation between x and y
+        signif (boolean): true (1) if significant; false (0) otherwise
+        pval (real): test p-value (the probability of the test statstic exceeding the observed one by chance alone)
 
     Remarks:
         The probability of obtaining a test statistic at least as extreme as the one actually observed,
-        assuming that the null hypothesis is true. \n
-        The test is 1 tailed on |r|: Ho = { |r| = 0 }, Ha = { |r| > 0 } \n
-        The test is rejected (signif = 1) if pval <= alpha, otherwise signif=0; \n
-        (Some Rights Reserved) Hepta Technologies, 2009 \n
+        assuming that the null hypothesis is true.
+        The test is 1 tailed on |r|: Ho = { |r| = 0 }, Ha = { |r| > 0 }
+        The test is rejected (signif = 1) if pval <= alpha, otherwise signif=0;
+        (Some Rights Reserved) Hepta Technologies, 2009
         v1.0 USC, Aug 10 2012, based on corr_signif.m
     '''
 
@@ -5088,18 +5084,15 @@ def corr_isospec(y1, y2, alpha=0.05, nsim=1000):
         nsim (int): number of simulations [default: 1000]
 
     Returns:
-        r (real): correlation between y1 and y2 \n
-        signif (boolean): true (1) if significant; false (0) otherwise \n
+        r (real): correlation between y1 and y2
+        signif (boolean): true (1) if significant; false (0) otherwise
         F : Fraction of time series with higher correlation coefficents than observed (approximates the p-value).
 
     References:
-        - Ebisuzaki, W, 1997: A method to estimate the statistical
-        significance of a correlation when the data are serially correlated.
-        J. of Climate, 10, 2147-2153.
-        - Prichard, D., Theiler, J. Generating Surrogate Data for Time Series
-        with Several Simultaneously Measured Variables (1994)
-        Physical Review Letters, Vol 73, Number 7
-        (Some Rights Reserved) USC Climate Dynamics Lab, 2012.
+        - Ebisuzaki, W, 1997: A method to estimate the statistical significance of a correlation when the data are serially correlated.  J. of Climate, 10, 2147-2153.
+        - Prichard, D., Theiler, J. Generating Surrogate Data for Time Series with Several Simultaneously Measured Variables (1994) Physical Review Letters, Vol 73, Number 7
+        - (Some Rights Reserved) USC Climate Dynamics Lab, 2012.
+
     '''
     r = pearsonr(y1, y2)[0]
 

@@ -1,0 +1,285 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>The machine learning module &mdash; LMRt  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Utilities" href="utils.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> LMRt
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="core.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">The machine learning module</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">LMRt</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>The machine learning module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/nn.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="module-LMRt.nn">
+<span id="the-machine-learning-module"></span><h1>The machine learning module<a class="headerlink" href="#module-LMRt.nn" title="Permalink to this headline">¶</a></h1>
+<p>the module for neural network</p>
+<dl class="function">
+<dt id="LMRt.nn.OLSp">
+<code class="sig-prename descclassname">LMRt.nn.</code><code class="sig-name descname">OLSp</code><span class="sig-paren">(</span><em class="sig-param">time_endog, endog, time_exog, exog, p=0, p_max=4, fit_args={}, time_exog2=None, exog2=None, calib_period=[1850, 2015], auto_choose_p=False, pacf_threshold=0.2, verbose=False, nobs_lb=25</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/nn.html#OLSp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.nn.OLSp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform OLS with lags on exog</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>time_endog</strong> (<em>array</em>) – time axis of the endogenous timeseries, assuming evenly-spaced</p></li>
+<li><p><strong>endog</strong> (<em>array</em>) – endogenous timeseries (i.e., dependent variable), assuming evenly-spaced</p></li>
+<li><p><strong>time_exog</strong> (<em>array</em>) – time axis of the exogenous timeseries, assuming evenly-spaced</p></li>
+<li><p><strong>exog</strong> (<em>array</em>) – exogenous timeseries (i.e., independent variable), assuming evenly-spaced</p></li>
+<li><p><strong>p</strong> (<em>int</em>) – lag order; 0 means no lag and perform normal OLS</p></li>
+<li><p><strong>fit_args</strong> (<em>dict</em>) – the keyword arguments for OLS fitting</p></li>
+<li><p><strong>auto_choose_p</strong> (<em>bool</em>) – if True, will choose p based on PACF of endog</p></li>
+<li><p><strong>pacf_threshold</strong> (<em>float</em>) – include lag p if its pacf is larger than pacf_threshold</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – if True, print verbose information</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the model return from statsmodels</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>mdl (obj)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.nn.norm">
+<code class="sig-prename descclassname">LMRt.nn.</code><code class="sig-name descname">norm</code><span class="sig-paren">(</span><em class="sig-param">values</em>, <em class="sig-param">time=None</em>, <em class="sig-param">ref_period=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/nn.html#norm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.nn.norm" title="Permalink to this definition">¶</a></dt>
+<dd><p>normalize a timeseries w.r.t the ref_period</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.nn.prep_data">
+<code class="sig-prename descclassname">LMRt.nn.</code><code class="sig-name descname">prep_data</code><span class="sig-paren">(</span><em class="sig-param">time_endog</em>, <em class="sig-param">endog</em>, <em class="sig-param">time_exog</em>, <em class="sig-param">exog</em>, <em class="sig-param">lookback=0</em>, <em class="sig-param">endog_col='endog'</em>, <em class="sig-param">exog_col='exog'</em>, <em class="sig-param">normalize=True</em>, <em class="sig-param">ref_period=None</em>, <em class="sig-param">merge_exogs=True</em>, <em class="sig-param">jump=1</em>, <em class="sig-param">mode='annual'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/nn.html#prep_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.nn.prep_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>prepare data for LSTM</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>time_endog</strong> (<em>array</em>) – time axis of the endogenous timeseries, assuming evenly-spaced</p></li>
+<li><p><strong>endog</strong> (<em>array</em>) – endogenous timeseries (i.e., dependent variable), assuming evenly-spaced</p></li>
+<li><p><strong>time_exog</strong> (<em>array</em>) – time axis of the exogenous timeseries, assuming evenly-spaced</p></li>
+<li><p><strong>exog</strong> (<em>array</em>) – exogenous timeseries (i.e., independent variable), assuming evenly-spaced</p></li>
+<li><p><strong>lookback</strong> (<em>int</em>) – the number of timesteps to lookback</p></li>
+<li><p><strong>jump</strong> (<em>int</em>) – keep every <cite>jump</cite> rows</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the DataFrame with lagged exog values</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>df_out (DataFrame)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="utils.html" class="btn btn-neutral float-left" title="Utilities" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Feng Zhu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

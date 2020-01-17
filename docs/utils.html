@@ -1,0 +1,1542 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Utilities &mdash; LMRt  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="The machine learning module" href="nn.html" />
+    <link rel="prev" title="API" href="core.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> LMRt
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="core.html">API</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nn.html">The machine learning module</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">LMRt</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Utilities</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/utils.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="module-LMRt.utils">
+<span id="utilities"></span><h1>Utilities<a class="headerlink" href="#module-LMRt.utils" title="Permalink to this headline">¶</a></h1>
+<p>The utility library</p>
+<dl class="class">
+<dt id="LMRt.utils.Grid">
+<em class="property">class </em><code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">Grid</code><span class="sig-paren">(</span><em class="sig-param">lat</em>, <em class="sig-param">lon</em>, <em class="sig-param">nlat</em>, <em class="sig-param">nlon</em>, <em class="sig-param">nens</em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.utils.Grid" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><a class="reference internal" href="#LMRt.utils.Grid.lat" title="LMRt.utils.Grid.lat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lat</span></code></a></dt><dd><p>Alias for field number 0</p>
+</dd>
+<dt><a class="reference internal" href="#LMRt.utils.Grid.lon" title="LMRt.utils.Grid.lon"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lon</span></code></a></dt><dd><p>Alias for field number 1</p>
+</dd>
+<dt><a class="reference internal" href="#LMRt.utils.Grid.nens" title="LMRt.utils.Grid.nens"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nens</span></code></a></dt><dd><p>Alias for field number 4</p>
+</dd>
+<dt><a class="reference internal" href="#LMRt.utils.Grid.nlat" title="LMRt.utils.Grid.nlat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nlat</span></code></a></dt><dd><p>Alias for field number 2</p>
+</dd>
+<dt><a class="reference internal" href="#LMRt.utils.Grid.nlon" title="LMRt.utils.Grid.nlon"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nlon</span></code></a></dt><dd><p>Alias for field number 3</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">count</span></code>(self, value, /)</p></td>
+<td><p>Return number of occurrences of value.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">index</span></code>(self, value[, start, stop])</p></td>
+<td><p>Return first index of value.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="LMRt.utils.Grid.lat">
+<em class="property">property </em><code class="sig-name descname">lat</code><a class="headerlink" href="#LMRt.utils.Grid.lat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.utils.Grid.lon">
+<em class="property">property </em><code class="sig-name descname">lon</code><a class="headerlink" href="#LMRt.utils.Grid.lon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.utils.Grid.nens">
+<em class="property">property </em><code class="sig-name descname">nens</code><a class="headerlink" href="#LMRt.utils.Grid.nens" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.utils.Grid.nlat">
+<em class="property">property </em><code class="sig-name descname">nlat</code><a class="headerlink" href="#LMRt.utils.Grid.nlat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.utils.Grid.nlon">
+<em class="property">property </em><code class="sig-name descname">nlon</code><a class="headerlink" href="#LMRt.utils.Grid.nlon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.Kalman_optimal">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">Kalman_optimal</code><span class="sig-paren">(</span><em class="sig-param">Y</em>, <em class="sig-param">vR</em>, <em class="sig-param">Ye</em>, <em class="sig-param">Xb</em>, <em class="sig-param">loc_rad=None</em>, <em class="sig-param">nsvs=None</em>, <em class="sig-param">transform_only=False</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#Kalman_optimal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.Kalman_optimal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Kalman Filter</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Y</strong> – observation vector (p x 1)</p></li>
+<li><p><strong>vR</strong> – observation error variance vector (p x 1)</p></li>
+<li><p><strong>Ye</strong> – prior-estimated observation vector (p x n)</p></li>
+<li><p><strong>Xbp</strong> – prior ensemble perturbation matrix (m x n)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Originator:</p>
+<blockquote>
+<div><p>Greg Hakim
+University of Washington
+26 February 2018</p>
+</div></blockquote>
+<p>Modifications:
+11 April 2018: Fixed bug in handling singular value matrix (rectangular, not square)</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="LMRt.utils.PSM">
+<em class="property">class </em><code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">PSM</code><span class="sig-paren">(</span><em class="sig-param">psm_key</em>, <em class="sig-param">R</em>, <em class="sig-param">SNR</em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.utils.PSM" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><a class="reference internal" href="#LMRt.utils.PSM.R" title="LMRt.utils.PSM.R"><code class="xref py py-obj docutils literal notranslate"><span class="pre">R</span></code></a></dt><dd><p>Alias for field number 1</p>
+</dd>
+<dt><a class="reference internal" href="#LMRt.utils.PSM.SNR" title="LMRt.utils.PSM.SNR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SNR</span></code></a></dt><dd><p>Alias for field number 2</p>
+</dd>
+<dt><a class="reference internal" href="#LMRt.utils.PSM.psm_key" title="LMRt.utils.PSM.psm_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">psm_key</span></code></a></dt><dd><p>Alias for field number 0</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">count</span></code>(self, value, /)</p></td>
+<td><p>Return number of occurrences of value.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">index</span></code>(self, value[, start, stop])</p></td>
+<td><p>Return first index of value.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="LMRt.utils.PSM.R">
+<em class="property">property </em><code class="sig-name descname">R</code><a class="headerlink" href="#LMRt.utils.PSM.R" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.utils.PSM.SNR">
+<em class="property">property </em><code class="sig-name descname">SNR</code><a class="headerlink" href="#LMRt.utils.PSM.SNR" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.utils.PSM.psm_key">
+<em class="property">property </em><code class="sig-name descname">psm_key</code><a class="headerlink" href="#LMRt.utils.PSM.psm_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="LMRt.utils.Proxy">
+<em class="property">class </em><code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">Proxy</code><span class="sig-paren">(</span><em class="sig-param">id</em>, <em class="sig-param">type</em>, <em class="sig-param">start_yr</em>, <em class="sig-param">end_yr</em>, <em class="sig-param">lat</em>, <em class="sig-param">lon</em>, <em class="sig-param">elev</em>, <em class="sig-param">seasonality</em>, <em class="sig-param">values</em>, <em class="sig-param">time</em>, <em class="sig-param">psm_obj</em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.utils.Proxy" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><a class="reference internal" href="#LMRt.utils.Proxy.elev" title="LMRt.utils.Proxy.elev"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elev</span></code></a></dt><dd><p>Alias for field number 6</p>
+</dd>
+<dt><a class="reference internal" href="#LMRt.utils.Proxy.end_yr" title="LMRt.utils.Proxy.end_yr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">end_yr</span></code></a></dt><dd><p>Alias for field number 3</p>
+</dd>
+<dt><a class="reference internal" href="#LMRt.utils.Proxy.id" title="LMRt.utils.Proxy.id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">id</span></code></a></dt><dd><p>Alias for field number 0</p>
+</dd>
+<dt><a class="reference internal" href="#LMRt.utils.Proxy.lat" title="LMRt.utils.Proxy.lat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lat</span></code></a></dt><dd><p>Alias for field number 4</p>
+</dd>
+<dt><a class="reference internal" href="#LMRt.utils.Proxy.lon" title="LMRt.utils.Proxy.lon"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lon</span></code></a></dt><dd><p>Alias for field number 5</p>
+</dd>
+<dt><a class="reference internal" href="#LMRt.utils.Proxy.psm_obj" title="LMRt.utils.Proxy.psm_obj"><code class="xref py py-obj docutils literal notranslate"><span class="pre">psm_obj</span></code></a></dt><dd><p>Alias for field number 10</p>
+</dd>
+<dt><a class="reference internal" href="#LMRt.utils.Proxy.seasonality" title="LMRt.utils.Proxy.seasonality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">seasonality</span></code></a></dt><dd><p>Alias for field number 7</p>
+</dd>
+<dt><a class="reference internal" href="#LMRt.utils.Proxy.start_yr" title="LMRt.utils.Proxy.start_yr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start_yr</span></code></a></dt><dd><p>Alias for field number 2</p>
+</dd>
+<dt><a class="reference internal" href="#LMRt.utils.Proxy.time" title="LMRt.utils.Proxy.time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">time</span></code></a></dt><dd><p>Alias for field number 9</p>
+</dd>
+<dt><a class="reference internal" href="#LMRt.utils.Proxy.type" title="LMRt.utils.Proxy.type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">type</span></code></a></dt><dd><p>Alias for field number 1</p>
+</dd>
+<dt><a class="reference internal" href="#LMRt.utils.Proxy.values" title="LMRt.utils.Proxy.values"><code class="xref py py-obj docutils literal notranslate"><span class="pre">values</span></code></a></dt><dd><p>Alias for field number 8</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">count</span></code>(self, value, /)</p></td>
+<td><p>Return number of occurrences of value.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">index</span></code>(self, value[, start, stop])</p></td>
+<td><p>Return first index of value.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="LMRt.utils.Proxy.elev">
+<em class="property">property </em><code class="sig-name descname">elev</code><a class="headerlink" href="#LMRt.utils.Proxy.elev" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 6</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.utils.Proxy.end_yr">
+<em class="property">property </em><code class="sig-name descname">end_yr</code><a class="headerlink" href="#LMRt.utils.Proxy.end_yr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.utils.Proxy.id">
+<em class="property">property </em><code class="sig-name descname">id</code><a class="headerlink" href="#LMRt.utils.Proxy.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.utils.Proxy.lat">
+<em class="property">property </em><code class="sig-name descname">lat</code><a class="headerlink" href="#LMRt.utils.Proxy.lat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.utils.Proxy.lon">
+<em class="property">property </em><code class="sig-name descname">lon</code><a class="headerlink" href="#LMRt.utils.Proxy.lon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 5</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.utils.Proxy.psm_obj">
+<em class="property">property </em><code class="sig-name descname">psm_obj</code><a class="headerlink" href="#LMRt.utils.Proxy.psm_obj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 10</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.utils.Proxy.seasonality">
+<em class="property">property </em><code class="sig-name descname">seasonality</code><a class="headerlink" href="#LMRt.utils.Proxy.seasonality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 7</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.utils.Proxy.start_yr">
+<em class="property">property </em><code class="sig-name descname">start_yr</code><a class="headerlink" href="#LMRt.utils.Proxy.start_yr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.utils.Proxy.time">
+<em class="property">property </em><code class="sig-name descname">time</code><a class="headerlink" href="#LMRt.utils.Proxy.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 9</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.utils.Proxy.type">
+<em class="property">property </em><code class="sig-name descname">type</code><a class="headerlink" href="#LMRt.utils.Proxy.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.utils.Proxy.values">
+<em class="property">property </em><code class="sig-name descname">values</code><a class="headerlink" href="#LMRt.utils.Proxy.values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 8</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.annualize_var">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">annualize_var</code><span class="sig-paren">(</span><em class="sig-param">var</em>, <em class="sig-param">year_float</em>, <em class="sig-param">resolution='month'</em>, <em class="sig-param">weights=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#annualize_var"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.annualize_var" title="Permalink to this definition">¶</a></dt>
+<dd><p>Annualize a variable array</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>var</strong> (<em>ndarray</em>) – the target variable array with 1st dim to be year</p></li>
+<li><p><strong>year_float</strong> (<em>1-D array</em>) – the time axis of the variable array</p></li>
+<li><p><strong>weights</strong> (<em>ndarray</em>) – the weights that shares the same shape of the target variable array</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the annualized variable array
+year_ann (1-D array): the time axis of the annualized variable array</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>var_ann (ndarray)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.ar1_fit">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">ar1_fit</code><span class="sig-paren">(</span><em class="sig-param">ts</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#ar1_fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.ar1_fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the lag-1 autocorrelation from ar1 fit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ts</strong> (<em>array</em>) – vector of (real) numbers as a time series</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>lag-1 autocorrelation coefficient</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>g (real)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.ar1_noise">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">ar1_noise</code><span class="sig-paren">(</span><em class="sig-param">ts</em>, <em class="sig-param">ys</em>, <em class="sig-param">g=None</em>, <em class="sig-param">sig_noise=1</em>, <em class="sig-param">nt_noise=None</em>, <em class="sig-param">seed=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#ar1_noise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.ar1_noise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the AR1 noise</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.ar1_sim">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">ar1_sim</code><span class="sig-paren">(</span><em class="sig-param">n</em>, <em class="sig-param">p</em>, <em class="sig-param">g</em>, <em class="sig-param">sig</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#ar1_sim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.ar1_sim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce p realizations of an AR1 process of length n with lag-1 autocorrelation g</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p</strong> (<em>n</em><em>,</em>) – dimensions as n rows by p columns</p></li>
+<li><p><strong>g</strong> (<em>real</em>) – lag-1 autocorrelation coefficient</p></li>
+<li><p><strong>sig</strong> (<em>real</em>) – the standard deviation of the original time series</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>n rows by p columns matrix of an AR1 process</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>red (matrix)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.butterworth">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">butterworth</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">fc</em>, <em class="sig-param">fs=1</em>, <em class="sig-param">filter_order=3</em>, <em class="sig-param">pad='reflect'</em>, <em class="sig-param">reflect_type='odd'</em>, <em class="sig-param">params=(2</em>, <em class="sig-param">1</em>, <em class="sig-param">2)</em>, <em class="sig-param">padFrac=0.1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#butterworth"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.butterworth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies a Butterworth filter with frequency fc, with padding</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X = 1d numpy array</strong> (<em>-</em>) – </p></li>
+<li><p><strong>fc = cutoff frequency. If scalar</strong><strong>, </strong><strong>it is interpreted as a low-frequency cutoff</strong> (<em>-</em>) – If fc is a 2-tuple,  it is interpreted as a frequency band (f1, f2), with f1 &lt; f2 (bandpass)</p></li>
+<li><p><strong>fs = sampling frequency</strong> (<em>-</em>) – </p></li>
+<li><p><strong>filter_order = order n of Butterworth filter</strong> (<em>-</em>) – </p></li>
+<li><p><strong>pad = boolean indicating whether tsPad needs to be applied</strong> (<em>-</em>) – </p></li>
+<li><p><strong>params = model parameters for ARIMA model</strong> (<em>-</em>) – </p></li>
+<li><p><strong>padFrac = fraction of the series to be padded</strong> (<em>-</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+<p>Output : xf, filtered array</p>
+<p>Author: Julien Emile-Geay</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.calc_autocorr">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">calc_autocorr</code><span class="sig-paren">(</span><em class="sig-param">series</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#calc_autocorr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.calc_autocorr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the autocorrelations from a pandas series</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>series</strong> (<em>Series</em>) – the pandas series</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the array of autocorrelations</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>autocorr (array)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-name descname">calc_field_corr_ce(exp_dir, field_model, time_model, lat_model, lon_model, verif_yrs=array([1880, 1881, 1882, 1883, 1884, 1885, 1886, 1887, 1888, 1889, 1890,</code></dt>
+<dt>
+<code class="sig-name descname">1891, 1892, 1893, 1894, 1895, 1896, 1897, 1898, 1899, 1900, 1901,</code></dt>
+<dt>
+<code class="sig-name descname">1902, 1903, 1904, 1905, 1906, 1907, 1908, 1909, 1910, 1911, 1912,</code></dt>
+<dt>
+<code class="sig-name descname">1913, 1914, 1915, 1916, 1917, 1918, 1919, 1920, 1921, 1922, 1923,</code></dt>
+<dt>
+<code class="sig-name descname">1924, 1925, 1926, 1927, 1928, 1929, 1930, 1931, 1932, 1933, 1934,</code></dt>
+<dt>
+<code class="sig-name descname">1935, 1936, 1937, 1938, 1939, 1940, 1941, 1942, 1943, 1944, 1945,</code></dt>
+<dt>
+<code class="sig-name descname">1946, 1947, 1948, 1949, 1950, 1951, 1952, 1953, 1954, 1955, 1956,</code></dt>
+<dt>
+<code class="sig-name descname">1957, 1958, 1959, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 1967,</code></dt>
+<dt>
+<code class="sig-name descname">1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978,</code></dt>
+<dt>
+<code class="sig-name descname">1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989,</code></dt>
+<dt>
+<code class="sig-name descname">1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999]), ref_period=[1951, 1980], valid_frac=0.5, var_name='tas_sfc_Amon', avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], detrend=False, detrend_kws={})</code></dt>
+<dd><p>Calculate corr and CE between LMR and model field</p>
+<p>Note: The time axis of the LMR field is assumed to fully cover the range of verif_yrs</p>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-name descname">calc_field_cov(field, lat, lon, year, target_field, target_lat, target_lon, target_year, verif_yrs=array([1880, 1881, 1882, 1883, 1884, 1885, 1886, 1887, 1888, 1889, 1890,</code></dt>
+<dt>
+<code class="sig-name descname">1891, 1892, 1893, 1894, 1895, 1896, 1897, 1898, 1899, 1900, 1901,</code></dt>
+<dt>
+<code class="sig-name descname">1902, 1903, 1904, 1905, 1906, 1907, 1908, 1909, 1910, 1911, 1912,</code></dt>
+<dt>
+<code class="sig-name descname">1913, 1914, 1915, 1916, 1917, 1918, 1919, 1920, 1921, 1922, 1923,</code></dt>
+<dt>
+<code class="sig-name descname">1924, 1925, 1926, 1927, 1928, 1929, 1930, 1931, 1932, 1933, 1934,</code></dt>
+<dt>
+<code class="sig-name descname">1935, 1936, 1937, 1938, 1939, 1940, 1941, 1942, 1943, 1944, 1945,</code></dt>
+<dt>
+<code class="sig-name descname">1946, 1947, 1948, 1949, 1950, 1951, 1952, 1953, 1954, 1955, 1956,</code></dt>
+<dt>
+<code class="sig-name descname">1957, 1958, 1959, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 1967,</code></dt>
+<dt>
+<code class="sig-name descname">1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978,</code></dt>
+<dt>
+<code class="sig-name descname">1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989,</code></dt>
+<dt>
+<code class="sig-name descname">1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999]), verbose=False, npts_lb=25, detrend=False, detrend_kws={})</code></dt>
+<dd><p>Calculate the correlation map between the field and the timeseries of a target field at the target location</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>field</strong> (<em>ndarray</em>) – the field in dims (nt x nlat x nlon)</p></li>
+<li><p><strong>lat/lon</strong> (<em>array</em>) – the lat/lon array of the field</p></li>
+<li><p><strong>year</strong> (<em>array</em>) – the time axis in float</p></li>
+<li><p><strong>target_field</strong> (<em>ndarray</em>) – the target field in dims (nt x nlat x nlon)</p></li>
+<li><p><strong>target_lat/lon</strong> (<em>float</em>) – the target location</p></li>
+<li><p><strong>verif_yrs</strong> (<em>tuple</em>) – the time period to calculate correlation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the correlation map in dims (nlat x nlon)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>corr (ndarray)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-name descname">calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=array([1880, 1881, 1882, 1883, 1884, 1885, 1886, 1887, 1888, 1889, 1890,</code></dt>
+<dt>
+<code class="sig-name descname">1891, 1892, 1893, 1894, 1895, 1896, 1897, 1898, 1899, 1900, 1901,</code></dt>
+<dt>
+<code class="sig-name descname">1902, 1903, 1904, 1905, 1906, 1907, 1908, 1909, 1910, 1911, 1912,</code></dt>
+<dt>
+<code class="sig-name descname">1913, 1914, 1915, 1916, 1917, 1918, 1919, 1920, 1921, 1922, 1923,</code></dt>
+<dt>
+<code class="sig-name descname">1924, 1925, 1926, 1927, 1928, 1929, 1930, 1931, 1932, 1933, 1934,</code></dt>
+<dt>
+<code class="sig-name descname">1935, 1936, 1937, 1938, 1939, 1940, 1941, 1942, 1943, 1944, 1945,</code></dt>
+<dt>
+<code class="sig-name descname">1946, 1947, 1948, 1949, 1950, 1951, 1952, 1953, 1954, 1955, 1956,</code></dt>
+<dt>
+<code class="sig-name descname">1957, 1958, 1959, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 1967,</code></dt>
+<dt>
+<code class="sig-name descname">1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978,</code></dt>
+<dt>
+<code class="sig-name descname">1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989,</code></dt>
+<dt>
+<code class="sig-name descname">1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999]), ref_period=[1951, 1980], field='LMR', load_num=None, valid_frac=0.5, var_name='tas_sfc_Amon', avgInterval=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], detrend=False, detrend_kws={})</code></dt>
+<dd><p>Calculate corr and CE between LMR and instrumental fields</p>
+<p>Note: The time axis of the LMR field is assumed to fully cover the range of verif_yrs</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.calc_seasonal_avg">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">calc_seasonal_avg</code><span class="sig-paren">(</span><em class="sig-param">var, year_float, seasonality=[[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [6, 7, 8], [6, 7, 8, 9, 10, 11], [-12, 1, 2], [-12, 1, 2, 3, 4, 5]], lat=None, lon=None, save_path=None, make_yr_mm_nan=True, verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#calc_seasonal_avg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.calc_seasonal_avg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pre-calculate the seasonal average of the target variable</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.calc_tpi">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">calc_tpi</code><span class="sig-paren">(</span><em class="sig-param">sst</em>, <em class="sig-param">lats</em>, <em class="sig-param">lons</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#calc_tpi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.calc_tpi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate Nino indices</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sst</strong> – sea-surface temperature, the last two dimensions are assumed to be (lat, lon)</p></li>
+<li><p><strong>lats</strong> – the latitudes in format of (-90, 90)</p></li>
+<li><p><strong>lons</strong> – the longitudes in format of (0, 360)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.calc_ye_linearPSM">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">calc_ye_linearPSM</code><span class="sig-paren">(</span><em class="sig-param">proxy_manager</em>, <em class="sig-param">ptypes</em>, <em class="sig-param">psm_name</em>, <em class="sig-param">precalib_data</em>, <em class="sig-param">precalc_avg</em>, <em class="sig-param">nproc=4</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#calc_ye_linearPSM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.calc_ye_linearPSM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate Ye with linear/bilinear PSMs</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.calculate_latlon_bnds">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">calculate_latlon_bnds</code><span class="sig-paren">(</span><em class="sig-param">lats</em>, <em class="sig-param">lons</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#calculate_latlon_bnds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.calculate_latlon_bnds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the bounds for regularly gridded lats and lons.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lats</strong> (<em>ndarray</em>) – Regularly spaced latitudes.  Must be 1-dimensional and monotonically
+increase with index.</p></li>
+<li><p><strong>lons</strong> (<em>ndarray</em>) – Regularly spaced longitudes.  Must be 1-dimensional and monotonically
+increase with index.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>lat_bnds</em> – Array of latitude boundaries for each input latitude of length
+len(lats)+1.</p></li>
+<li><p><em>lon_bnds</em> – Array of longitude boundaries for each input longitude of length
+len(lons)+1.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.calibrate_psm">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">calibrate_psm</code><span class="sig-paren">(</span><em class="sig-param">proxy_manager, ptypes, psm_name, precalc_avg, ref_period=[1951, 1980], calib_period=[1850, 2015], seasonality={'Tree Rings_WidthBreit': {'seasons_T': [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [6, 7, 8], [3, 4, 5, 6, 7, 8], [6, 7, 8, 9, 10, 11], [-12, 1, 2], [-9, -10, -11, -12, 1, 2], [-12, 1, 2, 3, 4, 5]], 'seasons_M': [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [6, 7, 8], [3, 4, 5, 6, 7, 8], [6, 7, 8, 9, 10, 11], [-12, 1, 2], [-9, -10, -11, -12, 1, 2], [-12, 1, 2, 3, 4, 5]]}, 'Tree Rings_WidthPages2': {'seasons_T': [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [6, 7, 8], [3, 4, 5, 6, 7, 8], [6, 7, 8, 9, 10, 11], [-12, 1, 2], [-9, -10, -11, -12, 1, 2], [-12, 1, 2, 3, 4, 5]], 'seasons_M': [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [6, 7, 8], [3, 4, 5, 6, 7, 8], [6, 7, 8, 9, 10, 11], [-12, 1, 2], [-9, -10, -11, -12, 1, 2], [-12, 1, 2, 3, 4, 5]]}, 'Tree Rings_WoodDensity': {'seasons_T': [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [6, 7, 8], [3, 4, 5, 6, 7, 8], [6, 7, 8, 9, 10, 11], [-12, 1, 2], [-9, -10, -11, -12, 1, 2], [-12, 1, 2, 3, 4, 5]], 'seasons_M': [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [6, 7, 8], [3, 4, 5, 6, 7, 8], [6, 7, 8, 9, 10, 11], [-12, 1, 2], [-9, -10, -11, -12, 1, 2], [-12, 1, 2, 3, 4, 5]]}, 'Tree Rings_Isotopes': {'seasons_T': [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [6, 7, 8], [3, 4, 5, 6, 7, 8], [6, 7, 8, 9, 10, 11], [-12, 1, 2], [-9, -10, -11, -12, 1, 2], [-12, 1, 2, 3, 4, 5]], 'seasons_M': [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [6, 7, 8], [3, 4, 5, 6, 7, 8], [6, 7, 8, 9, 10, 11], [-12, 1, 2], [-9, -10, -11, -12, 1, 2], [-12, 1, 2, 3, 4, 5]]}}, nproc=4, nobs_lb=25, verbose=False, output_optimal_reg=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#calibrate_psm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.calibrate_psm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calibrate linear/bilinear PSMs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>proxy_manager</strong> (<em>namedtuple</em>) – the proxy_manager</p></li>
+<li><p><strong>ptypes</strong> (<em>list of str</em>) – the list of proxy types</p></li>
+<li><p><strong>psm_name</strong> (<em>str</em>) – ‘linear’ or ‘bilinear’</p></li>
+<li><p><strong>precalc_avg</strong> (<em>dict</em>) – the dict that stores the seasonal-averaged environmental variables</p></li>
+<li><p><strong>seasonality</strong> (<em>dict</em>) – the seasonality information for each proxy type</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a dict that stores the calibration information</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>precalib_dict (dict)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.coefficient_efficiency">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">coefficient_efficiency</code><span class="sig-paren">(</span><em class="sig-param">ref</em>, <em class="sig-param">test</em>, <em class="sig-param">valid=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#coefficient_efficiency"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.coefficient_efficiency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the coefficient of efficiency for a test time series, with respect to a reference time series.</p>
+<p>Inputs:
+test:  test array
+ref:   reference array, of same size as test
+valid: fraction of valid data required to calculate the statistic</p>
+<p>Note: Assumes that the first dimension in test and ref arrays is time!!!</p>
+<p>Outputs:
+CE: CE statistic calculated following Nash &amp; Sutcliffe (1970)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.colored_noise">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">colored_noise</code><span class="sig-paren">(</span><em class="sig-param">alpha</em>, <em class="sig-param">t</em>, <em class="sig-param">f0=None</em>, <em class="sig-param">m=None</em>, <em class="sig-param">seed=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#colored_noise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.colored_noise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a colored noise timeseries</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>alpha</strong> (<em>float</em>) – exponent of the 1/f^alpha noise</p></li>
+<li><p><strong>t</strong> (<em>float</em>) – time vector of the generated noise</p></li>
+<li><p><strong>f0</strong> (<em>float</em>) – fundamental frequency</p></li>
+<li><p><strong>m</strong> (<em>int</em>) – maximum number of the waves, which determines the
+highest frequency of the components in the synthetic noise</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the generated 1/f^alpha noise</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>y (array)</p>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<dl class="simple">
+<dt>Eq. (15) in Kirchner, J. W. Aliasing in 1/f(alpha) noise spectra: origins, consequences, and remedies.</dt><dd><p>Phys Rev E Stat Nonlin Soft Matter Phys 71, 066110 (2005).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.colored_noise_2regimes">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">colored_noise_2regimes</code><span class="sig-paren">(</span><em class="sig-param">alpha1</em>, <em class="sig-param">alpha2</em>, <em class="sig-param">f_break</em>, <em class="sig-param">t</em>, <em class="sig-param">f0=None</em>, <em class="sig-param">m=None</em>, <em class="sig-param">seed=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#colored_noise_2regimes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.colored_noise_2regimes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a colored noise timeseries with two regimes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>alpha2</strong> (<em>alpha1</em><em>,</em>) – the exponent of the 1/f^alpha noise</p></li>
+<li><p><strong>f_break</strong> (<em>float</em>) – the frequency where the scaling breaks</p></li>
+<li><p><strong>t</strong> (<em>float</em>) – time vector of the generated noise</p></li>
+<li><p><strong>f0</strong> (<em>float</em>) – fundamental frequency</p></li>
+<li><p><strong>m</strong> (<em>int</em>) – maximum number of the waves, which determines the
+highest frequency of the components in the synthetic noise</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the generated 1/f^alpha noise</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>y (array)</p>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<dl class="simple">
+<dt>Eq. (15) in Kirchner, J. W. Aliasing in 1/f(alpha) noise spectra: origins, consequences, and remedies.</dt><dd><p>Phys Rev E Stat Nonlin Soft Matter Phys 71, 066110 (2005).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.compute_annual_means">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">compute_annual_means</code><span class="sig-paren">(</span><em class="sig-param">time_raw</em>, <em class="sig-param">data_raw</em>, <em class="sig-param">valid_frac</em>, <em class="sig-param">year_type</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#compute_annual_means"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.compute_annual_means" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes annual-means from raw data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>time_raw</strong> – Original time axis</p></li>
+<li><p><strong>data_raw</strong> – Original data</p></li>
+<li><p><strong>valid_frac</strong> – The fraction of sub-annual data necessary to create annual mean.  Otherwise NaN.</p></li>
+<li><p><strong>year_type</strong> – “calendar year” (Jan-Dec) or “tropical year” (Apr-Mar)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>time_annual
+data_annual</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Authors:</dt><dd><ol class="upperalpha simple" start="18">
+<li><p>Tardif, Univ. of Washington; M. Erb, Univ. of Southern California</p></li>
+</ol>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.corr_isopersist">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">corr_isopersist</code><span class="sig-paren">(</span><em class="sig-param">y1</em>, <em class="sig-param">y2</em>, <em class="sig-param">alpha=0.05</em>, <em class="sig-param">nsim=1000</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#corr_isopersist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.corr_isopersist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes correlation between two timeseries, and their significance.</p>
+<p>The latter is gauged via a non-parametric (Monte Carlo) simulation of
+correlations with nsim AR(1) processes with identical persistence
+properties as x and y ; the measure of which is the lag-1 autocorrelation (g).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y2</strong> (<em>y1</em><em>,</em>) – vectors of (real) numbers with identical length, no NaNs allowed</p></li>
+<li><p><strong>alpha</strong> (<em>real</em>) – significance level for critical value estimation [default: 0.05]</p></li>
+<li><p><strong>nsim</strong> (<em>int</em>) – number of simulations [default: 1000]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>correlation between x and y
+signif (boolean): true (1) if significant; false (0) otherwise
+pval (real): test p-value (the probability of the test statstic exceeding the observed one by chance alone)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>r (real)</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Remarks:</dt><dd><p>The probability of obtaining a test statistic at least as extreme as the one actually observed,
+assuming that the null hypothesis is true.
+The test is 1 tailed on <a href="#id1"><span class="problematic" id="id2">|r|</span></a>: Ho = { <a href="#id3"><span class="problematic" id="id4">|r|</span></a> = 0 }, Ha = { <a href="#id5"><span class="problematic" id="id6">|r|</span></a> &gt; 0 }
+The test is rejected (signif = 1) if pval &lt;= alpha, otherwise signif=0;
+(Some Rights Reserved) Hepta Technologies, 2009
+v1.0 USC, Aug 10 2012, based on corr_signif.m</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.corr_isospec">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">corr_isospec</code><span class="sig-paren">(</span><em class="sig-param">y1</em>, <em class="sig-param">y2</em>, <em class="sig-param">alpha=0.05</em>, <em class="sig-param">nsim=1000</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#corr_isospec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.corr_isospec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Phase randomization correltation estimates</p>
+<p>Estimates the significance of correlations between non IID
+time series by phase randomization of original inputs.
+This function creates ‘nsim’ random time series that have the same power
+spectrum as the original time series but random phases.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y2</strong> (<em>y1</em><em>,</em>) – vectors of (real) numbers with identical length, no NaNs allowed</p></li>
+<li><p><strong>alpha</strong> (<em>real</em>) – significance level for critical value estimation [default: 0.05]</p></li>
+<li><p><strong>nsim</strong> (<em>int</em>) – number of simulations [default: 1000]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>correlation between y1 and y2
+signif (boolean): true (1) if significant; false (0) otherwise
+F : Fraction of time series with higher correlation coefficents than observed (approximates the p-value).</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>r (real)</p>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<ul class="simple">
+<li><p>Ebisuzaki, W, 1997: A method to estimate the statistical significance of a correlation when the data are serially correlated.  J. of Climate, 10, 2147-2153.</p></li>
+<li><p>Prichard, D., Theiler, J. Generating Surrogate Data for Time Series with Several Simultaneously Measured Variables (1994) Physical Review Letters, Vol 73, Number 7</p></li>
+<li><p>(Some Rights Reserved) USC Climate Dynamics Lab, 2012.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.corr_sig">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">corr_sig</code><span class="sig-paren">(</span><em class="sig-param">y1</em>, <em class="sig-param">y2</em>, <em class="sig-param">nsim=1000</em>, <em class="sig-param">method='isospectral'</em>, <em class="sig-param">alpha=0.05</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#corr_sig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.corr_sig" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimates the significance of correlations between non IID time series by 3 independent methods:
+1) ‘ttest’: T-test where d.o.f are corrected for the effect of serial correlation
+2) ‘isopersistent’: AR(1) modeling of x and y.
+3) ‘isospectral’: phase randomization of original inputs. (default)
+The T-test is parametric test, hence cheap but usually wrong except in idyllic circumstances.
+The others are non-parametric, but their computational requirements scales with nsim.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y2</strong> (<em>y1</em><em>,</em>) – </p></li>
+<li><p><strong>nsim</strong> (<em>int</em>) – </p></li>
+<li><p><strong>method</strong> (<em>str</em>) – </p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>correlation between x and y</p>
+<p>signif (boolean): true (1) if significant; false (0) otherwise</p>
+<p>p (real): Fraction of time series with higher correlation coefficents than observed (approximates the p-value).</p>
+<blockquote>
+<div><p>Note that signif = True if and only if p &lt;= alpha.</p>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>r (real)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.corr_ttest">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">corr_ttest</code><span class="sig-paren">(</span><em class="sig-param">y1</em>, <em class="sig-param">y2</em>, <em class="sig-param">alpha=0.05</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#corr_ttest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.corr_ttest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimates the significance of correlations between 2 time series using
+the classical T-test with degrees of freedom modified for autocorrelation.
+This function creates ‘nsim’ random time series that have the same power
+spectrum as the original time series but with random phases.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y2</strong> (<em>y1</em><em>,</em>) – vectors of (real) numbers with identical length, no NaNs allowed</p></li>
+<li><p><strong>alpha</strong> (<em>real</em>) – significance level for critical value estimation [default: 0.05]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>r (real)- correlation between x and y</p>
+<p>signif (boolean)- true (1) if significant; false (0) otherwise</p>
+<p>pval (real)- test p-value (the probability of the test statstic exceeding the observed one by chance alone)</p>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.cov_localization">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">cov_localization</code><span class="sig-paren">(</span><em class="sig-param">locRad</em>, <em class="sig-param">Y</em>, <em class="sig-param">X</em>, <em class="sig-param">X_coords</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#cov_localization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.cov_localization" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.enkf_update_array">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">enkf_update_array</code><span class="sig-paren">(</span><em class="sig-param">Xb</em>, <em class="sig-param">obvalue</em>, <em class="sig-param">Ye</em>, <em class="sig-param">ob_err</em>, <em class="sig-param">loc=None</em>, <em class="sig-param">inflate=None</em>, <em class="sig-param">output_details=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#enkf_update_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.enkf_update_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to do the ensemble square-root filter (EnSRF) update</p>
+<p>(ref: Whitaker and Hamill, Mon. Wea. Rev., 2002)</p>
+<dl class="simple">
+<dt>Originator:</dt><dd><ol class="upperalpha simple" start="7">
+<li><ol class="upperalpha simple" start="10">
+<li><p>Hakim, with code borrowed from L. Madaus Dept. Atmos. Sciences, Univ. of Washington</p></li>
+</ol>
+</li>
+</ol>
+</dd>
+<dt>Revisions:</dt><dd><p>1 September 2017: changed varye = np.var(Ye) to varye = np.var(Ye,ddof=1) for an unbiased calculation of the variance. (G. Hakim - U. Washington)</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xb</strong> – background ensemble estimates of state (Nx x Nens)</p></li>
+<li><p><strong>obvalue</strong> – proxy value</p></li>
+<li><p><strong>Ye</strong> – background ensemble estimate of the proxy (Nens x 1)</p></li>
+<li><p><strong>ob_err</strong> – proxy error variance</p></li>
+<li><p><strong>loc</strong> – localization vector (Nx x 1) [optional]</p></li>
+<li><p><strong>inflate</strong> – scalar inflation factor [optional]</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-name descname">est_vslite_params(proxy_manager, tas, pr, lat_grid, lon_grid, time_grid, matlab_path=None, func_path=None, restart_matlab_period=100, lat_lon_idx_path=None, save_lat_lon_idx_path=None, nsamp=1000, errormod=0, gparpriors='fourbet', pt_ests='med', nargout=10, beta_params=matrix([[ 9. ,  5. ,  0. ,  9. ],</code></dt>
+<dt>
+<code class="sig-name descname">[ 3.5,  3.5, 10. , 24. ],</code></dt>
+<dt>
+<code class="sig-name descname">[ 1.5,  2.8,  0. ,  0.1],</code></dt>
+<dt>
+<code class="sig-name descname">[ 1.5,  2.5,  0.1,  0.5]]), seed=0, syear=1901, eyear=2001, verbose=False)</code></dt>
+<dd><p>Run the VSL parameter estimatino Matlab precedure</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pt_ests</strong> (<em>str</em>) – ‘med’ or ‘mle’</p></li>
+<li><p><strong>nsamp</strong> (<em>int</em>) – the number of MCMC iterations</p></li>
+<li><p><strong>errmod</strong> (<em>int</em>) – 0: white noise, 1: AR(1) noise</p></li>
+<li><p><strong>gparpriors</strong> (<em>str</em>) – ‘fourbet’: beta distribution, ‘uniform’: uniform distribution</p></li>
+<li><p><strong>beta_params</strong> (<em>matrix</em>) – the beta distribution parameters for T1, T2, M1, M2</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-name descname">est_vslite_params_from_df(df_TRW, tas_env, pr_env, lat_env, lon_env, time_env, latlon_ind_dict_path=None, matlab_path=None, func_path=None, tas_bias_dict_path=None, restart_matlab_period=100, nsamp=1000, errormod=0, gparpriors='fourbet', pt_ests='med', nargout=10, beta_params=matrix([[ 9. ,  5. ,  0. ,  9. ],</code></dt>
+<dt>
+<code class="sig-name descname">[ 3.5,  3.5, 10. , 24. ],</code></dt>
+<dt>
+<code class="sig-name descname">[ 1.5,  2.8,  0. ,  0.1],</code></dt>
+<dt>
+<code class="sig-name descname">[ 1.5,  2.5,  0.1,  0.5]]), seed=0, syear=1901, eyear=2001, verbose=False)</code></dt>
+<dd><p>Run the VSL parameter estimatino Matlab precedure</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tas_env</strong> (<em>3-D array</em>) – monthly surface air temperature [degC]</p></li>
+<li><p><strong>pr_env</strong> (<em>3-D array</em>) – monthly accumulated precipitation [mm]</p></li>
+<li><p><strong>lat_env</strong> (<em>1-D array</em>) – latitude dim of tas/pr</p></li>
+<li><p><strong>lon_env</strong> (<em>1-D array</em>) – longitude dim of tas/pr</p></li>
+<li><p><strong>time_env</strong> (<em>1-D array</em>) – temporal dim of tas/pr</p></li>
+<li><p><strong>pt_ests</strong> (<em>str</em>) – ‘med’ or ‘mle’</p></li>
+<li><p><strong>nsamp</strong> (<em>int</em>) – the number of MCMC iterations</p></li>
+<li><p><strong>errmod</strong> (<em>int</em>) – 0: white noise, 1: AR(1) noise</p></li>
+<li><p><strong>gparpriors</strong> (<em>str</em>) – ‘fourbet’: beta distribution, ‘uniform’: uniform distribution</p></li>
+<li><p><strong>beta_params</strong> (<em>matrix</em>) – the beta distribution parameters for T1, T2, M1, M2</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="sig-name descname">est_vslite_params_single_site(p2k_id, tas_env, pr_env, lat_env, lon_env, time_env, trw_obs, lat_obs, lon_obs, time_obs, matlab_path=None, func_path=None, tas_bias_dict_path=None, nsamp=1000, errormod=0, gparpriors='fourbet', pt_ests='med', nargout=10, beta_params=matrix([[ 9. ,  5. ,  0. ,  9. ],</code></dt>
+<dt>
+<code class="sig-name descname">[ 3.5,  3.5, 10. , 24. ],</code></dt>
+<dt>
+<code class="sig-name descname">[ 1.5,  2.8,  0. ,  0.1],</code></dt>
+<dt>
+<code class="sig-name descname">[ 1.5,  2.5,  0.1,  0.5]]), seed=0, syear=1901, eyear=2001, verbose=False)</code></dt>
+<dd><p>Run the VSL parameter estimatino Matlab precedure</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tas_env</strong> (<em>1-D array</em>) – monthly surface air temperature [degC]</p></li>
+<li><p><strong>pr_env</strong> (<em>1-D array</em>) – monthly accumulated precipitation [mm]</p></li>
+<li><p><strong>lat_env</strong> (<em>float</em>) – latitude dim of tas/pr</p></li>
+<li><p><strong>lon_env</strong> (<em>float</em>) – longitude dim of tas/pr</p></li>
+<li><p><strong>time_env</strong> (<em>1-D array</em>) – temporal dim of tas/pr</p></li>
+<li><p><strong>pt_ests</strong> (<em>str</em>) – ‘med’ or ‘mle’</p></li>
+<li><p><strong>nsamp</strong> (<em>int</em>) – the number of MCMC iterations</p></li>
+<li><p><strong>errmod</strong> (<em>int</em>) – 0: white noise, 1: AR(1) noise</p></li>
+<li><p><strong>gparpriors</strong> (<em>str</em>) – ‘fourbet’: beta distribution, ‘uniform’: uniform distribution</p></li>
+<li><p><strong>beta_params</strong> (<em>matrix</em>) – the beta distribution parameters for T1, T2, M1, M2</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.find_closest_loc">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">find_closest_loc</code><span class="sig-paren">(</span><em class="sig-param">lat</em>, <em class="sig-param">lon</em>, <em class="sig-param">target_lat</em>, <em class="sig-param">target_lon</em>, <em class="sig-param">mode=None</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#find_closest_loc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.find_closest_loc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the closet model sites (lat, lon) based on the given target (lat, lon) list</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lon</strong> (<em>lat</em><em>,</em>) – the model latitude and longitude arrays</p></li>
+<li><p><strong>target_lon</strong> (<em>target_lat</em><em>,</em>) – the target latitude and longitude arrays</p></li>
+<li><p><strong>mode</strong> (<em>str</em>) – </p></li>
+<li><p><strong>latlon</strong> (<em>+</em>) – the model lat/lon is a 1-D array</p></li>
+<li><p><strong>mesh</strong> (<em>+</em>) – the model lat/lon is a 2-D array</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the indices of the found closest model sites</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>lat_ind, lon_ind (array)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.generate_latlon">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">generate_latlon</code><span class="sig-paren">(</span><em class="sig-param">nlats</em>, <em class="sig-param">nlons</em>, <em class="sig-param">include_endpts=False</em>, <em class="sig-param">lat_bnd=(-90</em>, <em class="sig-param">90)</em>, <em class="sig-param">lon_bnd=(0</em>, <em class="sig-param">360)</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#generate_latlon"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.generate_latlon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate regularly spaced latitude and longitude arrays where each point
+is the center of the respective grid cell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nlats</strong> (<em>int</em>) – Number of latitude points</p></li>
+<li><p><strong>nlons</strong> (<em>int</em>) – Number of longitude points</p></li>
+<li><p><strong>lat_bnd</strong> (<em>tuple</em><em>(</em><em>float</em><em>)</em><em>, </em><em>optional</em>) – Bounding latitudes for gridcell edges (not centers).  Accepts values
+in range of [-90, 90].</p></li>
+<li><p><strong>lon_bnd</strong> (<em>tuple</em><em>(</em><em>float</em><em>)</em><em>, </em><em>optional</em>) – Bounding longitudes for gridcell edges (not centers).  Accepts values
+in range of [-180, 360].</p></li>
+<li><p><strong>include_endpts</strong> (<em>bool</em>) – Include the poles in the latitude array.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>lat_center_2d</em> – Array of central latitide points (nlat x nlon)</p></li>
+<li><p><em>lon_center_2d</em> – Array of central longitude points (nlat x nlon)</p></li>
+<li><p><em>lat_corner</em> – Array of latitude boundaries for all grid cells (nlat+1)</p></li>
+<li><p><em>lon_corner</em> – Array of longitude boundaries for all grid cells (nlon+1)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.geo_mean">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">geo_mean</code><span class="sig-paren">(</span><em class="sig-param">field_value</em>, <em class="sig-param">field_lat</em>, <em class="sig-param">field_lon</em>, <em class="sig-param">lats</em>, <em class="sig-param">lons</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#geo_mean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.geo_mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the average value of the given field over a list of lat/lon locations</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.get_distance">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">get_distance</code><span class="sig-paren">(</span><em class="sig-param">lon_pt</em>, <em class="sig-param">lat_pt</em>, <em class="sig-param">lon_ref</em>, <em class="sig-param">lat_ref</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#get_distance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.get_distance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Vectorized calculation the great circle distances between lat-lon points
+on the Earth (lat/lon are specified in decimal degrees)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>, </strong><strong>lat_pt</strong> (<em>lon_pt</em>) – longitude, latitude of site w.r.t. which distances
+are to be calculated. Both should be scalars.</p></li>
+<li><p><strong>lat_ref</strong> (<em>lon_ref</em><em>,</em>) – longitudes, latitudes of reference field
+(e.g. calibration dataset, reconstruction grid)
+May be scalar, 1D arrays, or 2D arrays.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>returns array containing distances between (lon_pt, lat_pt) and all other points</dt><dd><p>in (lon_ref,lat_ref). Array has dimensions [dim(lon_ref),dim(lat_ref)].</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>km</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Originator:</dt><dd><ol class="upperalpha simple" start="18">
+<li><p>Tardif, Atmospheric sciences, U. of Washington, January 2016</p></li>
+</ol>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.get_nc_vars">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">get_nc_vars</code><span class="sig-paren">(</span><em class="sig-param">filepath</em>, <em class="sig-param">varnames</em>, <em class="sig-param">useLib='xarray'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#get_nc_vars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.get_nc_vars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get variables from given ncfile</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.global_hemispheric_means">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">global_hemispheric_means</code><span class="sig-paren">(</span><em class="sig-param">field</em>, <em class="sig-param">lat</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#global_hemispheric_means"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.global_hemispheric_means" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adapted from LMR_utils.py by Greg Hakim &amp; Robert Tardif | U. of Washington</p>
+<p>compute global and hemispheric mean valuee for all times in the input (i.e. field) array
+:param field[ntime,nlat,nlon] or field[nlat,nlon]:
+:param lat[nlat,nlon] in degrees:</p>
+<dl class="simple">
+<dt>Retruns:</dt><dd><p>gm : global mean of “field”
+nhm : northern hemispheric mean of “field”
+shm : southern hemispheric mean of “field”</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.haversine">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">haversine</code><span class="sig-paren">(</span><em class="sig-param">lon1</em>, <em class="sig-param">lat1</em>, <em class="sig-param">lon2</em>, <em class="sig-param">lat2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#haversine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.haversine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the great circle distance between two points on the earth (specified in decimal degrees)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.isopersistent_rn">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">isopersistent_rn</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">p</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#isopersistent_rn"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.isopersistent_rn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates p realization of a red noise [i.e. AR(1)] process
+with same persistence properties as X (Mean and variance are also preserved).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>array</em>) – vector of (real) numbers as a time series, no NaNs allowed</p></li>
+<li><p><strong>p</strong> (<em>int</em>) – number of simulations</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><p>red (matrix) - n rows by p columns matrix of an AR1 process, where n is the size of X</p>
+<p>g (real) - lag-1 autocorrelation coefficient</p>
+</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Remarks:</dt><dd><p>(Some Rights Reserved) Hepta Technologies, 2008</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.mbc">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">mbc</code><span class="sig-paren">(</span><em class="sig-param">tas</em>, <em class="sig-param">pr</em>, <em class="sig-param">time</em>, <em class="sig-param">ref_tas</em>, <em class="sig-param">ref_pr</em>, <em class="sig-param">ref_time</em>, <em class="sig-param">seed=0</em>, <em class="sig-param">Rlib_path='/Library/Frameworks/R.framework/Versions/3.6/Resources/library'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#mbc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.mbc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform multivariate bias correction</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tas</strong> (<em>1-D array</em>) – the temperature timeseries at the proxy location</p></li>
+<li><p><strong>pr</strong> (<em>1-D array</em>) – the precipitation timeseries at the proxy location</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.nino_indices">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">nino_indices</code><span class="sig-paren">(</span><em class="sig-param">sst</em>, <em class="sig-param">lats</em>, <em class="sig-param">lons</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#nino_indices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.nino_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate Nino indices</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sst</strong> – sea-surface temperature, the last two dimensions are assumed to be (lat, lon)</p></li>
+<li><p><strong>lats</strong> – the latitudes in format of (-90, 90)</p></li>
+<li><p><strong>lons</strong> – the longitudes in format of (0, 360)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.phaseran">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">phaseran</code><span class="sig-paren">(</span><em class="sig-param">recblk</em>, <em class="sig-param">nsurr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#phaseran"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.phaseran" title="Permalink to this definition">¶</a></dt>
+<dd><p>Phaseran by Carlos Gias</p>
+<p><a class="reference external" href="http://www.mathworks.nl/matlabcentral/fileexchange/32621-phase-randomization/content/phaseran.m">http://www.mathworks.nl/matlabcentral/fileexchange/32621-phase-randomization/content/phaseran.m</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>recblk</strong> (<em>2D array</em>) – Row: time sample. Column: recording.
+An odd number of time samples (height) is expected.
+If that is not the case, recblock is reduced by 1 sample before the surrogate data is created.
+The class must be double and it must be nonsparse.</p></li>
+<li><p><strong>nsurr</strong> (<em>int</em>) – is the number of image block surrogates that you want to generate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>3D multidimensional array image block with the surrogate datasets along the third dimension</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>surrblk</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Reference:</dt><dd><p>Prichard, D., Theiler, J. Generating Surrogate Data for Time Series with Several Simultaneously Measured Variables (1994)
+Physical Review Letters, Vol 73, Number 7</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.pick_range">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">pick_range</code><span class="sig-paren">(</span><em class="sig-param">ts</em>, <em class="sig-param">ys</em>, <em class="sig-param">lb</em>, <em class="sig-param">ub</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#pick_range"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.pick_range" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pick range [lb, ub) from a timeseries pair (ts, ys)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.pick_years">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">pick_years</code><span class="sig-paren">(</span><em class="sig-param">year_int</em>, <em class="sig-param">time_grid</em>, <em class="sig-param">var_grid</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#pick_years"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.pick_years" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pick years from a timeseries pair (time_grid, var_grid) based on year_int</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.populate_ensemble">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">populate_ensemble</code><span class="sig-paren">(</span><em class="sig-param">datadict</em>, <em class="sig-param">cfg</em>, <em class="sig-param">seed</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#populate_ensemble"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.populate_ensemble" title="Permalink to this definition">¶</a></dt>
+<dd><p>Populate the prior ensemble from gridded model/analysis data</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.regrid_sphere">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">regrid_sphere</code><span class="sig-paren">(</span><em class="sig-param">nlat</em>, <em class="sig-param">nlon</em>, <em class="sig-param">Nens</em>, <em class="sig-param">X</em>, <em class="sig-param">ntrunc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#regrid_sphere"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.regrid_sphere" title="Permalink to this definition">¶</a></dt>
+<dd><p>Truncate lat,lon grid to another resolution in spherical harmonic space. Triangular truncation</p>
+<p>Inputs:
+nlat            : number of latitudes
+nlon            : number of longitudes
+Nens            : number of ensemble members
+X               : data array of shape (nlat*nlon,Nens)
+ntrunc          : triangular truncation (e.g., use 42 for T42)</p>
+<p>Outputs :
+lat_new : 2D latitude array on the new grid (nlat_new,nlon_new)
+lon_new : 2D longitude array on the new grid (nlat_new,nlon_new)
+X_new   : truncated data array of shape (nlat_new*nlon_new, Nens)</p>
+<dl class="simple">
+<dt>Originator: Greg Hakim</dt><dd><p>University of Washington
+May 2015</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.regrid_sphere_field">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">regrid_sphere_field</code><span class="sig-paren">(</span><em class="sig-param">nlat</em>, <em class="sig-param">nlon</em>, <em class="sig-param">var_field</em>, <em class="sig-param">ntrunc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#regrid_sphere_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.regrid_sphere_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Regrid a field</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.rotate_lon">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">rotate_lon</code><span class="sig-paren">(</span><em class="sig-param">field</em>, <em class="sig-param">lon</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#rotate_lon"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.rotate_lon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make lon to be sorted with range (0, 360)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>field</strong> (<em>ndarray</em>) – the last axis is assumed to be lon</p></li>
+<li><p><strong>lon</strong> (<em>1d array</em>) – the longitude axis</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the field with longitude rotated
+lon (1d array): the sorted longitude axis with range (0, 360)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>field (ndarray)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.sea">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">sea</code><span class="sig-paren">(</span><em class="sig-param">X, events, start_yr=0, preyr=3, postyr=10, qs=[0.05, 0.5, 0.95], highpass=False, verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#sea"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.sea" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Applies superposed Epoch Analysis to N-dim array X, at indices ‘events’,</dt><dd><p>and on a window [-preyr,postyr]</p>
+</dd>
+<dt>Inputs:</dt><dd><ul class="simple">
+<li><p>X: numpy array [time assumed to be the first dimension]</p></li>
+<li><p>events: indices of events of interest</p></li>
+<li><p>start_yr (int): the start year of X</p></li>
+<li><p>preyr: # years over which the pre-event mean is computed</p></li>
+<li><p>postyr: length of post-event window</p></li>
+</ul>
+</dd>
+<dt>Outputs:</dt><dd><ul class="simple">
+<li><p>Xevents : X lined up on events; removes mean of “preyr” years in shape of (time, ensemble, events)</p></li>
+<li><p>Xcomp  : composite of Xevents (same dimensions as X, minus the last one)</p></li>
+<li><p>tcomp  : the time axis relative to events</p></li>
+</ul>
+</dd>
+</dl>
+<p>by Julien Emile-Geay</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.sea_dbl">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">sea_dbl</code><span class="sig-paren">(</span><em class="sig-param">time, value, events, preyr=5, postyr=15, seeds=None, nsample=10, qs=[0.05, 0.5, 0.95], qs_signif=[0.01, 0.05, 0.1, 0.9, 0.95, 0.99], nboot_event=1000, verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#sea_dbl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.sea_dbl" title="Permalink to this definition">¶</a></dt>
+<dd><p>A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>time</strong> (<em>1-D array</em>) – time axis</p></li>
+<li><p><strong>value</strong> (<em>1-D array</em>) – value axis</p></li>
+<li><p><strong>events</strong> (<em>1-D array</em>) – event years</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>result dictionary</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>res (dict)</p>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<dl class="simple">
+<dt>Rao MP, Cook ER, Cook BI, et al (2019) A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty.</dt><dd><p>Dendrochronologia 55:119–124. doi: 10.1016/j.dendro.2019.05.001</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.sea_dbl_field">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">sea_dbl_field</code><span class="sig-paren">(</span><em class="sig-param">time, field, events, preyr=5, post_avg_range=[0], seeds=None, nsample=10, qs=[5, 50, 95], qs_signif=[1, 5, 10, 90, 95, 99], nboot_event=1000, verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#sea_dbl_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.sea_dbl_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>time</strong> (<em>1-D array</em>) – time axis</p></li>
+<li><p><strong>field</strong> (<em>3-D array</em>) – filed with 1st dim be time</p></li>
+<li><p><strong>events</strong> (<em>1-D array</em>) – event years</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>result dictionary</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>res (dict)</p>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<dl class="simple">
+<dt>Rao MP, Cook ER, Cook BI, et al (2019) A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty.</dt><dd><p>Dendrochronologia 55:119–124. doi: 10.1016/j.dendro.2019.05.001</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.sea_field">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">sea_field</code><span class="sig-paren">(</span><em class="sig-param">time, field, events, preyr=5, post_avg_range=[0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#sea_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.sea_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a simple SEA on a 3-D field</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>post_avg_range</strong> (<em>list</em>) – e.g. [0] refers to the event year; [1, 5] refers to the 1-5 yrs after the event</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.seasonal_var">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">seasonal_var</code><span class="sig-paren">(</span><em class="sig-param">var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], make_yr_mm_nan=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#seasonal_var"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.seasonal_var" title="Permalink to this definition">¶</a></dt>
+<dd><p>Annualize a variable array based on seasonality</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>var</strong> (<em>ndarray</em>) – the target variable array with 1st dim to be year</p></li>
+<li><p><strong>year_float</strong> (<em>1-D array</em>) – the time axis of the variable array</p></li>
+<li><p><strong>make_yr_mm_nan</strong> (<em>bool</em>) – make year with missing months nan or not</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the annualized variable array
+year_ann (1-D array): the time axis of the annualized variable array</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>var_ann (ndarray)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.seasonal_var_xarray">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">seasonal_var_xarray</code><span class="sig-paren">(</span><em class="sig-param">var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#seasonal_var_xarray"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.seasonal_var_xarray" title="Permalink to this definition">¶</a></dt>
+<dd><p>Annualize a variable array based on seasonality</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>var</strong> (<em>ndarray</em>) – the target variable array with 1st dim to be year</p></li>
+<li><p><strong>year_float</strong> (<em>array</em>) – the time axis of the variable array</p></li>
+<li><p><strong>avgMonths</strong> (<em>list</em><em>, </em><em>optional</em>) – the list of months to be averaged</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the annualized variable array
+year_ann (array): the time axis of the annualized variable array</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>var_ann (ndarray)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.tsPad">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">tsPad</code><span class="sig-paren">(</span><em class="sig-param">x</em>, <em class="sig-param">t</em>, <em class="sig-param">params=(2</em>, <em class="sig-param">1</em>, <em class="sig-param">2)</em>, <em class="sig-param">padFrac=0.1</em>, <em class="sig-param">diag=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#tsPad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.tsPad" title="Permalink to this definition">¶</a></dt>
+<dd><p>tsPad: pad a timeseries based on timeseries model predictions</p>
+<p>Args:
+- x: Evenly-spaced timeseries [np.array]
+- t: Time axis  [np.array]
+- params: ARIMA model order parameters (p,d,q)
+- padFrac: padding fraction (scalar) such that padLength = padFrac*length(series)
+- diag: if True, outputs diagnostics of the fitted ARIMA model</p>
+<dl class="simple">
+<dt>Output:</dt><dd><ul class="simple">
+<li><p>xp, tp, padded timeseries and augmented axis</p></li>
+</ul>
+</dd>
+</dl>
+<p>Author: Julien Emile-Geay</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.ts_matching">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">ts_matching</code><span class="sig-paren">(</span><em class="sig-param">time_target</em>, <em class="sig-param">value_target</em>, <em class="sig-param">time_ref</em>, <em class="sig-param">value_ref</em>, <em class="sig-param">match_std=True</em>, <em class="sig-param">match_mean=True</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#ts_matching"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.ts_matching" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform mean correction and variance matching against the reference timeseries over overlapped time interval</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>time_target</strong> (<em>1-D array</em>) – the time axis of the target timeseries</p></li>
+<li><p><strong>value_target</strong> (<em>1-D array</em>) – the value axis of the target timeseries</p></li>
+<li><p><strong>time_ref</strong> (<em>1-D array</em>) – the time axis of the reference timeseries</p></li>
+<li><p><strong>value_ref</strong> (<em>1-D array</em>) – the value axis of the reference timeseries</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the time axis of the target timeseries after correction
+value_corrected (1-D array): the value axis of the target timeseries after correction</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>time_corrected (1-D array)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="LMRt.utils.ymd2year_float">
+<code class="sig-prename descclassname">LMRt.utils.</code><code class="sig-name descname">ymd2year_float</code><span class="sig-paren">(</span><em class="sig-param">year</em>, <em class="sig-param">month</em>, <em class="sig-param">day</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt/utils.html#ymd2year_float"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.utils.ymd2year_float" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a set of (year, month, day) to an array of floats in unit of year</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="nn.html" class="btn btn-neutral float-right" title="The machine learning module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="core.html" class="btn btn-neutral float-left" title="API" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Feng Zhu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

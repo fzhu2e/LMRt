@@ -1,0 +1,381 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>API &mdash; LMRt  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Utilities" href="utils.html" />
+    <link rel="prev" title="Welcome to LMRt’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> LMRt
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nn.html">The machine learning module</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">LMRt</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>API</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/core.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="api">
+<h1>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="LMRt.ReconJob">
+<em class="property">class </em><code class="sig-prename descclassname">LMRt.</code><code class="sig-name descname">ReconJob</code><a class="reference internal" href="_modules/LMRt.html#ReconJob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.ReconJob" title="Permalink to this definition">¶</a></dt>
+<dd><p>A reconstruction job</p>
+<p class="rubric">Methods</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#LMRt.ReconJob.build_precalib_files" title="LMRt.ReconJob.build_precalib_files"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_precalib_files</span></code></a>(self, ptypes, psm_name, …)</p></td>
+<td><p>Build precalibration files for linear/bilinear PSMs</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#LMRt.ReconJob.build_proxies_from_df" title="LMRt.ReconJob.build_proxies_from_df"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_proxies_from_df</span></code></a>(self, df[, …])</p></td>
+<td><p>Build proxies database from a DataFrame</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#LMRt.ReconJob.build_ye_files" title="LMRt.ReconJob.build_ye_files"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_ye_files</span></code></a>(self, ptypes, psm_name, …)</p></td>
+<td><p>Build precalculated Ye files from priors</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#LMRt.ReconJob.calibrate_OLSp" title="LMRt.ReconJob.calibrate_OLSp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">calibrate_OLSp</span></code></a>(self, …[, seasonality, …])</p></td>
+<td><p>Calibrate the OLSp PSM and generate precalib &amp; Ye files</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#LMRt.ReconJob.load_prior" title="LMRt.ReconJob.load_prior"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_prior</span></code></a>(self, prior_filepath, prior_datatype)</p></td>
+<td><p>Load prior variables</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#LMRt.ReconJob.load_ye_files" title="LMRt.ReconJob.load_ye_files"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_ye_files</span></code></a>(self, ye_filesdict[, verbose])</p></td>
+<td><p>Load precalculated Ye files</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 76%" />
+<col style="width: 24%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>build_pseudoproxies_from_ye</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>load_cfg</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>load_proxies</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>run</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>run_da</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>save_results</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="LMRt.ReconJob.build_precalib_files">
+<code class="sig-name descname">build_precalib_files</code><span class="sig-paren">(</span><em class="sig-param">self, ptypes, psm_name, precalib_savepath, calib_refsdict=None, ref_period=[1951, 1980], calib_period=[1850, 2015], precalc_avg_pathdict=None, make_yr_mm_nan=True, seasonality={'Tree Rings_WidthBreit': {'seasons_T': [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [6, 7, 8], [3, 4, 5, 6, 7, 8], [6, 7, 8, 9, 10, 11], [-12, 1, 2], [-9, -10, -11, -12, 1, 2], [-12, 1, 2, 3, 4, 5]], 'seasons_M': [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [6, 7, 8], [3, 4, 5, 6, 7, 8], [6, 7, 8, 9, 10, 11], [-12, 1, 2], [-9, -10, -11, -12, 1, 2], [-12, 1, 2, 3, 4, 5]]}, 'Tree Rings_WidthPages2': {'seasons_T': [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [6, 7, 8], [3, 4, 5, 6, 7, 8], [6, 7, 8, 9, 10, 11], [-12, 1, 2], [-9, -10, -11, -12, 1, 2], [-12, 1, 2, 3, 4, 5]], 'seasons_M': [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [6, 7, 8], [3, 4, 5, 6, 7, 8], [6, 7, 8, 9, 10, 11], [-12, 1, 2], [-9, -10, -11, -12, 1, 2], [-12, 1, 2, 3, 4, 5]]}, 'Tree Rings_WoodDensity': {'seasons_T': [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [6, 7, 8], [3, 4, 5, 6, 7, 8], [6, 7, 8, 9, 10, 11], [-12, 1, 2], [-9, -10, -11, -12, 1, 2], [-12, 1, 2, 3, 4, 5]], 'seasons_M': [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [6, 7, 8], [3, 4, 5, 6, 7, 8], [6, 7, 8, 9, 10, 11], [-12, 1, 2], [-9, -10, -11, -12, 1, 2], [-12, 1, 2, 3, 4, 5]]}, 'Tree Rings_Isotopes': {'seasons_T': [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [6, 7, 8], [3, 4, 5, 6, 7, 8], [6, 7, 8, 9, 10, 11], [-12, 1, 2], [-9, -10, -11, -12, 1, 2], [-12, 1, 2, 3, 4, 5]], 'seasons_M': [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], [6, 7, 8], [3, 4, 5, 6, 7, 8], [6, 7, 8, 9, 10, 11], [-12, 1, 2], [-9, -10, -11, -12, 1, 2], [-12, 1, 2, 3, 4, 5]]}}, nproc=4, nobs_lb=25, verbose=False, output_optimal_reg=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt.html#ReconJob.build_precalib_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.ReconJob.build_precalib_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build precalibration files for linear/bilinear PSMs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>calib_refsdict</strong> (<em>dict</em>) – e.g., {‘T’: (‘GISTEMP’, GISTEMP_filepath), ‘M’: (‘GPCC’, GPCC_filepath)}</p></li>
+<li><p><strong>precalc_avg_pathdict</strong> (<em>dict</em>) – e.g., {‘T’: T_seasonal_avg_filepath), ‘M’: M_seasonal_avg_filepath)}</p></li>
+<li><p><strong>NOTE</strong> – one of the above two dicts must be provided</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.ReconJob.build_proxies_from_df">
+<code class="sig-name descname">build_proxies_from_df</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">df</em>, <em class="sig-param">exclude_list=None</em>, <em class="sig-param">time_year=array([   1</em>, <em class="sig-param">2</em>, <em class="sig-param">3</em>, <em class="sig-param">...</em>, <em class="sig-param">2017</em>, <em class="sig-param">2018</em>, <em class="sig-param">2019])</em>, <em class="sig-param">time_col='year'</em>, <em class="sig-param">value_col='paleoData_values'</em>, <em class="sig-param">metadata_savepath=None</em>, <em class="sig-param">proxies_savepath=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt.html#ReconJob.build_proxies_from_df"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.ReconJob.build_proxies_from_df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build proxies database from a DataFrame</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>df</strong> (<em>DataFrame</em>) – the DataFrame of the proxies</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.ReconJob.build_ye_files">
+<code class="sig-name descname">build_ye_files</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">ptypes</em>, <em class="sig-param">psm_name</em>, <em class="sig-param">prior_filesdict</em>, <em class="sig-param">ye_savepath</em>, <em class="sig-param">rename_vars={'tmp': 'tas'</em>, <em class="sig-param">'pre': 'pr'</em>, <em class="sig-param">'d18O': 'd18Opr'</em>, <em class="sig-param">'tos': 'sst'</em>, <em class="sig-param">'sos': 'sss'}</em>, <em class="sig-param">precalib_filesdict=None</em>, <em class="sig-param">verbose=False</em>, <em class="sig-param">useLib='netCDF4'</em>, <em class="sig-param">nproc=1</em>, <em class="sig-param">elev_model=None</em>, <em class="sig-param">lat_str='lat'</em>, <em class="sig-param">lon_str='lon'</em>, <em class="sig-param">repeat_frac_threashold=0.5</em>, <em class="sig-param">match_std=True</em>, <em class="sig-param">match_mean=True</em>, <em class="sig-param">tas_bias=None</em>, <em class="sig-param">pr_factor=None</em>, <em class="sig-param">calc_anomaly=None</em>, <em class="sig-param">ref_period=(1951</em>, <em class="sig-param">1980)</em>, <em class="sig-param">precalc_avg_pathdict=None</em>, <em class="sig-param">**psm_params</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt.html#ReconJob.build_ye_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.ReconJob.build_ye_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build precalculated Ye files from priors</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ptype</strong> (<em>str</em>) – the target proxy type</p></li>
+<li><p><strong>psm_name</strong> (<em>str</em>) – the name of the PSM used to forward prior variables</p></li>
+<li><p><strong>prior_filesdict</strong> (<em>dict</em>) – e.g. {‘tas’: tas_filepath, ‘pr’: pr_filepath}</p></li>
+<li><p><strong>ye_savepath</strong> (<em>str</em>) – the filepath to save precalculated Ye</p></li>
+<li><p><strong>rename_vars</strong> (<em>dict</em>) – a map used to rename the variable names,
+e.g., {‘d18O’: ‘d18Opr’, ‘tos’: ‘sst’, ‘sos’: ‘sss’}</p></li>
+<li><p><strong>psm_params</strong> (<em>kwargs</em>) – the specific parameters for certain PSMs</p></li>
+<li><p><strong>precalc_avg_pathdict</strong> (<em>dict</em>) – e.g., {‘T’: T_seasonal_avg_filepath), ‘M’: M_seasonal_avg_filepath)}</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.ReconJob.calibrate_OLSp">
+<code class="sig-name descname">calibrate_OLSp</code><span class="sig-paren">(</span><em class="sig-param">self, seasonal_inst_filesdict, precalib_savepath, seasonality=None, calib_period=[1850, 2015], auto_choose_p=True, p=0, p_max=4, p_dict=None, seasonality_dict=None, metric='fitR2adj', search_distance=3, verbose=False, pacf_threshold_dict=None, fit_args={}, print_OLSp_args=True, ye_savepath=None, seasonal_GCM_filesdict=None, nobs_lb=25, optimal_reg_savepath=None, normalize_proxy=False, detrend_proxy=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt.html#ReconJob.calibrate_OLSp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.ReconJob.calibrate_OLSp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calibrate the OLSp PSM and generate precalib &amp; Ye files</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seasonal_inst_filesdict</strong> (<em>dict</em>) – instrumental environmentals, expecting ‘tas’ and ‘pr’ (optional)</p></li>
+<li><p><strong>seasonal_GCM_filesdict</strong> (<em>dict</em>) – GCM simulated envrionmentals, expecting ‘tas’ and ‘pr’ (optional)</p></li>
+<li><p><strong>seasonality</strong> (<em>list</em>) – e.g. [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] for annual, [7, 8, 9] for NH summer</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.ReconJob.load_prior">
+<code class="sig-name descname">load_prior</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">prior_filepath</em>, <em class="sig-param">prior_datatype</em>, <em class="sig-param">anom_reference_period=(1951</em>, <em class="sig-param">1980)</em>, <em class="sig-param">seed=0</em>, <em class="sig-param">avgInterval=None</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt.html#ReconJob.load_prior"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.ReconJob.load_prior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load prior variables</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prior_filepath</strong> (<em>str</em>) – the full path of the prior file; only one variable is required,
+and other variables under the same folder will be also loaded if specified in the configuration</p></li>
+<li><p><strong>prior_datatype</strong> (<em>str</em>) – available options: ‘CMIP5’</p></li>
+<li><p><strong>anom_reference_period</strong> (<em>tuple</em>) – the period used for the calculation of climatology/anomaly</p></li>
+<li><p><strong>seed</strong> (<em>int</em>) – random number seed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="LMRt.ReconJob.load_ye_files">
+<code class="sig-name descname">load_ye_files</code><span class="sig-paren">(</span><em class="sig-param">self</em>, <em class="sig-param">ye_filesdict</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/LMRt.html#ReconJob.load_ye_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#LMRt.ReconJob.load_ye_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load precalculated Ye files</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ye_filesdict</strong> (<em>dict</em>) – e.g. {‘linear’: linear_filepath, ‘blinear’: bilinear_filepath}</p></li>
+<li><p><strong>proxy_set</strong> (<em>str</em>) – ‘assim’ or ‘eval’</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="utils.html" class="btn btn-neutral float-right" title="Utilities" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to LMRt’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Feng Zhu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
