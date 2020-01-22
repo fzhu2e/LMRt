@@ -4722,9 +4722,9 @@ def sea_dbl(time, value, events, preyr=5, postyr=15, seeds=None, nsample=10,
     ''' A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty
 
     Args:
-        time (1-D array): time axis
-        value (1-D array): value axis
-        events (1-D array): event years
+        time (array): time axis
+        value (1-D array or 2-D array): value axis; if 2-D, with time as the 1st dimension
+        events (array): event years
 
     Returns:
         res (dict): result dictionary
@@ -4737,6 +4737,10 @@ def sea_dbl(time, value, events, preyr=5, postyr=15, seeds=None, nsample=10,
         events = np.array(events)
 
     nevents = np.size(events)
+    if nsample > nevents:
+        print(f'SEA >>> nsample: {nsample} > nevents: {nevents}; setting nsample=nevents: {nevents} ...')
+        nsample = nevents
+
     total_draws = factorial(nevents)/factorial(nsample)/factorial(nevents-nsample)
     nyr = preyr + postyr + 1
 
@@ -4770,8 +4774,14 @@ def sea_dbl(time, value, events, preyr=5, postyr=15, seeds=None, nsample=10,
     draws_signif = np.array(draws_signif)
 
     # generate composite ndarrays
-    composite_raw = np.ndarray((nboot_event, nsample, nyr))
-    composite_raw_signif = np.ndarray((nboot_event, nsample, nyr))
+    ndim = len(np.shape(value))
+    if ndim == 1:
+        value = value[..., np.newaxis]
+
+    nts = np.shape(value)[-1]
+
+    composite_raw = np.ndarray((nboot_event, nsample, nyr, nts))
+    composite_raw_signif = np.ndarray((nboot_event, nsample, nyr, nts))
 
     for i in range(nboot_event):
         sample_yrs = draws[i]
@@ -4779,19 +4789,21 @@ def sea_dbl(time, value, events, preyr=5, postyr=15, seeds=None, nsample=10,
 
         for j in range(nsample):
             center_yr = list(time).index(sample_yrs[j])
-            composite_raw[i, j, :] = value[center_yr-preyr:center_yr+postyr+1]
+            composite_raw[i, j, :, :] = value[center_yr-preyr:center_yr+postyr+1, :]
 
             center_yr_signif = list(time).index(sample_yrs_signif[j])
-            composite_raw_signif[i, j, :] = value[center_yr_signif-preyr:center_yr_signif+postyr+1]
+            composite_raw_signif[i, j, :, :] = value[center_yr_signif-preyr:center_yr_signif+postyr+1, :]
 
     # normalization: remove the mean of the pre-years
-    composite_norm = composite_raw - np.average(composite_raw[:, :, :preyr], axis=-1)[:, :, np.newaxis]
-    composite_norm_signif = composite_raw_signif - np.average(composite_raw_signif[:, :, :preyr], axis=-1)[:, :, np.newaxis]
+    composite_norm = composite_raw - np.average(composite_raw[:, :, :preyr, ...], axis=2)[:, :, np.newaxis, :]
+    composite_norm_signif = composite_raw_signif - np.average(composite_raw_signif[:, :, :preyr, ...], axis=2)[:, :, np.newaxis, :]
 
     composite = np.average(composite_norm, axis=1)
+    composite = composite.transpose(0, 2, 1).reshape(nboot_event*nts, -1)
     composite_qs = mquantiles(composite, qs, axis=0)
 
     composite_signif = np.average(composite_norm_signif, axis=1)
+    composite_signif = composite_signif.transpose(0, 2, 1).reshape(nboot_event*nts, -1)
     composite_qs_signif = mquantiles(composite_signif, qs_signif, axis=0)
 
     composite_yr = np.arange(-preyr, postyr+1)
