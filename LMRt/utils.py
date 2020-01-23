@@ -1191,6 +1191,14 @@ def est_vsl_params_bc(site, latlon_ind_dict_path,
     return vsl_params, T_bias
 
 
+def pid2p2kid(pid):
+    ''' Translate the proxy ID in proxyDB to PAGES2k ID
+    '''
+    str_tmp = pid.split(':')[0]
+    p2kid = '_'.join(str_tmp.split('_')[-2:])
+    return p2kid
+
+
 def calibrate_psm(
     proxy_manager, ptypes, psm_name,
     precalc_avg,
