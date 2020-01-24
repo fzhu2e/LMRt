@@ -4735,13 +4735,14 @@ def sea(X, events, start_yr=0, preyr=3, postyr=10, qs=[0.05, 0.5, 0.95], highpas
 
 def sea_dbl(time, value, events, preyr=5, postyr=15, seeds=None, nsample=10,
             qs=[0.05, 0.5, 0.95], qs_signif=[0.01, 0.05, 0.10, 0.90, 0.95, 0.99],
-            nboot_event=1000, verbose=False):
+            nboot_event=1000, verbose=False, draw_mode='all'):
     ''' A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty
 
     Args:
         time (array): time axis
         value (1-D array or 2-D array): value axis; if 2-D, with time as the 1st dimension
         events (array): event years
+        draw_mode ({'all', 'non-events'}): the pool for significance test
 
     Returns:
         res (dict): result dictionary
@@ -4765,6 +4766,19 @@ def sea_dbl(time, value, events, preyr=5, postyr=15, seeds=None, nsample=10,
     # avoid edges
     time_inner = time[preyr:-postyr]
     events_inner = events[(events>=np.min(time_inner)) & (events<=np.max(time_inner))]
+    if draw_mode == 'all':
+        signif_pool = time_inner
+    if draw_mode == 'non-events':
+        signif_pool = time_inner
+        events_expanded = set()
+        for e in events_inner:
+            idx = list(time_inner).index(e)
+            subset = set(time_inner[idx-preyr:idx+postyr+1])
+            events_expanded |= subset
+        for e in events_expanded:
+            signif_pool.remove(e)
+    else:
+        raise ValueError('ERROR: Wrong `draw_mode`; choose between `all` and `non-events`')
 
     if verbose:
         print(f'SEA >>> valid events: {events_inner}')
@@ -4784,7 +4798,7 @@ def sea_dbl(time, value, events, preyr=5, postyr=15, seeds=None, nsample=10,
         draw_tmp = np.random.choice(events_inner, nsample, replace=False)
         draws.append(np.sort(draw_tmp))
 
-        draw_tmp = np.random.choice(time_inner, nsample, replace=False)
+        draw_tmp = np.random.choice(signif_pool, nsample, replace=False)
         draws_signif.append(np.sort(draw_tmp))
 
     draws = np.array(draws)
@@ -4873,13 +4887,14 @@ def sea_field(time, field, events, preyr=5, post_avg_range=[0]):
 
 def sea_dbl_field(time, field, events, preyr=5, post_avg_range=[0], seeds=None, nsample=10,
             qs=[5, 50, 95], qs_signif=[1, 5, 10, 90, 95, 99],
-            nboot_event=1000, verbose=False):
+            nboot_event=1000, verbose=False, draw_mode='all'):
     ''' A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty
 
     Args:
         time (1-D array): time axis
         field (3-D array): filed with 1st dim be time
         events (1-D array): event years
+        draw_mode ({'all', 'non-events'}): the pool for significance test
 
     Returns:
         res (dict): result dictionary
@@ -4901,6 +4916,19 @@ def sea_dbl_field(time, field, events, preyr=5, post_avg_range=[0], seeds=None, 
         time_inner = time[preyr:-post_avg_range[-1]]
 
     events_inner = events[(events>=np.min(time_inner)) & (events<=np.max(time_inner))]
+    if draw_mode == 'all':
+        signif_pool = time_inner
+    if draw_mode == 'non-events':
+        signif_pool = time_inner
+        events_expanded = set()
+        for e in events_inner:
+            idx = list(time_inner).index(e)
+            subset = set(time_inner[idx-preyr:idx+postyr+1])
+            events_expanded |= subset
+        for e in events_expanded:
+            signif_pool.remove(e)
+    else:
+        raise ValueError('ERROR: Wrong `draw_mode`; choose between `all` and `non-events`')
 
     if verbose:
         print(f'SEA >>> valid events: {events_inner}')
@@ -4920,7 +4948,7 @@ def sea_dbl_field(time, field, events, preyr=5, post_avg_range=[0], seeds=None, 
         draw_tmp = np.random.choice(events_inner, nsample, replace=False)
         draws.append(np.sort(draw_tmp))
 
-        draw_tmp = np.random.choice(time_inner, nsample, replace=False)
+        draw_tmp = np.random.choice(signif_pool, nsample, replace=False)
         draws_signif.append(np.sort(draw_tmp))
 
     draws = np.array(draws)
