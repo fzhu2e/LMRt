@@ -4767,9 +4767,9 @@ def sea_dbl(time, value, events, preyr=5, postyr=15, seeds=None, nsample=10,
     time_inner = time[preyr:-postyr]
     events_inner = events[(events>=np.min(time_inner)) & (events<=np.max(time_inner))]
     if draw_mode == 'all':
-        signif_pool = time_inner
-    if draw_mode == 'non-events':
-        signif_pool = time_inner
+        signif_pool = list(time_inner)
+    elif draw_mode == 'non-events':
+        signif_pool = list(time_inner)
         events_expanded = set()
         for e in events_inner:
             idx = list(time_inner).index(e)
@@ -4887,7 +4887,7 @@ def sea_field(time, field, events, preyr=5, post_avg_range=[0]):
 
 def sea_dbl_field(time, field, events, preyr=5, post_avg_range=[0], seeds=None, nsample=10,
             qs=[5, 50, 95], qs_signif=[1, 5, 10, 90, 95, 99],
-            nboot_event=1000, verbose=False, draw_mode='all'):
+            nboot_event=1000, verbose=False, draw_mode='all', postyr=10):
     ''' A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty
 
     Args:
@@ -4917,9 +4917,9 @@ def sea_dbl_field(time, field, events, preyr=5, post_avg_range=[0], seeds=None, 
 
     events_inner = events[(events>=np.min(time_inner)) & (events<=np.max(time_inner))]
     if draw_mode == 'all':
-        signif_pool = time_inner
-    if draw_mode == 'non-events':
-        signif_pool = time_inner
+        signif_pool = list(time_inner)
+    elif draw_mode == 'non-events':
+        signif_pool = list(time_inner)
         events_expanded = set()
         for e in events_inner:
             idx = list(time_inner).index(e)
