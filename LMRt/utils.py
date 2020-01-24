@@ -2709,7 +2709,8 @@ def seasonal_var_xarray(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 1
 
 
 def seasonal_var(var, year_float, resolution='month',
-                 avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], make_yr_mm_nan=True):
+                 avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], make_yr_mm_nan=True,
+                 verbose=False):
     ''' Annualize a variable array based on seasonality
 
     Args:
@@ -2752,19 +2753,26 @@ def seasonal_var(var, year_float, resolution='month',
             indsyrp1 = [j for j,v in enumerate(time) if v.year == cyears[i]+1. and v.month in year_follow]
 
         inds = indsyrm1 + indsyr + indsyrp1
+        if verbose:
+            print('nbcyears', nbcyears)
+            print('cyears[i]', cyears[i])
+            print('indsyrm1', indsyrm1)
+            print('indsyr', indsyr)
+            print('indsyrp1', indsyrp1)
+            print('inds', inds)
 
         if ndim == 1:
             tmp = np.nanmean(var[inds], axis=0)
-            nancount = np.isnan(var[inds]).sum(axis=0)
-            if nancount > 0:
-                tmp = np.nan
+            #  nancount = np.isnan(var[inds]).sum(axis=0)
+            #  if nancount > 0:
+                #  tmp = np.nan
         else:
             tmp = np.nanmean(var[inds, ...], axis=0)
-            nancount = np.isnan(var[inds, ...]).sum(axis=0)
-            tmp[nancount > 0] = np.nan
+            #  nancount = np.isnan(var[inds, ...]).sum(axis=0)
+            #  tmp[nancount > 0] = np.nan
 
         if make_yr_mm_nan and len(inds) != nbmonths:
-                tmp = np.nan
+            tmp = np.nan
 
         var_ann[i, ...] = tmp
 
