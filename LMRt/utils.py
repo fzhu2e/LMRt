@@ -2708,7 +2708,8 @@ def seasonal_var_xarray(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 1
     return var_ann, year_ann
 
 
-def seasonal_var(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], make_yr_mm_nan=True):
+def seasonal_var(var, year_float, resolution='month',
+                 avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], make_yr_mm_nan=True):
     ''' Annualize a variable array based on seasonality
 
     Args:
@@ -2725,7 +2726,7 @@ def seasonal_var(var, year_float, avgMonths=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 
     ndim = len(var_shape)
     year_float = np.array(year_float)
 
-    time = year_float2datetime(year_float)
+    time = year_float2datetime(year_float, resolution=resolution)
 
     nbmonths = len(avgMonths)
     cyears = np.asarray(list(set([t.year for t in time])))
