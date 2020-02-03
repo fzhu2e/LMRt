@@ -313,7 +313,7 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
             if pid in all_proxy_ids:
                 all_proxy_ids.remove(pid)
 
-    for site in all_proxy_ids:
+    for site in tqdm(all_proxy_ids, desc='Loading proxy'):
         site_meta = db_metadata[db_metadata['Proxy ID'] == site]
         start_yr = site_meta['Oldest (C.E.)'].iloc[0]
         end_yr = site_meta['Youngest (C.E.)'].iloc[0]
