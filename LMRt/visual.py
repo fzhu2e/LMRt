@@ -562,6 +562,7 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
 
 def plot_scatter_map(df, lon_col='lon', lat_col='lat', type_col='type', value_col='value',
                      vmin=None, vmax=None, cmap_str='viridis_r',
+                     bad_clr='grey', under_clr=sns.xkcd_rgb['cream'], over_clr='black',
                      title=None, title_weight='normal', font_scale=1.5,
                      projection='Robinson', transform=ccrs.PlateCarree(), proj_args={},
                      figsize=[12, 10], markersize=150, num_color=10,
@@ -588,8 +589,9 @@ def plot_scatter_map(df, lon_col='lon', lat_col='lat', type_col='type', value_co
     color_norm = Normalize(vmin=vmin, vmax=vmax)
 
     cmap = cm.get_cmap(cmap_str, num_color)
-    cmap.set_under(sns.xkcd_rgb['cream'])
-    cmap.set_over('black')
+    cmap.set_under(under_clr)
+    cmap.set_over(over_clr)
+    cmap.set_bad(bad_clr)
 
     # plot markers by archive types
     s_plots = []
@@ -606,12 +608,15 @@ def plot_scatter_map(df, lon_col='lon', lat_col='lat', type_col='type', value_co
         s_plots.append(
             ax_map.scatter(
                 lons, lats, marker=PAGES2k.markers_dict[ptype], cmap=cmap, norm=color_norm,
-                c=values, edgecolor='k', s=markersize, transform=ccrs.Geodetic(), label=ptype,
+                c=values, edgecolor='k', s=markersize, transform=ccrs.Geodetic(), label=f'{ptype} (n={np.size(lats)})',
             )
         )
 
     if add_legend:
         ax_map.legend(**lgd_args)
+        leg = ax_map.get_legend()
+        for l in leg.legendHandles:
+            l.set_color('grey')
 
     if plot_cbar:
         cbar_lm = plt.colorbar(s_plots[0], orientation='vertical',
