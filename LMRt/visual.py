@@ -278,7 +278,7 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
     if markers_dict is None:
         markers_dict = PAGES2k.markers_dict
     if colors_dict is None:
-        colors_dict = PAGES2k.markers_dict
+        colors_dict = PAGES2k.colors_dict
 
     s_plots = []
     type_names = []

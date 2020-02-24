@@ -4079,7 +4079,7 @@ def load_field_from_jobs(exp_dir, var='tas_sfc_Amon', average_iter=True, load_nu
     if average_iter:
         field_em = np.average(field_ens_mean, axis=0)
     else:
-        field_em = field_ens_mean
+        field_em = np.array(field_ens_mean)
 
     return field_em, year, lat, lon
 
