@@ -4993,6 +4993,28 @@ def sea_dbl_field(time, field, events, preyr=5, post_avg_range=[0], seeds=None, 
         print(f'SEA >>> res.keys(): {list(res.keys())}')
 
     return res
+
+
+def calc_anom(time, value, target_yrs, preyr=5, post_avg_range=[0]):
+    ''' Calculate the anomaly for each target_yr (with a post range) with the pre-target average subtracted.
+    '''
+    def post_avg_func(value, i, post_avg_range):
+        if len(post_avg_range) == 1:
+            return value[i+post_avg_range[0]]
+        else:
+            return np.average(value[i+post_avg_range[0]:i+post_avg_range[-1]+1], axis=0)
+
+    anom = []
+    for yr in target_yrs:
+        i = list(time).index(yr)
+        pre_avg = np.average(value[i-preyr:i], axis=0)
+        post_avg = post_avg_func(value, i, post_avg_range)
+        anom.append(post_avg - pre_avg)
+
+    anom = np.array(anom)
+    return anom
+
+
 # ===============================================
 
 # -----------------------------------------------
