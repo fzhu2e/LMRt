@@ -179,15 +179,16 @@ def run_LSTM(data_dict, neurons=[5], activations=['relu'], dropouts=[0], epochs=
 
 
 def clean_df(df, mask=None):
-    for col in df.columns:
-        df.dropna(subset=[col], inplace=True)
-
+    pd.options.mode.chained_assignment = None
     if mask is not None:
         df_cleaned = df.loc[mask]
     else:
         df_cleaned = df
 
-    return df
+    for col in df.columns:
+        df_cleaned.dropna(subset=[col], inplace=True)
+
+    return df_cleaned
 
 
 def normalize_df(df):
@@ -251,9 +252,6 @@ def OLSp(time_endog, endog, time_exog, exog, p=0, p_max=4, fit_args={}, time_exo
         frame_exog2 = pd.DataFrame({'time': time_exog2, 'exog2': exog2})
         df = df.merge(frame_exog2, how='outer', on='time')
 
-    mask = (df['time']>=calib_period[0]) & (df['time']<=calib_period[1])
-    #  df = clean_df(df, mask=mask)
-
     if auto_choose_p:
         mask = (time_endog>=calib_period[0]) & (time_endog<=calib_period[1])
         endog_pacf = calc_pacf(endog[mask])
@@ -276,7 +274,9 @@ def OLSp(time_endog, endog, time_exog, exog, p=0, p_max=4, fit_args={}, time_exo
     df.set_index('time', drop=True, inplace=True)
     df.sort_index(inplace=True)
     df.astype(np.float)
-    df = clean_df(df)
+    df_raw = df.copy()
+    mask = (df.index>=calib_period[0]) & (df.index<=calib_period[1])
+    df = clean_df(df, mask=mask)
 
     if exog2 is not None:
         formula_spell = 'endog ~ exog + exog2'
@@ -295,6 +295,7 @@ def OLSp(time_endog, endog, time_exog, exog, p=0, p_max=4, fit_args={}, time_exo
         mdl = smf.ols(formula=formula_spell, data=df).fit(**fit_args)
 
     res_dict = {
+        'df_raw': df_raw,
         'df': df,
         'mdl': mdl,
         'endog_pacf': endog_pacf,
