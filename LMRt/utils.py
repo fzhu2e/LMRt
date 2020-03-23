@@ -356,7 +356,12 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
                     print(site, psm_key)
                 psm_site_data = psm_data[(proxy_type, site)]
                 psm_obj = PSM(psm_key, psm_site_data['PSMmse'], psm_site_data['SNR'])
-                pobj = Proxy(site, proxy_type, start_yr, end_yr, lat, lon, elev, seasonality, values, time, psm_obj)
+                if 'proxy_time_adj' in psm_site_data.keys():
+                    proxy_time_adj = psm_site_data['proxy_time_adj']
+                else:
+                    proxy_time_adj = 0
+
+                pobj = Proxy(site, proxy_type, start_yr, end_yr, lat, lon, elev, seasonality, values, time+proxy_time_adj, psm_obj)
                 picked_proxies.append(pobj)
                 picked_proxy_ids.append(site)
 

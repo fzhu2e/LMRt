@@ -156,7 +156,8 @@ class ReconJob:
                        metric='fitR2adj', search_distance=3,
                        verbose=False, pacf_threshold_dict=None, fit_args={}, print_OLSp_args=True,
                        ye_savepath=None, seasonal_GCM_filesdict=None, nobs_lb=25,
-                       optimal_reg_savepath=None, normalize_proxy=False, detrend_proxy=False):
+                       optimal_reg_savepath=None, normalize_proxy=False, detrend_proxy=False,
+                       perturb_proxy_time=False):
         ''' Calibrate the OLSp PSM and generate precalib & Ye files
 
         Args:
@@ -197,6 +198,9 @@ class ReconJob:
             print('OLSp settings:')
             print(OLSp_args)
 
+        if perturb_proxy_time:
+            print('Proxy time will be perturbed with +/- 1 yr.')
+
         precalib_dict = {}
         optimal_reg_dict = {}
         for pobj in tqdm(self.proxy_manager.all_proxies, desc='Calibrating OLSp'):
@@ -208,6 +212,10 @@ class ReconJob:
                 proxy_value = utils.detrend(proxy_value)
 
             proxy_time = pobj.time
+            if perturb_proxy_time:
+                proxy_time_m1 = proxy_time - 1
+                proxy_time_p1 = proxy_time + 1
+
             lat_obs = pobj.lat
             lon_obs = pobj.lon
             lat_ind = {}
@@ -230,6 +238,7 @@ class ReconJob:
             season_tag_list = []
             R2_adj_list = []
             mse_list = []
+            proxy_time_adj_list = []
 
             for season_tag_tas in season_tags['tas']:
                 if optimal_season_tag_tas is not None and season_tag_tas != optimal_season_tag_tas:
@@ -241,6 +250,7 @@ class ReconJob:
                         seasonal_avg['tas'][season_tag_tas], lat_ind['tas'], lon_ind['tas'],
                         distance=search_distance,
                     )
+
                 if 'pr' in season_tags.keys():
                     # bivariate linear regression
                     for season_tag_pr in season_tags['pr']:
@@ -253,8 +263,60 @@ class ReconJob:
                                 distance=search_distance,
                             )
 
-                        res_dict = nn.OLSp(proxy_time, proxy_value, year_ann['tas'], tas_sub,
-                                           time_exog2=year_ann['pr'], exog2=pr_sub, **OLSp_args)
+                        # handling dating uncertainty in seasonal records
+                        if perturb_proxy_time:
+                            for p_time in [proxy_time_m1, proxy_time, proxy_time_p1]:
+                                res_dict = nn.OLSp(p_time, proxy_value, year_ann['tas'], tas_sub,
+                                                   time_exog2=year_ann['pr'], exog2=pr_sub, **OLSp_args)
+                                if res_dict['mdl'] is not None:
+                                    mdl_resid = res_dict['mdl'].resid
+                                    mse = nn.mean_squared(mdl_resid)
+                                    mse_list.append(mse)
+                                    R2_adj = res_dict['mdl'].rsquared_adj
+                                    R2_adj_list.append(R2_adj)
+                                    res_dict_list.append(res_dict)
+                                    season_tag_list.append((season_tag_tas, season_tag_pr))
+                                    proxy_time_adj_list.append(np.mean(p_time-proxy_time))
+                                else:
+                                    print(f'Skipping {pobj.id} due to nobs < {nobs_lb}')
+
+                        else:
+                            res_dict = nn.OLSp(proxy_time, proxy_value, year_ann['tas'], tas_sub,
+                                               time_exog2=year_ann['pr'], exog2=pr_sub, **OLSp_args)
+
+                            if res_dict['mdl'] is not None:
+                                mdl_resid = res_dict['mdl'].resid
+                                mse = nn.mean_squared(mdl_resid)
+                                mse_list.append(mse)
+                                R2_adj = res_dict['mdl'].rsquared_adj
+                                R2_adj_list.append(R2_adj)
+                                res_dict_list.append(res_dict)
+                                season_tag_list.append((season_tag_tas, season_tag_pr))
+                                proxy_time_adj_list.append(0)
+                            else:
+                                print(f'Skipping {pobj.id} due to nobs < {nobs_lb}')
+
+                else:
+                    # univariate linear regression
+
+                    # handling dating uncertainty in seasonal records
+                    if perturb_proxy_time:
+                        for p_time in [proxy_time_m1, proxy_time, proxy_time_p1]:
+                            res_dict = nn.OLSp(p_time, proxy_value, year_ann['tas'], tas_sub, **OLSp_args)
+                            if res_dict['mdl'] is not None:
+                                mdl_resid = res_dict['mdl'].resid
+                                mse = nn.mean_squared(mdl_resid)
+                                mse_list.append(mse)
+                                R2_adj = res_dict['mdl'].rsquared_adj
+                                R2_adj_list.append(R2_adj)
+                                res_dict_list.append(res_dict)
+                                season_tag_list.append((season_tag_tas, None))
+                                proxy_time_adj_list.append(np.mean(p_time-proxy_time))
+                            else:
+                                print(f'Skipping {pobj.id} due to nobs < {nobs_lb}')
+
+                    else:
+                        res_dict = nn.OLSp(proxy_time, proxy_value, year_ann['tas'], tas_sub, **OLSp_args)
                         if res_dict['mdl'] is not None:
                             mdl_resid = res_dict['mdl'].resid
                             mse = nn.mean_squared(mdl_resid)
@@ -262,23 +324,10 @@ class ReconJob:
                             R2_adj = res_dict['mdl'].rsquared_adj
                             R2_adj_list.append(R2_adj)
                             res_dict_list.append(res_dict)
-                            season_tag_list.append((season_tag_tas, season_tag_pr))
+                            season_tag_list.append((season_tag_tas, None))
+                            proxy_time_adj_list.append(proxy_time)
                         else:
                             print(f'Skipping {pobj.id} due to nobs < {nobs_lb}')
-
-                else:
-                    # univariate linear regression
-                    res_dict = nn.OLSp(proxy_time, proxy_value, year_ann['tas'], tas_sub, **OLSp_args)
-                    if res_dict['mdl'] is not None:
-                        mdl_resid = res_dict['mdl'].resid
-                        mse = nn.mean_squared(mdl_resid)
-                        mse_list.append(mse)
-                        R2_adj = res_dict['mdl'].rsquared_adj
-                        R2_adj_list.append(R2_adj)
-                        res_dict_list.append(res_dict)
-                        season_tag_list.append((season_tag_tas, None))
-                    else:
-                        print(f'Skipping {pobj.id} due to nobs < {nobs_lb}')
 
             if len(res_dict_list) > 0:
                 if metric == 'fitR2adj':
@@ -294,6 +343,7 @@ class ReconJob:
                 optimal_mse = mse_list[opt_idx]
                 optimal_R2_adj = R2_adj_list[opt_idx]
                 optimal_seasonality_tag = season_tag_list[opt_idx]
+                optimal_proxy_time_adj = proxy_time_adj_list[opt_idx]
 
                 SNR = np.std(optimal_reg['mdl'].predict()) / np.std(optimal_reg_resid)
 
@@ -308,6 +358,7 @@ class ReconJob:
                     'fitR2adj': optimal_R2_adj,
                     'SNR': SNR,
                     'p': optimal_reg['p'],
+                    'proxy_time_adj': optimal_proxy_time_adj,
                 }
                 optimal_reg_dict[(pobj.type, pobj.id)] = optimal_reg
             else:
