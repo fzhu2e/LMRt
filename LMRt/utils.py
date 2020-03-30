@@ -4912,6 +4912,10 @@ def sea_dbl_field(time, field, events, preyr=5, post_avg_range=[0], seeds=None, 
         events = np.array(events)
 
     nevents = np.size(events)
+    if nsample > nevents:
+        print(f'SEA >>> nsample: {nsample} > nevents: {nevents}; setting nsample=nevents: {nevents} ...')
+        nsample = nevents
+
     total_draws = factorial(nevents)/factorial(nsample)/factorial(nevents-nsample)
 
     # avoid edges

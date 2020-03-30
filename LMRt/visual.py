@@ -39,6 +39,7 @@ class PAGES2k(object):
         'Lake Cores_Varve': sns.xkcd_rgb['dark blue'],
         'Tree Rings_WidthPages2': sns.xkcd_rgb['green'],
         'Tree Rings_WoodDensity': sns.xkcd_rgb['forest green'],
+        'Tree Rings_WidthBreit': sns.xkcd_rgb['sea green'],
         'tas': sns.xkcd_rgb['pale red'],
         'pr': sns.xkcd_rgb['aqua'],
     }
@@ -55,6 +56,7 @@ class PAGES2k(object):
         'Lake Cores_Varve': 's',
         'Tree Rings_WidthPages2': '^',
         'Tree Rings_WoodDensity': 'v',
+        'Tree Rings_WidthBreit': 'h',
     }
 
 
@@ -1081,7 +1083,7 @@ def plot_volc_composites(gmt, event_yrs, start_yr=0, before=3, after=10, highpas
 
 
 def plot_sea_res(res, style='ticks', font_scale=2, figsize=[6, 6],
-                 ls='-o', lw=3, color='k', label=None, alpha=1, shade_alpha=0.3,
+                 ls='-o', lw=3, color='k', label=None, label_shade=None, alpha=1, shade_alpha=0.3,
                  ylim=None, xlim=None,
                  signif_alpha=0.3, signif_color='k', signif_text_loc_fix=(0.1, -0.01), signif_fontsize=15,
                  xlabel='Years relative to event year', ylabel='T anom. (K)',
@@ -1094,7 +1096,7 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[6, 6],
 
     if 'composite_qs' in res.keys():
         ax.plot(res['composite_yr'], res['composite_qs'][1], ls, color=color, label=label, lw=lw, alpha=alpha)
-        ax.fill_between(res['composite_yr'], res['composite_qs'][0], res['composite_qs'][-1], facecolor=color, alpha=shade_alpha)
+        ax.fill_between(res['composite_yr'], res['composite_qs'][0], res['composite_qs'][-1], facecolor=color, alpha=shade_alpha, label=label_shade)
     else:
         ax.plot(res['composite_yr'], res['composite'], ls, color=color, label=label, lw=lw)
 
