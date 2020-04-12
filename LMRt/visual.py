@@ -445,8 +445,25 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                    land_zorder=None, ocean_zorder=None, signif_values=None, signif_range=[0.05, 9999], hatch='..',
                    clim=None, cmap='RdBu_r', cmap_under=None, cmap_over=None, extend='both', mode='latlon', add_gridlines=False,
                    make_cbar=True, cbar_labels=None, cbar_pad=0.05, cbar_orientation='vertical', cbar_aspect=10,
-                   cbar_fraction=0.15, cbar_shrink=0.5, cbar_title=None, font_scale=1.5,
+                   cbar_fraction=0.15, cbar_shrink=0.5, cbar_title=None, font_scale=1.5, plot_type=None,
                    fig=None, ax=None):
+
+    if plot_type == 'corr':
+        clim = [-1, 1]
+        levels = np.linspace(-1, 1, 21)
+        cbar_labels = np.linspace(-1, 1, 11)
+        num_color = 20
+        cbar_title = 'r'
+        extend = 'neither'
+        cmap = 'RdBu_r'
+    elif plot_type == 'R2':
+        clim = [0, 1]
+        levels = np.linspace(0, 1, 21)
+        cbar_labels = np.linspace(0, 1, 11)
+        num_color = 10
+        cbar_title = r'R$^2$'
+        cmap = 'Reds'
+        extend = 'neither'
 
     if add_cyclic_point:
         if mode == 'latlon':
