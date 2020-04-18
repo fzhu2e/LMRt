@@ -1,9 +1,5 @@
 ''' The main structure
 '''
-__author__ = 'Feng Zhu'
-__email__ = 'fengzhu@usc.edu'
-__version__ = '0.6.5'
-
 import yaml
 import os
 from dotmap import DotMap

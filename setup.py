@@ -1,12 +1,15 @@
 from setuptools import setup, find_packages
-import LMRt
+
+__author__ = 'Feng Zhu'
+__email__ = 'fengzhu@usc.edu'
+__version__ = '0.6.6'
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
 
 setup(
     name='LMRt',
-    version=LMRt.__version__,
+    version=__version__,
     description='A lightweight, packaged version of the Last Millennium Reanalysis (LMR) framework',
     long_description=long_description,
     long_description_content_type='text/markdown',
