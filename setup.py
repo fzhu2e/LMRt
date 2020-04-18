@@ -30,6 +30,7 @@ setup(
     install_requires=[
         'dotmap',
         'pyyaml',
+        'prysm-api',
         'scikit-learn',
         'keras',
         'tensorflow',
