@@ -26,6 +26,9 @@ from statsmodels.graphics.gofplots import ProbPlot
 from pandas.plotting import autocorrelation_plot
 from tqdm import tqdm
 
+from scipy.stats import cumfreq
+from matplotlib.lines import Line2D
+
 class PAGES2k(object):
     colors_dict = {
         'Bivalve_d18O': sns.xkcd_rgb['gold'],
@@ -1097,6 +1100,76 @@ def plot_volc_composites(gmt, event_yrs, start_yr=0, before=3, after=10, highpas
     ax.set_ylabel(ylabel)
 
     return fig
+
+
+def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_range,
+                  nbin=2000, qs=[0.05, 0.95], figsize=[5, 5], xlabel=None, ylabel='Cumulative distribution function',
+                  lw_nonvolc_qs=2, lw_volc_nonvolc=2, xlim=None, title=None,
+                  clr_volc=sns.xkcd_rgb['pale red'], clr_nonvolc=sns.xkcd_rgb['denim blue'], clr_nonvolc_qs=sns.xkcd_rgb['grey'],
+                  label_volc='Volcanic years', label_nonvolc='Non-volcanic years',
+                  label_nonvolc_qs='Randomly selected\nnon-volcanic years', plot_lgd=True, ax=None):
+
+        kws = {'cumulative': True, 'density': True, 'histtype': 'step', 'range': value_range, 'bins': nbin, 'lw': lw_volc_nonvolc}
+        if ax is None:
+            fig, ax = plt.subplots(figsize=figsize)
+
+        n, bins, patches = {}, {}, {}
+        n['volc'], bins['volc'], patches['volc'] = ax.hist(anom_volc, label=label_volc, color=clr_volc, **kws, zorder=99)
+        n['nonvolc'], bins['nonvolc'], patches['nonvolc'] = ax.hist(anom_nonvolc, label=label_nonvolc, color=clr_nonvolc, zorder=99, **kws)
+
+        cdf_draw = []
+        for anom_draw in anom_nonvolc_draws:
+            cdf_anom_draw = cumfreq(anom_draw, numbins=nbin, defaultreallimits=value_range)
+            cdf = cdf_anom_draw.cumcount / np.shape(anom_nonvolc_draws)[-1]
+            cdf_draw.append(cdf)
+
+        cdf_qs = utils.calc_cdf_qs(cdf_draw, qs)
+        cdf_lb = utils.recover_cdf_from_locs(cdf_qs[qs[0]], nbin)
+        cdf_ub = utils.recover_cdf_from_locs(cdf_qs[qs[-1]], nbin)
+
+        for k in n.keys():
+            patches[k][0].set_xy(patches[k][0].get_xy()[:-1])
+
+        for i, yr in enumerate(year_volc):
+            for j, b in enumerate(bins['volc']):
+                if anom_volc[i] >= b and anom_volc[i] < bins['volc'][j+1]:
+                    n_tmp = n['volc'][j]
+
+            lb = 'Events' if i == 1 else ''
+            ax.scatter(anom_volc[i], n_tmp, marker='^', color='k', zorder=100, label=lb)
+            ax.text(anom_volc[i]-0.2, n_tmp+0.02, yr, color='k', zorder=100, fontsize=15)
+
+        label_nonvolc_qs = f'{label_nonvolc_qs} ({qs[0]*100:g}%-{qs[-1]*100:g}%)'
+        ax.plot(np.linspace(value_range[0], value_range[-1], nbin), cdf_lb, color=clr_nonvolc_qs, label=label_nonvolc_qs, lw=lw_nonvolc_qs)
+        ax.plot(np.linspace(value_range[0], value_range[-1], nbin), cdf_ub, color=clr_nonvolc_qs, lw=lw_nonvolc_qs)
+
+        ax.set_ylim(0, 1.05)
+        if xlim is not None:
+            ax.set_xlim(xlim)
+        else:
+            ax.set_xlim(-1, 1)
+
+        ax.set_ylabel(ylabel)
+        if xlabel is not None:
+            ax.set_xlabel(xlabel)
+
+        if plot_lgd:
+            handles, labels = ax.get_legend_handles_labels()
+            new_handles = [Line2D([], [], c=h.get_edgecolor()) for h in handles[1:3]]
+            handles[1:3] = new_handles
+
+            order = [1, 2, 0, 3]
+            handles_reordered = [handles[idx] for idx in order]
+            labels_reordered = [labels[idx] for idx in order]
+            ax.legend(handles_reordered, labels_reordered, loc='lower right', bbox_to_anchor=(2., 0), fontsize=15)
+
+        if title is not None:
+            ax.set_title(title, y=1.05)
+
+        if 'fig' in locals():
+            return fig, ax
+        else:
+            return ax
 
 
 def plot_sea_res(res, style='ticks', font_scale=2, figsize=[6, 6],

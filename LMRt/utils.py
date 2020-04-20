@@ -5074,6 +5074,99 @@ def calc_anom(time, value, target_yrs, preyr=5, post_avg_range=[0]):
     return anom
 
 
+# -----------------------------------------------
+#  Cumulative Distribution Function Analysis
+# -----------------------------------------------
+def calc_volc_nonvolc_anom(year_all, target_series, year_volc, preyr=3, postyr=6, year_nonvolc=None, post_avg_range=[1],
+                           seed=None, nboot=1000):
+    if year_nonvolc is None:
+        events_expanded = set()
+        year_inner = year_all[preyr:-postyr]
+        for e in year_volc:
+            idx = list(year_inner).index(e)
+            subset = set(year_inner[idx-preyr:idx+postyr+1])
+            events_expanded |= subset
+
+        year_nonvolc = np.array(list(set(year_inner)-set(events_expanded)))
+
+    anom_volc = calc_anom(year_all, target_series, year_volc, post_avg_range=post_avg_range, preyr=preyr)
+    anom_nonvolc = calc_anom(year_all, target_series, year_nonvolc, post_avg_range=post_avg_range, preyr=preyr)
+
+    if seed is not None:
+        np.random.seed(seed)
+
+    draws = []
+    for i in range(nboot):
+        draw_tmp = np.random.choice(year_nonvolc, np.size(year_volc), replace=False)
+        draws.append(np.sort(draw_tmp))
+
+    anom_nonvolc_draws = []
+    for draw in draws:
+        anom_nonvolc_draws.append(calc_anom(year_all, target_series, draw, post_avg_range=post_avg_range, preyr=preyr))
+
+    anom_nonvolc_draws = np.array(anom_nonvolc_draws)
+
+    res_dict = {
+        'anom_volc': anom_volc,
+        'anom_nonvolc': anom_nonvolc,
+        'anom_nonvolc_draws': anom_nonvolc_draws,
+    }
+
+    return res_dict
+
+
+def calc_cdf_qs(cdf_list, qs):
+    ''' Calculate the quantiles of a list of cumulative distribution functions
+    '''
+
+    cdf_dict = {}
+    for c in cdf_list:
+        cdf = np.sort(list(set(c)))
+        cdf = cdf[cdf!=0]
+        diff = np.diff(c)
+        locs = np.where(diff!=0)[0]+1
+        for j, s in enumerate(cdf):
+            if s not in cdf_dict.keys():
+                cdf_dict[s] = [locs[j]]
+            else:
+                cdf_dict[s].append(locs[j])
+
+    cdf_qs = {}
+    for k, c in cdf_dict.items():
+        for q in qs:
+            c_qs = mquantiles(c, [q])
+            if q not in cdf_qs.keys():
+                cdf_qs[q] = {}
+
+            cdf_qs[q][k] = c_qs[0]
+
+    return cdf_qs
+
+
+def recover_cdf_from_locs(loc_dict, loc_len):
+    ''' Recover CDF from a dictionary with densities as keys and locations as values
+    '''
+    cdf = np.empty((loc_len))
+
+    keys = loc_dict.keys()
+    if 0 not in keys:
+        loc_dict[0] = 0
+
+    keys_sorted = np.sort(list(keys))
+    values_sorted = [int(loc_dict[k]) for k in keys_sorted]
+
+    nk = np.size(keys_sorted)
+
+    for i in range(nk-1):
+        #  print(values_sorted[i], values_sorted[i+1], keys_sorted[i])
+        cdf[values_sorted[i]:values_sorted[i+1]] = keys_sorted[i]
+
+    #  print(values_sorted[nk-1], loc_len-1, 1)
+    cdf[values_sorted[nk-1]:] = 1
+
+    return cdf
+
+
 # ===============================================
 
 # -----------------------------------------------
