@@ -28,7 +28,7 @@ from scipy.stats import gaussian_kde
 import cftime
 from pprint import pprint
 from time import time as ttime
-from IPython import embed
+#  from IPython import embed
 from pathos.multiprocessing import ProcessingPool as Pool
 import itertools
 from scipy.stats import pearsonr

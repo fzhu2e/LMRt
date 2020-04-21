@@ -29,20 +29,32 @@ Ultimately, it aims to provide following features:
 
 
 ## Package dependencies
-+ [tqdm](https://github.com/tqdm/tqdm): A fast, extensible progress bar for Python and CLI (`pip install tqdm`)
-+ [prysm-api](https://github.com/fzhu2e/prysm-api): The API for PRoxY System Modeling (PRYSM) (`pip install prysm-api`)
-+ [dotmap](https://github.com/drgrib/dotmap): Dot access dictionary with dynamic hierarchy creation and ordered iteration (`pip install dotmap`)
-+ [xarray](https://github.com/pydata/xarray): N-D labeled arrays and datasets in Python (`pip install xarray`)
-+ [netCDF4](https://github.com/Unidata/netcdf4-python): the python interface for netCDF4 format (`conda install netCDF4`)
-+ [pyspharm](https://code.google.com/archive/p/pyspharm/): an  object-oriented python interface to the NCAR SPHEREPACK library (`conda install -c conda-forge pyspharm`)
-+ [pyyaml](https://github.com/yaml/pyyaml): The next generation YAML parser and emitter for Python (`pip install pyyaml`).
 + [cartopy](https://scitools.org.uk/cartopy/docs/latest/): a Python package designed for geospatial data processing in order to produce maps and other geospatial data analyses (`conda install -c conda-forge cartopy`).
++ [pyspharm](https://code.google.com/archive/p/pyspharm/): an object-oriented python interface to the NCAR SPHEREPACK library (`conda install -c conda-forge pyspharm`).
++ [tqdm](https://github.com/tqdm/tqdm): A fast, extensible progress bar for Python and CLI (`pip install tqdm`).
++ [prysm-api](https://github.com/fzhu2e/prysm-api): The API for PRoxY System Modeling (PRYSM) (`pip install prysm-api`).
++ [dotmap](https://github.com/drgrib/dotmap): Dot access dictionary with dynamic hierarchy creation and ordered iteration (`pip install dotmap`).
++ [xarray](https://github.com/pydata/xarray): N-D labeled arrays and datasets in Python (`pip install xarray`).
++ [netCDF4](https://github.com/Unidata/netcdf4-python): the python interface for netCDF4 format (`pip install netCDF4`).
++ [nitime](https://github.com/nipy/nitime): Timeseries analysis for neuroscience data (`pip install nitime`).
++ [statsmodels](https://www.statsmodels.org): Statistical models, hypothesis tests, and data exploration (`pip install statsmodels`).
++ [pyyaml](https://github.com/yaml/pyyaml): The next generation YAML parser and emitter for Python (`pip install pyyaml`).
++ [seaborn](https://github.com/mwaskom/seaborn): Statistical data visualization using matplotlib (`pip install seaborn`).
 + [scikit-learn](https://scikit-learn.org/stable/index.html): Machine Learning in Python (`pip install -U scikit-learn`).
 + [keras](http://keras.io/): Deep Learning for humans (`pip install keras`).
 + [tensorflow](https://github.com/tensorflow/tensorflow): An Open Source Machine Learning Framework for Everyone (`pip install tensorflow` or `pip install tensorflow-gpu`).
 
 ## How to install
-Once the above dependencies are installed, simply
+Taking a clean install as example, first let's create a new environment named `LMRt` via `conda`
+```
+conda create -n LMRt python=3.7
+conda activate LMRt
+```
+Then install two dependencies that is not able to be installed via `pip`:
+```bash
+conda install -c conda-forge cartopy pyspharm
+```
+Once the above dependencies have been installed, simply
 ```bash
 pip install LMRt
 ```

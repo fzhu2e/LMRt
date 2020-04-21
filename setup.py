@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 __author__ = 'Feng Zhu'
 __email__ = 'fengzhu@usc.edu'
-__version__ = '0.6.6'
+__version__ = '0.6.7'
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
@@ -31,9 +31,15 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     install_requires=[
+        'tqdm',
         'dotmap',
         'pyyaml',
         'prysm-api',
+        'xarray',
+        'statsmodels',
+        'nitime',
+        'netCDF4',
+        'seaborn',
         'scikit-learn',
         'keras',
         'tensorflow',
