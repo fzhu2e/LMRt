@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 __author__ = 'Feng Zhu'
 __email__ = 'fengzhu@usc.edu'
-__version__ = '0.6.7'
+__version__ = '0.6.8'
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()

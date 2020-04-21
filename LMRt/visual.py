@@ -1177,11 +1177,11 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[6, 6],
                  ylim=None, xlim=None,
                  signif_alpha=0.3, signif_color='k', signif_text_loc_fix=(0.1, -0.01), signif_fontsize=15,
                  xlabel='Years relative to event year', ylabel='T anom. (K)',
-                 xticks=None, title=None, plot_signif=True, fig=None, ax=None):
+                 xticks=None, title=None, plot_signif=True, ax=None):
     ''' Plot SEA results
     '''
-    if ax is None or fig is None:
-        sns.set(style=style, font_scale=font_scale)
+    sns.set(style=style, font_scale=font_scale)
+    if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
 
     if 'composite_qs' in res.keys():
@@ -1215,7 +1215,10 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[6, 6],
     if title:
         ax.set_title(title)
 
-    return fig, ax
+    if 'fig' in locals():
+        return fig, ax
+    else:
+        return ax
 
 
 def plot_sea_field_map(field_var, field_signif_lb, field_signif_ub, lat, lon,
