@@ -2859,14 +2859,17 @@ def get_nc_vars(filepath, varnames, useLib='xarray'):
             for varname in varnames:
                 if varname == 'year_float':
                     time = ds['time'].values
-                    if type(time[0]) is np.datetime64:
-                        time = pd.DatetimeIndex(time)
+                    if type(time[0]) is np.float32 or np.float64:
+                        year_float = time
+                    else:
+                        if type(time[0]) is np.datetime64:
+                            time = pd.DatetimeIndex(time)
 
-                    year = [d.year for d in time]
-                    month = [d.month for d in time]
-                    day = [d.day for d in time]
+                        year = [d.year for d in time]
+                        month = [d.month for d in time]
+                        day = [d.day for d in time]
 
-                    year_float = ymd2year_float(year, month, day)
+                        year_float = ymd2year_float(year, month, day)
                     var_list.append(year_float)
 
                 else:
@@ -5078,7 +5081,7 @@ def calc_anom(time, value, target_yrs, preyr=5, post_avg_range=[0]):
 #  Cumulative Distribution Function Analysis
 # -----------------------------------------------
 def calc_volc_nonvolc_anom(year_all, target_series, year_volc, preyr=3, postyr=6, year_nonvolc=None, post_avg_range=[1],
-                           seed=None, nboot=1000):
+                           seeds=None, nboot=1000):
     if year_nonvolc is None:
         events_expanded = set()
         year_inner = year_all[preyr:-postyr]
@@ -5092,11 +5095,11 @@ def calc_volc_nonvolc_anom(year_all, target_series, year_volc, preyr=3, postyr=6
     anom_volc = calc_anom(year_all, target_series, year_volc, post_avg_range=post_avg_range, preyr=preyr)
     anom_nonvolc = calc_anom(year_all, target_series, year_nonvolc, post_avg_range=post_avg_range, preyr=preyr)
 
-    if seed is not None:
-        np.random.seed(seed)
-
     draws = []
     for i in range(nboot):
+        if seeds is not None:
+            np.random.seed(seeds[i])
+
         draw_tmp = np.random.choice(year_nonvolc, np.size(year_volc), replace=False)
         draws.append(np.sort(draw_tmp))
 

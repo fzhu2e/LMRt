@@ -45,6 +45,7 @@ class PAGES2k(object):
         'Tree Rings_WidthBreit': sns.xkcd_rgb['sea green'],
         'tas': sns.xkcd_rgb['pale red'],
         'pr': sns.xkcd_rgb['aqua'],
+        'Tree Rings_PDSI': sns.xkcd_rgb['sea green'],
     }
 
     markers_dict = {
@@ -60,6 +61,9 @@ class PAGES2k(object):
         'Tree Rings_WidthPages2': '^',
         'Tree Rings_WoodDensity': 'v',
         'Tree Rings_WidthBreit': 'h',
+        'tas': '^',
+        'pr': 'o',
+        'Tree Rings_PDSI': '^',
     }
 
 

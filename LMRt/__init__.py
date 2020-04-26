@@ -784,7 +784,7 @@ class ReconJob:
             df_metadata.loc[i, 'Lon (E)'] = np.mod(p2k_lon, 360)
             df_metadata.loc[i, 'Elev'] = p2k_elev
             df_metadata.loc[i, 'Proxy measurement'] = p2k_vn
-            df_metadata.loc[i, 'Databases'] = ['PAGES2kv2']
+            df_metadata.loc[i, 'Databases'] = 'PAGES2kv2'
             df_metadata.at[i, 'Seasonality'] = p2k_season
 
             p2k_time = np.array(row[time_col], dtype=np.float)
