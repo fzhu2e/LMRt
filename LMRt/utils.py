@@ -2859,7 +2859,7 @@ def get_nc_vars(filepath, varnames, useLib='xarray'):
             for varname in varnames:
                 if varname == 'year_float':
                     time = ds['time'].values
-                    if type(time[0]) is np.float32 or np.float64:
+                    if type(time[0]) is np.float32 or type(time[0]) is np.float64:
                         year_float = time
                     else:
                         if type(time[0]) is np.datetime64:
