@@ -1108,10 +1108,12 @@ def plot_volc_composites(gmt, event_yrs, start_yr=0, before=3, after=10, highpas
 
 def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_range,
                   nbin=2000, qs=[0.05, 0.95], figsize=[5, 5], xlabel=None, ylabel='Cumulative distribution function',
-                  lw_nonvolc_qs=2, lw_volc_nonvolc=2, xlim=None, title=None,
-                  clr_volc=sns.xkcd_rgb['pale red'], clr_nonvolc=sns.xkcd_rgb['denim blue'], clr_nonvolc_qs=sns.xkcd_rgb['grey'],
+                  lw_nonvolc_qs=2, lw_volc_nonvolc=2, xlim=None, title=None, show_ratio_in_title=True,
+                  clr_volc_signif=sns.xkcd_rgb['pale red'], clr_volc=sns.xkcd_rgb['black'],
+                  clr_nonvolc=sns.xkcd_rgb['grey'], clr_nonvolc_qs=sns.xkcd_rgb['light grey'],
+                  fs=15, ms=100,
                   label_volc='Volcanic years', label_nonvolc='Non-volcanic years',
-                  label_nonvolc_qs='Randomly selected\nnon-volcanic years', plot_lgd=True, ax=None):
+                  label_nonvolc_qs='Randomly selected\nnon-volcanic years', plot_lgd=True, ax=None, lgd_style=None):
 
         kws = {'cumulative': True, 'density': True, 'histtype': 'step', 'range': value_range, 'bins': nbin, 'lw': lw_volc_nonvolc}
         if ax is None:
@@ -1119,7 +1121,7 @@ def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_
 
         n, bins, patches = {}, {}, {}
         n['volc'], bins['volc'], patches['volc'] = ax.hist(anom_volc, label=label_volc, color=clr_volc, **kws, zorder=99)
-        n['nonvolc'], bins['nonvolc'], patches['nonvolc'] = ax.hist(anom_nonvolc, label=label_nonvolc, color=clr_nonvolc, zorder=99, **kws)
+        n['nonvolc'], bins['nonvolc'], patches['nonvolc'] = ax.hist(anom_nonvolc, label=label_nonvolc, color=clr_nonvolc, zorder=98, **kws)
 
         cdf_draw = []
         for anom_draw in anom_nonvolc_draws:
@@ -1131,21 +1133,36 @@ def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_
         cdf_lb = utils.recover_cdf_from_locs(cdf_qs[qs[0]], nbin)
         cdf_ub = utils.recover_cdf_from_locs(cdf_qs[qs[-1]], nbin)
 
+        x_values = np.linspace(value_range[0], value_range[1], nbin)
+        ub_loc_dict = {}
+        for k, v in cdf_qs[qs[-1]].items():
+            ub_loc_dict[f'{k:.2f}'] = x_values[int(v)]
+
         for k in n.keys():
             patches[k][0].set_xy(patches[k][0].get_xy()[:-1])
 
+        nsig = 0
         for i, yr in enumerate(year_volc):
             for j, b in enumerate(bins['volc']):
                 if anom_volc[i] >= b and anom_volc[i] < bins['volc'][j+1]:
                     n_tmp = n['volc'][j]
 
-            lb = 'Events' if i == 1 else ''
-            ax.scatter(anom_volc[i], n_tmp, marker='^', color='k', zorder=100, label=lb)
-            ax.text(anom_volc[i]-0.2, n_tmp+0.02, yr, color='k', zorder=100, fontsize=15)
+            loc = f'{n_tmp:.2f}'
+            if anom_volc[i] < ub_loc_dict[loc]:
+                signif = False
+            else:
+                signif = True
+                nsig += 1
+
+            clr = clr_volc_signif if signif else clr_volc
+            ax.scatter(anom_volc[i], n_tmp, marker='^', color=clr, zorder=100, s=ms)
+            ax.text(anom_volc[i]-0.2, n_tmp+0.02, yr, color=clr, zorder=100, fontsize=fs)
+
+        ax.scatter(None, None, marker='^', color=clr_volc, label='Insignificant events')
+        ax.scatter(None, None, marker='^', color=clr_volc_signif, label='Significant events')
 
         label_nonvolc_qs = f'{label_nonvolc_qs} ({qs[0]*100:g}%-{qs[-1]*100:g}%)'
-        ax.plot(np.linspace(value_range[0], value_range[-1], nbin), cdf_lb, color=clr_nonvolc_qs, label=label_nonvolc_qs, lw=lw_nonvolc_qs)
-        ax.plot(np.linspace(value_range[0], value_range[-1], nbin), cdf_ub, color=clr_nonvolc_qs, lw=lw_nonvolc_qs)
+        ax.fill_between(np.linspace(value_range[0], value_range[-1], nbin), cdf_lb, cdf_ub, color=clr_nonvolc_qs, label=label_nonvolc_qs, lw=lw_nonvolc_qs)
 
         ax.set_ylim(0, 1.05)
         if xlim is not None:
@@ -1159,16 +1176,26 @@ def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_
 
         if plot_lgd:
             handles, labels = ax.get_legend_handles_labels()
-            new_handles = [Line2D([], [], c=h.get_edgecolor()) for h in handles[1:3]]
-            handles[1:3] = new_handles
+            order = [0, 1, 4, 2, 3]
+            handles = [handles[idx] for idx in order]
+            labels = [labels[idx] for idx in order]
 
-            order = [1, 2, 0, 3]
-            handles_reordered = [handles[idx] for idx in order]
-            labels_reordered = [labels[idx] for idx in order]
-            ax.legend(handles_reordered, labels_reordered, loc='lower right', bbox_to_anchor=(2., 0), fontsize=15)
+            new_handles = [Line2D([], [], c=h.get_edgecolor()) for h in handles[0:2]]
+            handles[0:2] = new_handles
+
+            lgd_kwargs = {'loc': 'lower right', 'bbox_to_anchor': (2., 0), 'fontsize': 15}
+            lgd_style = {} if lgd_style is None else lgd_style.copy()
+            lgd_kwargs.update(lgd_style)
+
+            ax.legend(handles, labels, **lgd_kwargs)
 
         if title is not None:
-            ax.set_title(title, y=1.05)
+            nevents = np.size(year_volc)
+            ratio_str = f'{nsig}/{nevents}'
+            if show_ratio_in_title:
+                ax.set_title(f'{title}, ratio: {ratio_str}', y=1.05)
+            else:
+                ax.set_title(f'{title}', y=1.05)
 
         if 'fig' in locals():
             return fig, ax
