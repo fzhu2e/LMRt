@@ -1190,12 +1190,12 @@ def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_
             ax.legend(handles, labels, **lgd_kwargs)
 
         if title is not None:
+            ax.set_title(f'{title}', y=1.05)
+
+        if show_ratio_in_title:
             nevents = np.size(year_volc)
             ratio_str = f'{nsig}/{nevents}'
-            if show_ratio_in_title:
-                ax.set_title(f'{title}, ratio: {ratio_str}', y=1.05)
-            else:
-                ax.set_title(f'{title}', y=1.05)
+            ax.text(0.02, 0.9, f'Signif. ratio: {ratio_str}', transform=ax.transAxes)
 
         if 'fig' in locals():
             return fig, ax
@@ -1205,7 +1205,7 @@ def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_
 
 def plot_sea_res(res, style='ticks', font_scale=2, figsize=[6, 6],
                  ls='-o', lw=3, color='k', label=None, label_shade=None, alpha=1, shade_alpha=0.3,
-                 ylim=None, xlim=None,
+                 ylim=None, xlim=None, plot_mode='composite_qs',
                  signif_alpha=0.3, signif_color='k', signif_text_loc_fix=(0.1, -0.01), signif_fontsize=15,
                  xlabel='Years relative to event year', ylabel='T anom. (K)',
                  xticks=None, title=None, plot_signif=True, ax=None):
@@ -1215,11 +1215,18 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[6, 6],
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
 
-    if 'composite_qs' in res.keys():
-        ax.plot(res['composite_yr'], res['composite_qs'][1], ls, color=color, label=label, lw=lw, alpha=alpha)
-        ax.fill_between(res['composite_yr'], res['composite_qs'][0], res['composite_qs'][-1], facecolor=color, alpha=shade_alpha, label=label_shade)
+    if plot_mode in res.keys():
+        if plot_mode == 'composite_qs':
+            ax.plot(res['composite_yr'], res['composite_qs'][1], ls, color=color, label=label, lw=lw, alpha=alpha)
+            ax.fill_between(res['composite_yr'], res['composite_qs'][0], res['composite_qs'][-1], facecolor=color, alpha=shade_alpha, label=label_shade)
+        elif plot_mode == 'composite':
+            ax.plot(res['composite_yr'], res['composite'], ls, color=color, label=label, lw=lw, alpha=alpha)
+        elif plot_mode == 'composite_norm':
+            ax.plot(res['composite_yr'], res['composite_qs'][1], ls, color=color, label=label, lw=lw, alpha=1)
+            for i, individual_curve in enumerate(res['composite_norm'][0, :, :, 0]):
+                ax.plot(res['composite_yr'], individual_curve, '--', label=res['events'][i], lw=1, alpha=alpha)
     else:
-        ax.plot(res['composite_yr'], res['composite'], ls, color=color, label=label, lw=lw)
+        raise KeyError('Wrong plot_mode!')
 
     if 'qs_signif' not in res.keys():
         plot_signif = False
