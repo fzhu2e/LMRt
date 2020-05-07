@@ -35,6 +35,10 @@ from scipy.stats import pearsonr
 from sklearn import preprocessing
 import nitime.algorithms as tsa
 
+from rpy2.robjects.packages import importr
+import rpy2.robjects.numpy2ri
+rpy2.robjects.numpy2ri.activate()
+
 from . import load_gridded_data  # original file from LMR
 from . import nn
 
@@ -3383,7 +3387,7 @@ def make_groups(ys, window, apply_func=None, apply_kws={}):
 # -----------------------------------------------
 def mbc(tas, pr, time,
          ref_tas, ref_pr, ref_time,
-         seed=0, Rlib_path='/Library/Frameworks/R.framework/Versions/3.6/Resources/library'):
+         seed=0, Rlib_path=None):
     ''' Perform multivariate bias correction
 
     Args:
@@ -3424,7 +3428,9 @@ def mbc(tas, pr, time,
     model_vars_c = np.array([model_pr_c, model_tas_c]).T
     model_vars = np.array([pr, tas]).T
     # run the multivariate bias correction function
-    ro.r('.libPaths("{}")'.format(Rlib_path))
+    if Rlib_path is not None:
+        ro.r('.libPaths("{}")'.format(Rlib_path))
+
     MBCn_R = importr('MBC').MBCn
 
     res = MBCn_R(o_c=ref_vars_c, m_c=model_vars_c, m_p=model_vars)
@@ -3434,6 +3440,112 @@ def mbc(tas, pr, time,
     tas_corrected = res_array[:, 1]
 
     return tas_corrected, pr_corrected
+
+
+# ===============================================
+#  PDSI
+# -----------------------------------------------
+def calc_PET(T_grid, lat, na_rm=False):
+    ''' Calculate the potential evapotranspiration (PET)
+
+    Parameters
+    ----------
+    T_grid : np.ndarray
+        The grid data of temperature in shape of (nt, nlat, nlon).
+
+    lat : np.array
+        The latitude axis.
+
+    na_rm : bool, optional
+        A logical value indicating whether NA values should be stripped from the computations.
+
+    Returns
+    -------
+    PET: np.ndarray
+        The grid data of PET in shape of (nt, nlat, nlon)
+
+    References
+    ----------
+    The R code: https://rdrr.io/cran/SPEI/man/PET.html
+    ''' 
+    SPEI = importr('SPEI')
+
+    nt, nlat, nlon = np.shape(T_grid)
+    PET = np.ndarray((nt, nlat, nlon))
+    for ilon in tqdm(range(nlon)):
+        PET[:, :, ilon] = SPEI.thornthwaite(T_grid[:, :, ilon]-273.15, lat, na_rm=na_rm)
+
+    return PET
+
+def calc_scPDSI(P_monthly, PET_monthly, start, sc=True):
+    scPDSI = importr('scPDSI')
+    res = scPDSI.pdsi(P_monthly, PET_monthly, start=start, sc=sc)
+    res_dict = dict(zip(res.names, map(list, list(res))))
+    res_idx = res_dict['X']
+    return res_idx
+
+def scPDSI_GCM(P_grid, start, PET_grid=None, T_grid=None, lat=None, nproc=4):
+    nt, nlat, nlon = np.shape(P_grid)
+
+    if PET_grid is None:
+        if T_grid is None or lat is None:
+            raise ValueError('T_grid & lat are required when PET_grid is not provided!')
+        pet = calc_PET(T_grid, lat)
+    else:
+        pet = PET_grid
+
+    pr = P_grid * 3600*24*30  # unit conversion: [kg/m2/s] -> [mm]
+
+    def func_wrapper(ilat, ilon):
+        return calc_scPDSI(pr[:, ilat, ilon], pet[:, ilat, ilon], start)
+
+    ilats = np.arange(nlat)
+    ilons = np.arange(nlon)
+    idx_mesh = np.meshgrid(ilats, ilons)
+    list_of_grids = list(zip(*(grid.flat for grid in idx_mesh)))
+    lat_grids, lon_grids = zip(*list_of_grids)
+
+    with Pool(nproc) as pool:
+        res = pool.map(func_wrapper, lat_grids, lon_grids)
+        res_array = np.array(res)
+        scpdsi = res_array.reshape(nlon, nlat, nt).T
+
+    return scpdsi
+
+def scPDSI_GCM_parallel(P_grid, start, PET_grid=None, T_grid=None, lat=None, nproc=4, batch_size=10):
+    ''' Due to limit of memory, we have to process a block each time
+    '''
+    nt, nlat, nlon = np.shape(P_grid)
+    scpdsi = np.ndarray((nt, nlat, nlon))
+
+    if PET_grid is None:
+        if T_grid is None or lat is None:
+            raise ValueError('T_grid & lat are required when PET_grid is not provided!')
+        pet = calc_PET(T_grid, lat)
+    else:
+        pet = PET_grid
+
+    nbatch_lat = nlat // batch_size
+    nbatch_lon = nlon // batch_size
+    for i in tqdm(range(nbatch_lat+1)):
+        for j in range(nbatch_lon+1):
+            lat_s = i*batch_size 
+            lat_e = np.min([
+                (i+1)*batch_size, nlat
+            ])
+            lon_s = j*batch_size 
+            lon_e = np.min([
+                (j+1)*batch_size, nlon
+            ])
+            scpdsi[:, lat_s:lat_e, lon_s:lon_e] = scPDSI_GCM(
+                P_grid[:, lat_s:lat_e, lon_s:lon_e],
+                start,
+                PET_grid=pet[:, lat_s:lat_e, lon_s:lon_e],
+                nproc=nproc,
+            )
+    return scpdsi
+
+# ===============================================
 
 # ===============================================
 #  Noise
