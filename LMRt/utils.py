@@ -4667,7 +4667,7 @@ def calc_corr_between_fields(
 
 
 def calc_corr_map(field, lat, lon, year, target_ts, target_year, verbose=False,
-                  verif_yrs=np.arange(1880, 2000), npts_lb=25, detrend=False):
+                  verif_yrs=np.arange(1880, 2001), npts_lb=25, detrend=False):
     ''' Calculate the correlation map between the field and the target timeseries
 
     Args:
@@ -4685,6 +4685,8 @@ def calc_corr_map(field, lat, lon, year, target_ts, target_year, verbose=False,
 
     syear, eyear = verif_yrs[0], verif_yrs[-1]
     if syear < np.min(year) or eyear > np.max(year):
+        print(f'Year range: {np.min(year), np.max(year)}')
+        print(f'Verification range: {syear, eyear}')
         raise ValueError('ERROR: The time axis of the field is not fully covering the range of verif_yrs!!!')
     mask = (year >= syear) & (year <= eyear)
 
