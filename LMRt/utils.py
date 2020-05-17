@@ -17,6 +17,7 @@ import pickle
 from scipy import signal
 from scipy import optimize
 from scipy import stats
+from scipy import interpolate
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import glob
@@ -3546,6 +3547,27 @@ def scPDSI_GCM_parallel(P_grid, start, PET_grid=None, T_grid=None, lat=None, npr
     return scpdsi
 
 # ===============================================
+# Field interpolation
+# ===============================================
+def interp_field(field, lat, lon, target_lats, target_lons, method='linear', nproc=4):
+    nt, nlat, nlon = np.shape(field)
+    grid_lon, grid_lat = np.meshgrid(lon, lat)
+
+    if nproc == 1:
+        field_interp = []
+        for field_sub in field:
+            d = interpolate.griddata((grid_lon.flatten(), grid_lat.flatten()), field_sub.flatten(), (target_lons, target_lats), method=method)
+            field_interp.append(d)
+    else:
+        def func_wrapper(field_sub):
+            d = interpolate.griddata((grid_lon.flatten(), grid_lat.flatten()), field_sub.flatten(), (target_lons, target_lats), method=method)
+            return d
+
+        with Pool(nproc) as pool:
+            field_interp = pool.map(func_wrapper, field)
+    
+    field_interp = np.array(field_interp)
+    return field_interp
 
 # ===============================================
 #  Noise

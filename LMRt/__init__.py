@@ -10,12 +10,13 @@ from tqdm import tqdm
 import pandas as pd
 import xarray as xr
 import random
-from scipy import stats
+from scipy import stats, interpolate
 import statsmodels.api as sm
 
 from . import utils
 from . import visual
 from . import nn
+from IPython import embed
 
 ProxyManager = namedtuple(
     'ProxyManager',
@@ -153,13 +154,14 @@ class ReconJob:
                        verbose=False, pacf_threshold_dict=None, fit_args={}, print_OLSp_args=True,
                        ye_savepath=None, seasonal_GCM_filesdict=None, nobs_lb=25,
                        optimal_reg_savepath=None, normalize_proxy=False, detrend_proxy=False,
-                       perturb_proxy_time=False):
+                       perturb_proxy_time=False, grid_search_method='nearest', grid_search_nproc=4):
         ''' Calibrate the OLSp PSM and generate precalib & Ye files
 
         Args:
             seasonal_inst_filesdict (dict): instrumental environmentals, expecting 'tas' and 'pr' (optional)
             seasonal_GCM_filesdict (dict): GCM simulated envrionmentals, expecting 'tas' and 'pr' (optional)
             seasonality (list): e.g. [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] for annual, [7, 8, 9] for NH summer
+            grid_search_method : {'nearest', 'linear'}
         '''
         # PSM calibration
         seasonal_avg = {}
@@ -199,7 +201,32 @@ class ReconJob:
 
         precalib_dict = {}
         optimal_reg_dict = {}
-        for pobj in tqdm(self.proxy_manager.all_proxies, desc='Calibrating OLSp'):
+
+        # for quick interpolation
+        if grid_search_method != 'nearest':
+            proxy_lats, proxy_lons = [], []
+            for pobj in self.proxy_manager.all_proxies:
+                proxy_lats.append(pobj.lat)
+                proxy_lons.append(pobj.lon)
+
+            tas_sub_all = {}
+            for season_tag_tas in season_tags['tas']:
+                tas_sub_all[season_tag_tas] = utils.interp_field(
+                    seasonal_avg['tas'][season_tag_tas], lat['tas'], lon['tas'],
+                    proxy_lats, proxy_lons, method=grid_search_method, nproc=grid_search_nproc,
+                )
+
+
+            if 'pr' in season_tags.keys():
+                pr_sub_all = {}
+                for season_tag_pr in season_tags['pr']:
+                    pr_sub_all[season_tag_pr] = utils.interp_field(
+                        seasonal_avg['pr'][season_tag_pr], lat['pr'], lon['pr'],
+                        proxy_lats, proxy_lons, method=grid_search_method, nproc=grid_search_nproc,
+                    )
+
+        nproxy = len(self.proxy_manager.all_proxies)
+        for proxy_idx, pobj in tqdm(enumerate(self.proxy_manager.all_proxies), desc='Calibrating OLSp', total=nproxy):
             proxy_value = pobj.values.values
             if normalize_proxy:
                 proxy_value = nn.norm(proxy_value)
@@ -214,10 +241,6 @@ class ReconJob:
 
             lat_obs = pobj.lat
             lon_obs = pobj.lon
-            lat_ind = {}
-            lon_ind = {}
-            for varname in lat.keys():
-                lat_ind[varname], lon_ind[varname] = utils.find_closest_loc(lat[varname], lon[varname], lat_obs, lon_obs)
 
             if auto_choose_p:
                 OLSp_args['pacf_threshold'] = pacf_threshold_dict[pobj.type]
@@ -236,28 +259,41 @@ class ReconJob:
             mse_list = []
             proxy_time_adj_list = []
 
+            if grid_search_method == 'nearest':
+                lat_ind = {}
+                lon_ind = {}
+                for varname in lat.keys():
+                    lat_ind[varname], lon_ind[varname] = utils.find_closest_loc(lat[varname], lon[varname], lat_obs, lon_obs)
+
             for season_tag_tas in season_tags['tas']:
                 if optimal_season_tag_tas is not None and season_tag_tas != optimal_season_tag_tas:
                     continue
 
-                tas_sub = seasonal_avg['tas'][season_tag_tas][:, lat_ind['tas'], lon_ind['tas']]
-                if np.all(np.isnan(tas_sub)):
-                    tas_sub, _, _ = utils.search_nearest_not_nan(
-                        seasonal_avg['tas'][season_tag_tas], lat_ind['tas'], lon_ind['tas'],
-                        distance=search_distance,
-                    )
+                if grid_search_method == 'nearest':
+                    tas_sub = seasonal_avg['tas'][season_tag_tas][:, lat_ind['tas'], lon_ind['tas']]
+                    if np.all(np.isnan(tas_sub)):
+                        tas_sub, _, _ = utils.search_nearest_not_nan(
+                            seasonal_avg['tas'][season_tag_tas], lat_ind['tas'], lon_ind['tas'],
+                            distance=search_distance,
+                        )
+                else:
+                    tas_sub = tas_sub_all[season_tag_tas][:, proxy_idx]
 
                 if 'pr' in season_tags.keys():
                     # bivariate linear regression
                     for season_tag_pr in season_tags['pr']:
                         if optimal_season_tag_pr is not None and season_tag_pr != optimal_season_tag_pr:
                             continue
-                        pr_sub = seasonal_avg['pr'][season_tag_pr][:, lat_ind['pr'], lon_ind['pr']]
-                        if np.all(np.isnan(pr_sub)):
-                            pr_sub, _, _ = utils.search_nearest_not_nan(
-                                seasonal_avg['pr'][season_tag_tas], lat_ind['pr'], lon_ind['pr'],
-                                distance=search_distance,
-                            )
+
+                        if grid_search_method == 'nearest':
+                            pr_sub = seasonal_avg['pr'][season_tag_pr][:, lat_ind['pr'], lon_ind['pr']]
+                            if np.all(np.isnan(pr_sub)):
+                                pr_sub, _, _ = utils.search_nearest_not_nan(
+                                    seasonal_avg['pr'][season_tag_tas], lat_ind['pr'], lon_ind['pr'],
+                                    distance=search_distance,
+                                )
+                        else:
+                            pr_sub = pr_sub_all[season_tag_pr][:, proxy_idx]
 
                         # handling dating uncertainty in seasonal records
                         if perturb_proxy_time:
@@ -385,6 +421,32 @@ class ReconJob:
 
                 seasonal_avg[varname], year_ann[varname], lat[varname], lon[varname] = pd.read_pickle(filepath)
 
+            # for quick interpolation
+            if grid_search_method != 'nearest':
+                proxy_lats, proxy_lons = [], []
+                i = 0
+                for k, v in precalib_dict.items():
+                    ptype, pid = k
+                    proxy_lats.append(v['lat'])
+                    proxy_lons.append(v['lon'])
+
+                    i += 1
+
+                tas_sub_all = {}
+                for season_tag_tas in season_tags['tas']:
+                    tas_sub_all[season_tag_tas] = utils.interp_field(
+                        seasonal_avg['tas'][season_tag_tas], lat['tas'], lon['tas'],
+                        proxy_lats, proxy_lons, method=grid_search_method, nproc=grid_search_nproc,
+                    )
+
+                if 'pr' in season_tags.keys():
+                    pr_sub_all = {}
+                    for season_tag_pr in season_tags['pr']:
+                        pr_sub_all[season_tag_pr] = utils.interp_field(
+                            seasonal_avg['pr'][season_tag_pr], lat['pr'], lon['pr'],
+                            proxy_lats, proxy_lons, method=grid_search_method, nproc=grid_search_nproc,
+                        )
+
             pid_map = {}
             nproxy = len(precalib_dict)
             ye_out = np.ndarray((nproxy, np.size(year_ann['tas'])))
@@ -398,20 +460,32 @@ class ReconJob:
 
                 lat_obs = v['lat']
                 lon_obs = v['lon']
-                lat_ind = {}
-                lon_ind = {}
-                for varname in lat.keys():
-                    lat_ind[varname], lon_ind[varname] = utils.find_closest_loc(lat[varname], lon[varname], lat_obs, lon_obs)
+
+                if grid_search_method == 'nearest':
+                    lat_ind = {}
+                    lon_ind = {}
+                    for varname in lat.keys():
+                        lat_ind[varname], lon_ind[varname] = utils.find_closest_loc(lat[varname], lon[varname], lat_obs, lon_obs)
+
+                    tas_sub = seasonal_avg['tas'][season_tag_tas][:, lat_ind['tas'], lon_ind['tas']]
+                else:
+                    proxy_idx = i
+                    tas_sub = tas_sub_all[season_tag_tas][:, proxy_idx]
 
                 exog_dict = {}
-                tas_sub = seasonal_avg['tas'][season_tag_tas][:, lat_ind['tas'], lon_ind['tas']]
                 exog_dict['exog'] = tas_sub
+
                 if p > 0:
                     for k in range(1, p+1):
                         exog_dict[f'exog_lag{k}'] = np.pad(tas_sub[:-k], (k, 0), 'edge')
 
                 if season_tag_pr is not None:
-                    pr_sub = seasonal_avg['pr'][season_tag_pr][:, lat_ind['pr'], lon_ind['pr']]
+                    if grid_search_method == 'nearest':
+                        pr_sub = seasonal_avg['pr'][season_tag_pr][:, lat_ind['pr'], lon_ind['pr']]
+                    else:
+                        proxy_idx = i
+                        pr_sub = pr_sub_all[season_tag_pr][:, proxy_idx]
+
                     exog_dict['exog2'] = pr_sub
 
                 ye_out[i] = optimal_reg['mdl'].predict(exog=exog_dict)
