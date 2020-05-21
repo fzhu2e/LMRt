@@ -147,6 +147,93 @@ class ReconJob:
             self.prior = Prior(prior_dict, ens, prior_sample_indices, coords, full_state_info, trunc_state_info)
             print(f'pid={os.getpid()} >>> job.prior regridded')
 
+    def calibrate_OLSp_1d(
+            self, Xo_time, Xo_value, Xb_value=None, calib_period=[1850, 2015], ye_savepath=None, metric='fitR2adj',
+            normalize_proxy=False, detrend_proxy=False, fit_args={}, verbose=False, nobs_lb=25, precalib_savepath=None, optimal_reg_savepath=None,
+        ):
+
+        OLSp_args = {
+            'calib_period': calib_period,
+            'auto_choose_p': False,
+            'p_max': 4,
+            'p': 0,
+            'fit_args': fit_args,
+            'verbose': verbose,
+            'nobs_lb': nobs_lb,
+        }
+
+        precalib_dict = {}
+        optimal_reg_dict = {}
+
+        nproxy = len(self.proxy_manager.all_proxies)
+        for proxy_idx, pobj in tqdm(enumerate(self.proxy_manager.all_proxies), desc='Calibrating OLSp', total=nproxy):
+            proxy_time = pobj.time
+            proxy_value = pobj.values.values
+
+            if normalize_proxy:
+                proxy_value = nn.norm(proxy_value)
+
+            if detrend_proxy:
+                proxy_value = utils.detrend(proxy_value)
+
+            res_dict = nn.OLSp(proxy_time, proxy_value, Xo_time, Xo_value, **OLSp_args)
+            if res_dict['mdl'] is not None:
+                mdl_resid = res_dict['mdl'].resid
+                mse = nn.mean_squared(mdl_resid)
+                R2_adj = res_dict['mdl'].rsquared_adj
+
+                SNR = np.std(res_dict['mdl'].predict()) / np.std(res_dict['mdl'].resid)
+
+                precalib_dict[(pobj.type, pobj.id)] = {
+                    'lat': pobj.lat,
+                    'lon': pobj.lon,
+                    'elev': pobj.elev,
+                    'ptype': pobj.type,
+                    'Seasonality': None,
+                    'PSMresid': res_dict['mdl'].resid,
+                    'PSMmse': mse,
+                    'fitR2adj': R2_adj,
+                    'SNR': SNR,
+                    'p': res_dict['p'],
+                    'proxy_time_adj': 0,
+                }
+                optimal_reg_dict[(pobj.type, pobj.id)] = res_dict
+            else:
+                print(f'optimal_reg is None for {pobj.id} due to nobs < {nobs_lb}')
+
+        with open(precalib_savepath, 'wb') as f:
+            pickle.dump(precalib_dict, f)
+
+        print(f'\npid={os.getpid()} >>> Saving calibration results to {precalib_savepath}')
+
+        if optimal_reg_savepath is not None:
+            with open(optimal_reg_savepath, 'wb') as f:
+                pickle.dump(optimal_reg_dict, f)
+
+            print(f'\npid={os.getpid()} >>> Saving optimal_reg_dict to {optimal_reg_savepath}')
+
+        # Calculate Ye
+        if ye_savepath is not None:
+            seasonal_avg = {}
+            year_ann = {}
+            lat = {}
+            lon = {}
+            pid_map = {}
+            nproxy = len(precalib_dict)
+            ye_out = np.ndarray((nproxy, np.size(Xb_value)))
+            i = 0
+            for k, v in tqdm(precalib_dict.items(), desc='Calculating Ye', total=nproxy):
+                ptype, pid = k
+                pid_map[pid] = i
+                optimal_reg = optimal_reg_dict[k]
+                exog_dict = {}
+                exog_dict['exog'] = Xb_value
+                ye_out[i] = optimal_reg['mdl'].predict(exog=exog_dict)
+                i += 1
+
+            np.savez(ye_savepath, pid_index_map=pid_map, ye_vals=ye_out)
+            print(f'\npid={os.getpid()} >>> Saving Ye to {ye_savepath}')
+
     def calibrate_OLSp(self, seasonal_inst_filesdict, precalib_savepath, seasonality=None,
                        calib_period=[1850, 2015], auto_choose_p=True, p=0, p_max=4,
                        p_dict=None, seasonality_dict=None,
