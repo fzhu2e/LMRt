@@ -587,7 +587,7 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
 
 
 def plot_scatter_map(df, lon_col='lon', lat_col='lat', type_col='type', value_col='value',
-                     vmin=None, vmax=None, cmap_str='viridis_r',
+                     vmin=None, vmax=None, cmap_str='viridis_r', edge_lw=1,
                      bad_clr='grey', under_clr=sns.xkcd_rgb['cream'], over_clr='black',
                      title=None, title_weight='normal', font_scale=1.5,
                      projection='Robinson', transform=ccrs.PlateCarree(), proj_args={},
@@ -633,7 +633,7 @@ def plot_scatter_map(df, lon_col='lon', lat_col='lat', type_col='type', value_co
         values = list(df[selector][value_col])
         s_plots.append(
             ax_map.scatter(
-                lons, lats, marker=PAGES2k.markers_dict[ptype], cmap=cmap, norm=color_norm,
+                lons, lats, marker=PAGES2k.markers_dict[ptype], cmap=cmap, norm=color_norm, linewidths=edge_lw,
                 c=values, edgecolor='k', s=markersize, transform=ccrs.Geodetic(), label=f'{ptype} (n={np.size(lats)})',
             )
         )
