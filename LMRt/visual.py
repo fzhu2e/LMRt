@@ -450,27 +450,28 @@ def plot_field_map(field_var, lat, lon, levels=50, add_cyclic_point=True,
                    lon_ticks=[60, 120, 180, 240, 300], lat_ticks=[-90, -45, 0, 45, 90],
                    land_color=sns.xkcd_rgb['light grey'], ocean_color=sns.xkcd_rgb['light grey'],
                    land_zorder=None, ocean_zorder=None, signif_values=None, signif_range=[0.05, 9999], hatch='..',
-                   clim=None, cmap='RdBu_r', cmap_under=None, cmap_over=None, extend='both', mode='latlon', add_gridlines=False,
+                   clim=None, cmap=None, cmap_under=None, cmap_over=None, extend=None, mode='latlon', add_gridlines=False,
                    make_cbar=True, cbar_labels=None, cbar_pad=0.05, cbar_orientation='vertical', cbar_aspect=10,
                    cbar_fraction=0.15, cbar_shrink=0.5, cbar_title=None, font_scale=1.5, plot_type=None,
                    fig=None, ax=None):
 
     if plot_type == 'corr':
-        clim = [-1, 1]
-        levels = np.linspace(-1, 1, 21)
-        cbar_labels = np.linspace(-1, 1, 11)
-        num_color = 20
-        cbar_title = 'r'
-        extend = 'neither'
-        cmap = 'RdBu_r'
+        clim = [-1, 1] if clim is None else clim
+        levels = np.linspace(-1, 1, 21) if levels is None else levels
+        cbar_labels = np.linspace(-1, 1, 11) if cbar_labels is None else cbar_labels
+        cbar_title = 'r' if cbar_title is None else cbar_title
+        extend = 'neither' if extend is None else extend
+        cmap = 'RdBu_r' if cmap is None else cmap
     elif plot_type == 'R2':
-        clim = [0, 1]
-        levels = np.linspace(0, 1, 21)
-        cbar_labels = np.linspace(0, 1, 11)
-        num_color = 10
-        cbar_title = r'R$^2$'
-        cmap = 'Reds'
-        extend = 'neither'
+        clim = [0, 1] if clim is None else clim
+        levels = np.linspace(0, 1, 21) if levels is None else levels
+        cbar_labels = np.linspace(0, 1, 11) if cbar_labels is None else cbar_labels
+        cbar_title = r'R$^2$' if cbar_title is None else cbar_title
+        extend = 'neither' if extend is None else extend
+        cmap = 'Reds' if cmap is None else cmap
+    else:
+        extend = 'both' if extend is None else extend
+        cmap = 'RdBu_r' if cmap is None else cmap
 
     if add_cyclic_point:
         if mode == 'latlon':
