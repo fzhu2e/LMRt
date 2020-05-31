@@ -795,11 +795,11 @@ def plot_ts_from_jobs(
     qs=[0.025, 0.25, 0.5, 0.75, 0.975], pannel_size=[10, 4], ylabel='T anom. (K)',
     font_scale=1.5, hspace=0.5, ylim=[-1, 1], color=sns.xkcd_rgb['pale red'],
     title=None, plot_title=True, title_y=1,
-    plot_lgd=True,
-    lgd_ncol=3, lgd_bbox_to_anchor=None,
-    lgd_order=[0, 2, 3, 1], style='ticks',
+    plot_lgd=True, lgd_ncol=3, lgd_bbox_to_anchor=None, lgd_order=[0, 2, 3, 1], style='ticks',
     bias_correction=False,
     ref_value=None, ref_time=None, ref_color='k', ref_ls='-', ref_label='reference', ref_alpha=1,
+    plot_proxies=False, count_proxies=None, clr_proxies=None, label_proxies=None, time_proxies=np.arange(2001),
+    anchor_proxies=(1.3, 0.05),
 ):
     ''' Plot timeseries
 
@@ -818,7 +818,6 @@ def plot_ts_from_jobs(
 
         return item
 
-    print(plot_vars)
     plot_vars = make_list(plot_vars)
     nvars = len(plot_vars)
 
@@ -846,6 +845,7 @@ def plot_ts_from_jobs(
         'tpi': 'Annual Tripole Index',
     }
 
+    ax = {}
     for plot_i, var in enumerate(plot_vars):
 
         ts_qs, year = utils.load_ts_from_jobs(exp_dir, qs, var=var)
@@ -858,7 +858,7 @@ def plot_ts_from_jobs(
         gs = gridspec.GridSpec(nvar, 1)
         gs.update(wspace=0, hspace=hspace)
 
-        ax = plt.subplot(gs[plot_i, 0])
+        ax[plot_i] = plt.subplot(gs[plot_i, 0])
         if qs[2] == 0.5:
             label = 'median'
         else:
@@ -869,14 +869,14 @@ def plot_ts_from_jobs(
         else:
             title_str = title
 
-        ax.plot(year, ts_qs[:, 2], '-', color=color, alpha=1, label=f'{label}')
-        ax.fill_between(year, ts_qs[:, -2], ts_qs[:, 1], color=color, alpha=0.5,
+        ax[plot_i].plot(year, ts_qs[:, 2], '-', color=color, alpha=1, label=f'{label}')
+        ax[plot_i].fill_between(year, ts_qs[:, -2], ts_qs[:, 1], color=color, alpha=0.5,
                         label=f'{qs[1]*100}% to {qs[-2]*100}%')
-        ax.fill_between(year, ts_qs[:, -1], ts_qs[:, 0], color=color, alpha=0.1,
+        ax[plot_i].fill_between(year, ts_qs[:, -1], ts_qs[:, 0], color=color, alpha=0.1,
                         label=f'{qs[0]*100}% to {qs[-1]*100}%')
-        ax.set_ylabel(ylabel[plot_i])
-        ax.set_xlabel('Year (AD)')
-        ax.set_ylim(ylim)
+        ax[plot_i].set_ylabel(ylabel[plot_i])
+        ax[plot_i].set_xlabel('Year (AD)')
+        ax[plot_i].set_ylim(ylim)
 
         if type(ref_value) is list and len(ref_value) > 1:
             ref_v = ref_value[plot_i]
@@ -905,40 +905,69 @@ def plot_ts_from_jobs(
                 ref_mean = np.nanmean(ref_v)
                 ref_v -= ref_mean
 
-
             overlap_yrs = np.intersect1d(ref_t, year)
             ind_ref = np.searchsorted(ref_t, overlap_yrs)
             ind_ts = np.searchsorted(year, overlap_yrs)
             corr = np.corrcoef(ts_qs[ind_ts, 2], ref_v[ind_ref])[1, 0]
             ce = utils.coefficient_efficiency(ref_v[ind_ref], ts_qs[ind_ts, 2])
 
-            ax.plot(ref_t, ref_v, ls=ref_ls, color=ref_color, alpha=ref_alpha, label=f'{ref_l}')
+            ax[plot_i].plot(ref_t, ref_v, ls=ref_ls, color=ref_color, alpha=ref_alpha, label=f'{ref_l}')
             if plot_title[plot_i]:
-                ax.set_title(f'{title_str} (corr={corr:.2f}; CE={ce:.2f})', y=title_y)
+                ax[plot_i].set_title(f'{title_str} (corr={corr:.2f}; CE={ce:.2f})', y=title_y)
 
             if plot_i == 0:
                 if plot_lgd:
                     if lgd_order:
-                        handles, labels = ax.get_legend_handles_labels()
-                        ax.legend(
+                        handles, labels = ax[plot_i].get_legend_handles_labels()
+                        ax[plot_i].legend(
                             [handles[idx] for idx in lgd_order], [labels[idx] for idx in lgd_order],
                             loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor,
                         )
                     else:
-                        ax.legend(loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor)
+                        ax[plot_i].legend(loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor)
         else:
-            ax.set_title(title_str, y=title_y)
+            ax[plot_i].set_title(title_str, y=title_y)
             if plot_lgd:
-                ax.legend(loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor)
+                ax[plot_i].legend(loc='upper center', ncol=lgd_ncol, frameon=False, bbox_to_anchor=lgd_bbox_to_anchor)
 
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
+        ax[plot_i].spines['right'].set_visible(False)
+        ax[plot_i].spines['top'].set_visible(False)
+
+    if plot_proxies:
+        # extend ylim but keep the old tick & ticklabels
+        ax[nvars-1].set_ylim([ylim[0]-2, ylim[-1]])
+        yticks = ax[nvars-1].get_yticks()
+        mask = (yticks>=ylim[0]) & (yticks<=ylim[-1])
+        ax[nvars-1].set_yticks(yticks[mask])
+
+        ax[nvars] = ax[nvars-1].twinx()
+        ct_last = np.zeros(np.size(count_proxies[0]))
+        ct_total = np.zeros(np.size(count_proxies[0]))
+        for p_idx, ct in enumerate(count_proxies):
+            ct_total = ct_total + ct
+            ax[nvars].fill_between(time_proxies, ct_total, ct_last, color=clr_proxies[p_idx], label=label_proxies[p_idx])
+            ct_last = np.copy(ct_total)
+
+        max_proxy_num = np.max(ct_total)
+        yticklabels_default = np.array([1, 10, 100, 1000, 10000])
+        upper_bd = yticklabels_default[yticklabels_default>max_proxy_num][0]
+        mask = yticklabels_default <= upper_bd
+        ax[nvars].set_yscale('log')
+        ax[nvars].set_yticks(yticklabels_default[mask])
+        ax[nvars].set_yticklabels(yticklabels_default[mask], fontsize=15)
+        ax[nvars].set_ylim(0, 1e10)
+        ax[nvars].spines['left'].set_visible(False)
+        ax[nvars].spines['right'].set_visible(False)
+        ax[nvars].spines['top'].set_visible(False)
+        ax[nvars].set_ylabel('# of records', y=0.2, fontsize=15)
+        ax[nvars].set_xlim(*time_span[nvars-1])
+        ax[nvars].legend(frameon=False, loc='lower right', bbox_to_anchor=anchor_proxies, fontsize=15)
 
     if savefig_path:
         plt.savefig(savefig_path, bbox_inches='tight')
         plt.close(fig)
 
-    return fig
+    return fig, ax
 
 
 def plot_vslite_params(lat_obs, lon_obs, T1, T2, M1, M2,
