@@ -799,7 +799,7 @@ def plot_ts_from_jobs(
     bias_correction=False,
     ref_value=None, ref_time=None, ref_color='k', ref_ls='-', ref_label='reference', ref_alpha=1,
     plot_proxies=False, count_proxies=None, clr_proxies=None, label_proxies=None, time_proxies=np.arange(2001),
-    anchor_proxies=(1.3, 0.05),
+    anchor_proxies=(1.3, 0.05), count_min=0.7,
 ):
     ''' Plot timeseries
 
@@ -955,7 +955,7 @@ def plot_ts_from_jobs(
         ax[nvars].set_yscale('log')
         ax[nvars].set_yticks(yticklabels_default[mask])
         ax[nvars].set_yticklabels(yticklabels_default[mask], fontsize=15)
-        ax[nvars].set_ylim(0, 1e10)
+        ax[nvars].set_ylim(count_min, 1e10)
         ax[nvars].spines['left'].set_visible(False)
         ax[nvars].spines['right'].set_visible(False)
         ax[nvars].spines['top'].set_visible(False)
