@@ -3816,6 +3816,40 @@ def global_hemispheric_means(field, lat):
     return gm, nhm, shm
 
 
+def geo_area_mean(field_value, field_lat, field_lon, lat_min, lat_max, lon_min, lon_max):
+    def lon360(lon):
+        # convert from (-180, 180) to (0, 360)
+        return np.mod(lon, 360)
+
+    lats = np.array(field_lat)
+    lons = np.array(field_lon)
+    if any(np.diff(lons)) < 0:
+        field_value, lons = rotate_lon(field_value, lons)
+
+    lat_mask = {}
+    lon_mask = {}
+    ind = {}
+
+    if lat_max - lat_min == 90:
+        lat_mask = np.ones(np.size(lats), dtype=int)
+    else:
+        lat_mask = (lats >= lat_min) & (lats <= lat_max)
+
+    if lon_max - lon_min == 360:
+        lon_mask = np.ones(np.size(lons), dtype=int)
+    else:
+        lon_mask = (lon360(lons) >= lon360(lon_min)) & (lon360(lons) <= lon360(lon_max))
+
+    field_sub = field_value[..., lon_mask]
+    field_sub = field_sub[..., lat_mask, :]
+    field_area_mean = np.average(
+        np.average(field_sub, axis=-1),
+        axis=-1,
+        weights=np.cos(np.deg2rad(lats[lat_mask])),
+    )
+
+    return field_area_mean
+
 def geo_mean(field_value, field_lat, field_lon, lats, lons):
     ''' Calculate the average value of the given field over a list of lat/lon locations
     '''
