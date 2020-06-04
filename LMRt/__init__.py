@@ -881,9 +881,20 @@ class ReconJob:
 
         return df_metadata_out, df_proxies_out
 
-    def build_proxies_from_df(self, df, exclude_list=None, time_year=np.arange(1, 2020),
-                              time_col='year', value_col='paleoData_values',
-                              metadata_savepath=None, proxies_savepath=None):
+    def build_proxies_from_df(
+            self, df, exclude_list=None, time_year=np.arange(1, 2020),
+            time_col='year', value_col='paleoData_values',
+            metadata_savepath=None, proxies_savepath=None,
+            key_id='paleoData_pages2kID',
+            key_dsname='dataSetName',
+            key_type='archiveType',
+            key_lat='geo_meanLat',
+            key_lon='geo_meanLon',
+            key_elev='geo_meanElev',
+            key_varname='paleoData_variableName',
+            key_seasonality='seasonality',
+            key_dbname='dataBasesName',
+        ):
         ''' Build proxies database from a DataFrame
 
         Args:
@@ -920,14 +931,15 @@ class ReconJob:
         }
 
         for i, row in tqdm(df.iterrows(), total=len(df)):
-            p2k_id = row['paleoData_pages2kID']
-            p2k_dsn = row['dataSetName']
-            p2k_archive = row['archiveType']
-            p2k_lat = row['geo_meanLat']
-            p2k_lon = row['geo_meanLon']
-            p2k_elev = row['geo_meanElev']
-            p2k_vn = row['paleoData_variableName']
-            p2k_season = row['seasonality']
+            p2k_id = row[key_id]
+            p2k_dsn = row[key_dsname] if key_dsname in row.keys() else None
+            p2k_archive = row[key_type]
+            p2k_lat = row[key_lat]
+            p2k_lon = row[key_lon]
+            p2k_elev = row[key_elev]
+            p2k_vn = row[key_varname]
+            p2k_season = row[key_seasonality]
+            p2k_dbname = row[key_dbname] if key_dbname in row.keys() else 'PAGES2kv2'
 
             if p2k_archive == 'glacier ice' and p2k_vn == 'd18O1':
                 p2k_vn = 'd18O'
@@ -938,14 +950,14 @@ class ReconJob:
             if p2k_archive == 'lake sediment' and (p2k_vn == 'temperature1' or p2k_vn == 'temperature3'):
                 p2k_vn = 'temperature'
 
-            pid = f'PAGES2kv2_{p2k_dsn}_{p2k_id}:{p2k_vn}'
+            pid = f'{p2k_dbname}_{p2k_dsn}_{p2k_id}:{p2k_vn}'
             df_metadata.loc[i, 'Proxy ID'] = pid
-            df_metadata.loc[i, 'Archive type'] = archive_dict[p2k_archive]
+            df_metadata.loc[i, 'Archive type'] = archive_dict[p2k_archive] if p2k_archive in archive_dict.keys() else p2k_archive
             df_metadata.loc[i, 'Lat (N)'] = p2k_lat
             df_metadata.loc[i, 'Lon (E)'] = np.mod(p2k_lon, 360)
             df_metadata.loc[i, 'Elev'] = p2k_elev
             df_metadata.loc[i, 'Proxy measurement'] = p2k_vn
-            df_metadata.loc[i, 'Databases'] = 'PAGES2kv2'
+            df_metadata.loc[i, 'Databases'] = p2k_dbname
             df_metadata.at[i, 'Seasonality'] = p2k_season
 
             p2k_time = np.array(row[time_col], dtype=np.float)

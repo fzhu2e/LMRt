@@ -3955,19 +3955,42 @@ def calc_tpi(sst, lats, lons):
 
 
 def pobjs2df(pobjs,
-             col_names=['id', 'type', 'start_yr', 'end_yr', 'lat', 'lon', 'elev', 'seasonality', 'values', 'time']):
+             col_names=[
+                 'paleoData_pages2kID',
+                 'archiveType',
+                 'geo_meanLat',
+                 'geo_meanLon',
+                 'geo_meanElev',
+                 'seasonality',
+                 'paleoData_values',
+                 'year',
+            ]):
 
     df = pd.DataFrame(index=range(len(pobjs)), columns=col_names)
 
     for i, pobj in enumerate(pobjs):
         pobj_dict = pobj._asdict()
-        for name in col_names:
-            if name == 'values':
-                entry = pobj_dict[name].values
-            else:
-                entry = pobj_dict[name]
+        id_str = pobj_dict['id']
+        # print(id_str)
+        tmp_str = id_str.split(':')[0]
+        varname = id_str.split(':')[-1]
+        dbname = tmp_str.split('_')[0]
+        dsname = '_'.join(tmp_str.split('_')[1:-2])
+        pid = '_'.join(tmp_str.split('_')[-2:])
+        # print('->', dbname, dsname, pid, varname)
+        # print()
 
-            df.loc[i, name] = entry
+        df.loc[i, 'paleoData_pages2kID'] = pid
+        df.loc[i, 'dataSetName'] = dsname
+        df.loc[i, 'dataBasesName'] = dbname
+        df.loc[i, 'paleoData_variableName'] = varname
+        df.loc[i, 'archiveType'] = pobj_dict['type'].split('_')[0]
+        df.loc[i, 'geo_meanLat'] = pobj_dict['lat']
+        df.loc[i, 'geo_meanLon'] = pobj_dict['lon']
+        df.loc[i, 'geo_meanElev'] = pobj_dict['elev']
+        df.loc[i, 'seasonality'] = pobj_dict['seasonality']
+        df.loc[i, 'paleoData_values'] = pobj_dict['values'].values
+        df.loc[i, 'year'] = pobj_dict['time']
 
     return df
 
@@ -4441,17 +4464,15 @@ def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), 
 
 
 def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 2000), ref_period=[1951, 1980], field='LMR', load_num=None,
-                            valid_frac=0.5, var_name='tas_sfc_Amon', avgInterval=list(range(1, 13)), detrend=False, detrend_kws={}):
+                            valid_frac=0.5, var_name='tas_sfc_Amon', avgInterval=list(range(1, 13)), detrend=False, detrend_kws={},
+                            target_field=None, target_time=None, target_lat=None, target_lon=None):
     ''' Calculate corr and CE between LMR and instrumental fields
 
     Note: The time axis of the LMR field is assumed to fully cover the range of verif_yrs
     '''
-    if not os.path.exists(exp_dir):
-        raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
-
     if field == 'LMR':
         field_em, year, lat, lon = load_field_from_jobs(exp_dir, var=var_name, load_num=load_num)
-    else:
+    elif field == 'nc':
         filepath = exp_dir
         filesdict = {
             var_name: filepath,
@@ -4459,6 +4480,13 @@ def calc_field_inst_corr_ce(exp_dir, ana_pathdict, verif_yrs=np.arange(1880, 200
         lat, lon, time_model, prior_vars = get_env_vars(filesdict, calc_anomaly=False)
         var_model =  prior_vars[var_name]
         field_em, year = seasonal_var(var_model, time_model, avgMonths=avgInterval)
+    elif field == 'ndarray':
+        field_em = target_field
+        year = target_time
+        lat = target_lat
+        lon = target_lon
+    else:
+        raise ValueError('`field` must be either "LMR", "nc", or "ndarray"!')
 
     syear, eyear = verif_yrs[0], verif_yrs[-1]
 
