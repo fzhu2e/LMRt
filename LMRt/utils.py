@@ -4398,6 +4398,12 @@ def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), 
                 outfreq,
             )
 
+            year_float = datetime2year_float(time_grid)
+
+            if outfreq == 'monthly' and type(avgInterval) is list:
+                anomaly_grid, time_grid = seasonal_var(anomaly_grid, year_float, avgMonths=avgInterval)
+                time_grid = year_float2datetime(time_grid)
+
         elif name == 'PREC':
             # get_env_vars
             lat_grid, lon_grid, time_grid, vars_grid = load_func[name](
