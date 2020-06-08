@@ -799,7 +799,7 @@ def plot_ts_from_jobs(
     bias_correction=False,
     ref_value=None, ref_time=None, ref_color='k', ref_ls='-', ref_label='reference', ref_alpha=1,
     plot_proxies=False, count_proxies=None, clr_proxies=None, label_proxies=None, time_proxies=np.arange(2001),
-    anchor_proxies=(1.3, 0.05), count_min=0.7,
+    anchor_proxies=(1.3, 0.05), count_min=0.7, load_num=None,
 ):
     ''' Plot timeseries
 
@@ -848,7 +848,7 @@ def plot_ts_from_jobs(
     ax = {}
     for plot_i, var in enumerate(plot_vars):
 
-        ts_qs, year = utils.load_ts_from_jobs(exp_dir, qs, var=var)
+        ts_qs, year = utils.load_ts_from_jobs(exp_dir, qs, var=var, load_num=load_num)
 
         mask = (year >= time_span[plot_i][0]) & (year <= time_span[plot_i][-1])
         ts_qs = ts_qs[mask, :]

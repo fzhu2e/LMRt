@@ -4204,9 +4204,9 @@ def get_ts_from_jobs(exp_dir, var='tas_sfc_Amon', load_num=None, calc_list=['gm_
         res_dict['shm_ens'] = shm_ens
 
     if 'nino' in calc_list:
-        res_dict['nino12'] = nino12
+        res_dict['nino1.2'] = nino12
         res_dict['nino3'] = nino3
-        res_dict['nino34'] = nino34
+        res_dict['nino3.4'] = nino34
         res_dict['nino4'] = nino4
 
     if 'tpi' in calc_list:
@@ -4228,21 +4228,44 @@ def load_ts_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='tas_sfc_Amon_gm_ens', 
         paths = paths[:load_num]
 
     with xr.open_dataset(paths[0]) as ds:
-        ts_tmp = ds[var].values
         year = ds['year'].values
+        varnames = ds.keys()
+    
+    if var in varnames:
+        ts_tmp = ds[var].values
+        nt = np.shape(ts_tmp)[0]
+        nEN = np.shape(ts_tmp)[-1]
+        nMC = len(paths)
 
-    nt = np.shape(ts_tmp)[0]
-    nEN = np.shape(ts_tmp)[-1]
-    nMC = len(paths)
+        ts = np.ndarray((nt, nEN*nMC))
+        ts_MC = np.ndarray((nt, nMC))
+        for i, path in enumerate(paths):
+            with xr.open_dataset(path) as ds:
+                ts_ens = ds[var].values
 
-    ts = np.ndarray((nt, nEN*nMC))
-    ts_MC = np.ndarray((nt, nMC))
-    for i, path in enumerate(paths):
-        with xr.open_dataset(path) as ds:
-            ts_ens = ds[var].values
+            ts[:, nEN*i:nEN+nEN*i] = ts_ens
+            ts_MC[:, i] = np.average(ts_ens, axis=-1)
 
-        ts[:, nEN*i:nEN+nEN*i] = ts_ens
-        ts_MC[:, i] = np.average(ts_ens, axis=-1)
+    elif 'nino' in var:
+        filepath = os.path.join(exp_dir, f'{var}.pkl')
+        if os.path.exists(filepath):
+            ts_tmp = pd.read_pickle(filepath)
+        else:
+            res_dict = get_ts_from_jobs(exp_dir, load_num=load_num, calc_list=['nino'])
+            if var in res_dict.keys():
+                ts_tmp = res_dict[var]
+                with open(filepath, 'wb') as f:
+                    print(f'Saving to {filepath}...')
+                    pickle.dump(ts_tmp, f)
+            else:
+                raise ValueError('Wrong `var` name!')
+
+        nt, nEN, nMC = np.shape(ts_tmp)
+        ts = ts_tmp.reshape([nt, nEN*nMC])
+        ts_MC = np.average(ts_tmp, axis=1)
+    else:
+        raise ValueError('Wrong `var` name!')
+
 
     if return_MC_mean:
         ts_qs = ts_MC
