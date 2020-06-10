@@ -3569,6 +3569,20 @@ def interp_field(field, lat, lon, target_lats, target_lons, method='linear', npr
     field_interp = np.array(field_interp)
     return field_interp
 
+def regrid_field(field, lat, lon, lat_new, lon_new):
+    nlat_old, nlon_old = np.size(lat), np.size(lon)
+    nlat_new, nlon_new = np.size(lat_new), np.size(lon_new)
+    spec_old = Spharmt(nlon_old, nlat_old, gridtype='regular', legfunc='computed')
+    spec_new = Spharmt(nlon_new, nlat_new, gridtype='regular', legfunc='computed')
+
+    field_new = []
+    for field_old in field:
+        regridded_field =  regrid(spec_old, spec_new, field_old, ntrunc=None, smooth=None)
+        field_new.append(regridded_field)
+
+    field_new = np.array(field_new)
+    return field_new
+
 # ===============================================
 #  Noise
 # -----------------------------------------------
