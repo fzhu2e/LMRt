@@ -126,16 +126,24 @@ class ReconJob:
         Args:
             prior_filepath(str): the full path of the prior file; only one variable is required,
                 and other variables under the same folder will be also loaded if specified in the configuration
-            prior_datatype (str): available options: 'CMIP5'
+            prior_datatype (str): available options: 'CMIP5', 'seasonal_avg'
             anom_reference_period (tuple): the period used for the calculation of climatology/anomaly
             seed (int): random number seed
         '''
-        prior_dict = utils.get_prior(
-            prior_filepath, prior_datatype, self.cfg,
-            anom_reference_period=anom_reference_period,
-            avgInterval=avgInterval,
-            verbose=verbose
-        )
+        if prior_datatype in ['CMIP5']:
+            prior_dict = utils.get_prior(
+                prior_filepath, prior_datatype, self.cfg,
+                anom_reference_period=anom_reference_period,
+                avgInterval=avgInterval,
+                verbose=verbose
+            )
+        elif prior_datatype == 'seasonal_avg':
+            if type(prior_filepath) == dict:
+                prior_dict = {}
+                for varname, prior_path in prior_filepath.items():
+                    prior_dict[f'{varname}_sfc_Amon'] = utils.get_prior_seasonal_avg(prior_path, varname)
+            else:
+                raise ValueError('When `prior_datatype` is "seasonal_avg", `prior_filepath` should be a dictionary with key as variable names and value as filepath.')
 
         ens, prior_sample_indices, coords, full_state_info = utils.populate_ensemble(
             prior_dict, self.cfg, seed=seed, verbose=verbose)

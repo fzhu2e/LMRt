@@ -29,7 +29,6 @@ from scipy.stats import gaussian_kde
 import cftime
 from pprint import pprint
 from time import time as ttime
-#  from IPython import embed
 from pathos.multiprocessing import ProcessingPool as Pool
 import itertools
 from scipy.stats import pearsonr
@@ -101,6 +100,25 @@ def get_prior(filepath, datatype, cfg, anom_reference_period=(1951, 1980), verbo
         detrend=detrend, anom_ref=anom_reference_period,
         var_info=statevars_info,
     )
+
+    return datadict
+
+def get_prior_seasonal_avg(filepath, varname):
+    datadict = {}
+    datadict['vartype'] = '2D:horizontal'
+    datadict['spacecoords'] = ('lat', 'lon')
+    suffix = filepath.split('.')[-1]
+    with xr.open_dataset(filepath) as ds:
+        time = ds['time'].values
+        lat = ds['lat'].values
+        lon = ds['lon'].values
+        var = ds[varname].values
+
+    datadict['years'] = [datetime(year=y, month=1, day=1) for y in time]
+    datadict['value'] = var
+    lon_grid, lat_grid = np.meshgrid(lon, lat)
+    datadict['lat'] = lat_grid
+    datadict['lon'] = lon_grid
 
     return datadict
 
@@ -3549,7 +3567,43 @@ def scPDSI_GCM_parallel(P_grid, start, PET_grid=None, T_grid=None, lat=None, npr
 # ===============================================
 # Field interpolation
 # ===============================================
-def interp_field(field, lat, lon, target_lats, target_lons, method='linear', nproc=4):
+def interp_field(field, lat, lon, target_lats, target_lons, method='linear', nproc=4, add_ghost_grid=True, verbose=False):
+    if add_ghost_grid:
+        if verbose:
+            print('Before adding ghost grid')
+            print('------------------------')
+            print('shape(field):', np.shape(field))
+            print('lat:', lat)
+            print('lon:', lon)
+
+        nt, nlat, nlon = np.shape(field)
+        dlat, dlon = np.mean(np.diff(lat)), np.mean(np.diff(lon))
+        field_new = np.ndarray((nt, nlat+2, nlon+2))
+        field_new[:, 1:-1, 1:-1] = field
+        field_new[:, 0, :] = field_new[:, 1, :]
+        field_new[:, -1, :] = field_new[:, -2, :]
+        field_new[:, :, 0] = field_new[:, :, -2]
+        field_new[:, :, -1] = field_new[:, :, 1]
+        field = np.copy(field_new)
+
+        lat = list(lat)
+        lon = list(lon)
+
+        lat.insert(0, lat[0]-dlat)
+        lat.insert(-1, lat[-1]+dlat)
+        lon.insert(0, lon[0]-dlon)
+        lon.insert(-1, lon[-1]+dlon)
+        lat = np.array(lat)
+        lon = np.array(lon)
+
+        if verbose:
+            print()
+            print('After adding ghost grid')
+            print('------------------------')
+            print('shape(field):', np.shape(field))
+            print('lat:', lat)
+            print('lon:', lon)
+
     nt, nlat, nlon = np.shape(field)
     grid_lon, grid_lat = np.meshgrid(lon, lat)
 
