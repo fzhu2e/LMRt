@@ -797,7 +797,7 @@ def plot_ts_from_jobs(
     bias_correction=False,
     ref_value=None, ref_time=None, ref_color='k', ref_ls='-', ref_label='reference', ref_alpha=1,
     plot_proxies=False, count_proxies=None, clr_proxies=None, label_proxies=None, time_proxies=np.arange(2001),
-    anchor_proxies=(1.3, 0.05), count_min=0.7, load_num=None,
+    anchor_proxies=(1.3, 0.05), count_min=0.7, count_max=100, load_num=None, proxy_count_style='log',
 ):
     ''' Plot timeseries
 
@@ -947,13 +947,19 @@ def plot_ts_from_jobs(
             ct_last = np.copy(ct_total)
 
         max_proxy_num = np.max(ct_total)
-        yticklabels_default = np.array([1, 10, 100, 1000, 10000])
+        if proxy_count_style == 'log':
+            yticklabels_default = np.array([1, 10, 100, 1000, 10000])
+            ax[nvars].set_yscale('log')
+            count_max = 1e10
+        else:
+            yticklabels_default = np.array([0, 50, 100, 200, 500, 1000])
+
+        ax[nvars].set_ylim(count_min, count_max)
+
         upper_bd = yticklabels_default[yticklabels_default>max_proxy_num][0]
         mask = yticklabels_default <= upper_bd
-        ax[nvars].set_yscale('log')
         ax[nvars].set_yticks(yticklabels_default[mask])
         ax[nvars].set_yticklabels(yticklabels_default[mask], fontsize=15)
-        ax[nvars].set_ylim(count_min, 1e10)
         ax[nvars].spines['left'].set_visible(False)
         ax[nvars].spines['right'].set_visible(False)
         ax[nvars].spines['top'].set_visible(False)
