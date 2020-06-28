@@ -49,7 +49,7 @@ class ReconJob:
             self.cfg = utils.setup_cfg(self.cfg)
             print(f'pid={os.getpid()} >>> job.cfg updated')
 
-    def load_proxies(self, proxies_df_filepath, metadata_df_filepath, precalib_filesdict=None,
+    def load_proxies(self, proxies_df_filepath, metadata_df_filepath, precalib_filesdict=None, ye_filesdict=None,
                      select_box_lf=None, select_box_ur=None, exclude_list=None, NH_only=False, SH_only=False,
                      seed=0, verbose=False, print_assim_proxy_count=False, print_proxy_type_list=False,
                      detrend_proxy=False, detrend_method=None, detrend_kws={}):
@@ -59,6 +59,7 @@ class ReconJob:
             select_box_lf=select_box_lf, select_box_ur=select_box_ur,
             NH_only=NH_only, SH_only=SH_only,
             precalib_filesdict=precalib_filesdict,
+            ye_filesdict=ye_filesdict,
             exclude_list=exclude_list,
             detrend_proxy=detrend_proxy, detrend_method=detrend_method, detrend_kws=detrend_kws,
             verbose=verbose)
@@ -910,6 +911,7 @@ class ReconJob:
             key_varname='paleoData_variableName',
             key_seasonality='seasonality',
             key_dbname='dataBasesName',
+            calc_annual=True,
         ):
         ''' Build proxies database from a DataFrame
 
@@ -979,8 +981,13 @@ class ReconJob:
             p2k_time = np.array(row[time_col], dtype=np.float)
             p2k_value = np.array(row[value_col], dtype=np.float)
             p2k_time, p2k_value = utils.clean_ts(p2k_time, p2k_value)
-            time_annual, data_annual, proxy_resolution = utils.compute_annual_means(p2k_time, p2k_value, 0.5, 'calendar year')
-            data_annual = np.squeeze(data_annual)
+            if calc_annual:
+                time_annual, data_annual, proxy_resolution = utils.compute_annual_means(p2k_time, p2k_value, 0.5, 'calendar year')
+                data_annual = np.squeeze(data_annual)
+            else:
+                time_annual, data_annual = p2k_time, p2k_value
+                proxy_resolution = np.median(np.diff(p2k_time))
+
             df_metadata.loc[i, 'Resolution (yr)'] = proxy_resolution
             df_metadata.loc[i, 'Oldest (C.E.)'] = np.min(time_annual)
             df_metadata.loc[i, 'Youngest (C.E.)'] = np.max(time_annual)

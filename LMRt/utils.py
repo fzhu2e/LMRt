@@ -280,7 +280,7 @@ def regrid_prior(cfg, X, verbose=False):
     return Xb_one, Xb_one_coords, new_state_info
 
 
-def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict=None,
+def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict=None, ye_filesdict=None,
               exclude_list=None, select_box_lf=None, select_box_ur=None,
               detrend_proxy=False, detrend_method=None, detrend_kws={}, verbose=False,
               NH_only=False, SH_only=False):
@@ -371,7 +371,6 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
         psm_key = proxy_db_cfg[db_name].proxy_psm_type[proxy_type]
 
         # check if pre-calibration files are provided
-
         if precalib_filesdict and psm_key in precalib_filesdict.keys():
             psm_data = pd.read_pickle(precalib_filesdict[psm_key])
             try:
@@ -432,6 +431,20 @@ def get_proxy(cfg, proxies_df_filepath, metadata_df_filepath, precalib_filesdict
                 if pobj.lat > 0:
                     picked_proxies.pop(idx)
                     picked_proxy_ids.pop(idx)
+
+        if ye_filesdict:
+            pid_idx_list = []
+            for k, v in ye_filesdict.items():
+                ye_data = np.load(v, allow_pickle=True)
+                pid_idx_map = ye_data['pid_index_map'][()]
+                pid_idx_list.extend(list(pid_idx_map.keys()))
+
+            for idx, pobj in enumerate(picked_proxies):
+                if pobj.id not in pid_idx_list:
+                    picked_proxies.pop(idx)
+                    picked_proxy_ids.pop(idx)
+
+        # check if ye files are provided
 
     return picked_proxy_ids, picked_proxies
 
@@ -4493,10 +4506,10 @@ def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), 
                 calc_anomaly=True,
                 ref_period=ref_period,
             )
-            if avgInterval == list(range(1, 13)):
-                anomaly_grid, time_grid = annualize_var(vars_grid['prate'], time_grid)
-            else:
+            if type(avgInterval) is list:
                 anomaly_grid, time_grid = seasonal_var(vars_grid['prate'], time_grid, avgMonths=avgInterval)
+            else:
+                anomaly_grid = vars_grid['prate']
 
             time_grid = year_float2datetime(time_grid)
 

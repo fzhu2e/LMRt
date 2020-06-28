@@ -260,7 +260,7 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
                  figsize=[8, 10], projection='Robinson', proj_args={}, central_longitude=0, markersize=50,
                  plot_count=True, nrow=2, ncol=1, wspace=0.5, hspace=0.1,
                  lgd_ncol=1, lgd_anchor_upper=(1, -0.1), lgd_anchor_lower=(1, -0.05),lgd_frameon=False,
-                 enumerate_ax=False, enumerate_prop={'weight': 'bold', 'size': 30},
+                 enumerate_ax=False, enumerate_prop={'weight': 'bold', 'size': 30}, p=PAGES2k,
                  enumerate_anchor_map=[0, 1], enumerate_anchor_count=[0, 1], map_grid_idx=0, count_grid_idx=-1):
 
     sns.set(style='darkgrid', font_scale=font_scale)
@@ -285,9 +285,9 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
 
     # plot markers by archive types
     if markers_dict is None:
-        markers_dict = PAGES2k.markers_dict
+        markers_dict = p.markers_dict
     if colors_dict is None:
-        colors_dict = PAGES2k.colors_dict
+        colors_dict = p.colors_dict
 
     s_plots = []
     type_names = []
@@ -363,10 +363,8 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
 def plot_proxy_age_map(df, lon_col='lon', lat_col='lat', type_col='type', time_col='time',
                        title=None, title_weight='normal', font_scale=1.5,
                        figsize=[12, 10], projection=ccrs.Robinson, central_longitude=0, markersize=150,
-                       plot_cbar=True, marker_color=None, transform=ccrs.PlateCarree(),
+                       plot_cbar=True, marker_color=None, transform=ccrs.PlateCarree(), p=PAGES2k,
                        add_nino34_box=False, add_nino12_box=False, add_box=False, add_box_lf=None, add_box_ur=None):
-
-    p = PAGES2k()
 
     sns.set(style='ticks', font_scale=font_scale)
     fig = plt.figure(figsize=figsize)
