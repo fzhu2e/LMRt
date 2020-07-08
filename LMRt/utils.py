@@ -4423,6 +4423,7 @@ def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), 
         'GPCC': load_gridded_data.read_gridded_data_GPCC,
         'PREC': get_env_vars,
         '20CR-V2C': get_env_vars,
+        'ERSSTv5': get_env_vars,
     }
 
     calib_vars = {
@@ -4435,6 +4436,7 @@ def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), 
         'GPCC': ['precip'],
         'PREC': 'precip',
         '20CR-V2C': 'precip',
+        'ERSSTv5': 'sst',
     }
 
     inst_field = {}
@@ -4510,6 +4512,20 @@ def load_inst_analyses(ana_pathdict, var='gm', verif_yrs=np.arange(1880, 2000), 
                 anomaly_grid, time_grid = seasonal_var(vars_grid['prate'], time_grid, avgMonths=avgInterval)
             else:
                 anomaly_grid = vars_grid['prate']
+
+            time_grid = year_float2datetime(time_grid)
+
+        elif name == 'ERSSTv5':
+            # get_env_vars
+            lat_grid, lon_grid, time_grid, vars_grid = load_func[name](
+                {'sst': path},
+                calc_anomaly=True,
+                ref_period=ref_period,
+            )
+            if type(avgInterval) is list:
+                anomaly_grid, time_grid = seasonal_var(vars_grid['sst'], time_grid, avgMonths=avgInterval)
+            else:
+                anomaly_grid = vars_grid['sst']
 
             time_grid = year_float2datetime(time_grid)
 
