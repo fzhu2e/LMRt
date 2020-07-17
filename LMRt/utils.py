@@ -114,7 +114,8 @@ def get_prior_seasonal_avg(filepath, varname):
         lon = ds['lon'].values
         var = ds[varname].values
 
-    datadict['years'] = [datetime(year=y, month=1, day=1) for y in time]
+    # datadict['years'] = [datetime(year=y, month=1, day=1) for y in time]
+    datadict['years'] = [int(y) for y in time]
     datadict['value'] = var
     lon_grid, lat_grid = np.meshgrid(lon, lat)
     datadict['lat'] = lat_grid
@@ -2548,7 +2549,8 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath, dtype
     if output_full_ens:
         # output full ensemble for field
         for name in var_names:
-            output_dict[name] = (('year', 'ens', 'lat', 'lon'), field_ens_save[name])
+            output_var = np.array(field_ens_save[name], dtype=dtype)
+            output_dict[name] = (('year', 'ens', 'lat', 'lon'), output_var)
 
     else:
         # output ensemble means for field and full ensemble for timeseries
@@ -2597,6 +2599,7 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath, dtype
 
                 # calculate tripole index (TPI)
                 tpi = calc_tpi(field_ens_save[name], lats, lons)
+                tpi = np.array(tpi, dtype=dtype)
                 output_dict['tpi'] = (('year', 'ens'), tpi)
 
             if output_geo_mean:
@@ -4358,6 +4361,98 @@ def load_ts_from_jobs(exp_dir, qs=[0.05, 0.5, 0.95], var='tas_sfc_Amon_gm_ens', 
             ts_qs = ts
 
     return ts_qs, year
+
+def replace_jobs_with_ens_mean(exp_dir, var='tas_sfc_Amon', load_num=None,
+        calc_ts_list = ['tas_sfc_Amon_gm_ens', 'tas_sfc_Amon_nhm_ens', 'tas_sfc_Amon_shm_ens',
+                        'nino1+2', 'nino3', 'nino3.4', 'nino4', 'tpi'],
+        compress_dict={'zlib': True, 'least_significant_digit': 1}, dtype=np.float32,
+    ):
+
+    if not os.path.exists(exp_dir):
+        raise ValueError('ERROR: Specified path of the results directory does not exist!!!')
+
+    paths = sorted(glob.glob(os.path.join(exp_dir, 'job_r*')))
+    if load_num is not None:
+        paths = paths[:load_num]
+
+    for i, path in enumerate(paths):
+        print(f'Processing {path} ...')
+        with xr.open_dataset(path) as ds:
+
+            lats = ds['lat'].values
+            lons = ds['lon'].values
+            years = ds['year'].values
+            ens = ds['ens'].values
+            nyr = np.size(years)
+            nens = np.size(ens)
+
+            gm_ens = np.zeros((nyr, nens))
+            nhm_ens = np.zeros((nyr, nens))
+            shm_ens = np.zeros((nyr, nens))
+
+            field_ens_save = {}
+            field_ens_save[var] = ds[var].values
+
+            name = var
+            for k in range(nens):
+                gm_ens[:, k], nhm_ens[:, k], shm_ens[:, k] = global_hemispheric_means(
+                    field_ens_save[name][:, k, :, :], lats)
+
+            # compress to float32
+            gm_ens = np.array(gm_ens, dtype=dtype)
+            nhm_ens = np.array(nhm_ens, dtype=dtype)
+            shm_ens = np.array(shm_ens, dtype=dtype)
+
+            output_dict = {}
+            field_ens_mean = np.average(ds[var].values, axis=1)
+            field_ens_mean = np.array(field_ens_mean, dtype=dtype)
+            output_dict[var] = (('year', 'lat', 'lon'), field_ens_mean)
+
+            output_dict[f'{name}_gm_ens'] = (('year', 'ens'), gm_ens)
+            output_dict[f'{name}_nhm_ens'] = (('year', 'ens'), nhm_ens)
+            output_dict[f'{name}_shm_ens'] = (('year', 'ens'), shm_ens)
+
+            if name == 'tas_sfc_Amon':
+                # calculate NINO indices
+                nino_ind = nino_indices(field_ens_save[name], lats, lons)
+                nino12 = nino_ind['nino1+2']
+                nino3 = nino_ind['nino3']
+                nino34 = nino_ind['nino3.4']
+                nino4 = nino_ind['nino4']
+
+                nino12 = np.array(nino12, dtype=dtype)
+                nino3 = np.array(nino3, dtype=dtype)
+                nino34 = np.array(nino34, dtype=dtype)
+                nino4 = np.array(nino4, dtype=dtype)
+
+                output_dict['nino1+2'] = (('year', 'ens'), nino12)
+                output_dict['nino3'] = (('year', 'ens'), nino3)
+                output_dict['nino3.4'] = (('year', 'ens'), nino34)
+                output_dict['nino4'] = (('year', 'ens'), nino4)
+
+                # calculate tripole index (TPI)
+                tpi = calc_tpi(field_ens_save[name], lats, lons)
+                tpi = np.array(tpi, dtype=dtype)
+                output_dict['tpi'] = (('year', 'ens'), tpi)
+
+            ds_new = xr.Dataset(
+                data_vars=output_dict,
+                coords={
+                    'year': years,
+                    'lat': lats,
+                    'lon': lons,
+                    'ens': np.arange(nens)
+                })
+
+            save_path = f'{path}_ensMean'
+            if compress_dict is not None:
+                encoding_dict = {}
+                for k in output_dict.keys():
+                    encoding_dict[k] = compress_dict
+
+                ds_new.to_netcdf(save_path, encoding=encoding_dict)
+            else:
+                ds_new.to_netcdf(save_path)
 
 
 def load_field_from_jobs(exp_dir, var='tas_sfc_Amon', average_iter=True, load_num=None):
