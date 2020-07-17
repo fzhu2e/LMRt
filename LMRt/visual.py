@@ -1237,6 +1237,129 @@ def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_
             return ax
 
 
+def plot_volc_timeseries(timeseries_dict, event_yrs, before=3, after=10, main_alpha=1, event_alpha=1,
+                         clr_dict=None, ls_dict=None, lw_dict=None, xlabel=None, ylabel=None,
+                         xlim=None, ylim=None, event_ylim=None, ncol=4, lgd_ncol=1, lgd_loc=(0, 1)):
+    ''' Plot timeseires around volcanic events
+
+    Args
+    ----
+    timeseries_dict : dict
+        the nested dictionary with key as labels for the timeseries and value as timeseries dictionaries,
+        each timeseries dictionary is with keys as 'time' and 'value'
+    event_yrs : list
+        the list of volcanic events
+    before : int
+        the years before volcanic events for plotting
+    after : int
+        the years after volcanic events for plotting
+    clr_dict : dict
+        the dictionary that assigns colors for each timeseries dictionary
+    ls_dict : dict
+        the dictionary that assigns linestyles for each timeseries dictionary
+    lw_dict : dict
+        the dictionary that assigns linewidths for each timeseries dictionary
+
+    '''
+    sns.set(style="ticks", font_scale=1.5)
+    fig = plt.figure(figsize=[20, 12])
+
+    nevents = np.size(event_yrs)
+    nrow = int(1 + np.ceil(nevents/ncol))
+    gs = gridspec.GridSpec(nrow, ncol)
+    gs.update(wspace=0.2, hspace=0.5)
+
+    ax = {}
+    ax['main'] = plt.subplot(gs[0, :])
+    for ts_name, ts_dict in timeseries_dict.items():
+        ts_time = ts_dict['time']
+        ts_value = ts_dict['value']
+
+        plot_kwargs = {}
+        if clr_dict is not None:
+            plot_kwargs['color'] = clr_dict[ts_name]
+        if ls_dict is not None:
+            plot_kwargs['linestyle'] = ls_dict[ts_name]
+        if lw_dict is not None:
+            plot_kwargs['linewidth'] = lw_dict[ts_name]
+
+        ax['main'].plot(ts_time, ts_value, label=ts_name, alpha=main_alpha, **plot_kwargs)
+
+    if xlabel is not None:
+        ax['main'].set_xlabel(xlabel)
+
+    if ylabel is not None:
+        ax['main'].set_ylabel(ylabel)
+
+    if xlim is not None:
+        ax['main'].set_xlim(xlim)
+
+    if ylim is not None:
+        ax['main'].set_ylim(ylim)
+
+    ax['main'].legend(frameon=False, ncol=lgd_ncol, bbox_to_anchor=lgd_loc, loc='upper left')
+    ax['main'].spines['right'].set_visible(False)
+    ax['main'].spines['top'].set_visible(False)
+
+    i_row = 1
+    for idx, event in enumerate(event_yrs):
+        ax[event] = plt.subplot(gs[i_row+idx//ncol, idx%ncol])
+
+        x_start = event-before
+        x_end = event+after
+
+        if ylabel is not None and idx%ncol == 0:
+            ax[event].set_ylabel(ylabel)
+        if event_ylim is None:
+            ax[event].set_ylim(ylim)
+        else:
+            ax[event].set_ylim(event_ylim)
+
+        ax[event].set_xlabel('Years relative to event year')
+
+        for ts_name, ts_dict in timeseries_dict.items():
+            ts_time = ts_dict['time']
+            ts_value = ts_dict['value']
+
+            plot_kwargs = {}
+            if clr_dict is not None:
+                plot_kwargs['color'] = clr_dict[ts_name]
+            if ls_dict is not None:
+                plot_kwargs['linestyle'] = ls_dict[ts_name]
+            if lw_dict is not None:
+                plot_kwargs['linewidth'] = lw_dict[ts_name]
+
+            if event in list(ts_time):
+                i_start = list(ts_time).index(x_start)
+                i_end = list(ts_time).index(x_end)
+                ax[event].plot(ts_time[i_start:i_end+1], ts_value[i_start:i_end+1], alpha=event_alpha, **plot_kwargs)
+            else:
+                empty_time = np.arange(x_start, x_end+1)
+                empty_value = np.empty(np.size(empty_time))
+                empty_value[:] = np.nan
+                ax[event].plot(empty_time, empty_value)
+
+            ax_ylim = ax[event].get_ylim()
+            ax[event].axvline(x=event, color=sns.xkcd_rgb['grey'], ls='--')
+            ax[event].axhline(y=0, color=sns.xkcd_rgb['grey'], ls='--')
+            ax[event].text(event, 1.05*ax_ylim[-1], event, horizontalalignment='center', color=sns.xkcd_rgb['grey'])
+            
+            ax[event].set_xlim([x_start, x_end])
+            if before % 2 == 0:
+                xticklabels = np.arange(-before, after+1, 2)
+                xticks = np.arange(x_start, x_end+1, 2)
+            else:
+                xticklabels = np.arange(-before+1, after+1, 2)
+                xticks = np.arange(x_start+1, x_end+1, 2)
+
+            ax[event].set_xticks(xticks)
+            ax[event].set_xticklabels(xticklabels)
+
+        ax[event].spines['right'].set_visible(False)
+        ax[event].spines['top'].set_visible(False)
+
+    return fig, ax
+
 def plot_sea_res(res, style='ticks', font_scale=2, figsize=[6, 6],
                  ls='-o', lw=3, color='k', label=None, label_shade=None, alpha=1, shade_alpha=0.3,
                  ylim=None, xlim=None, plot_mode='composite_qs',
