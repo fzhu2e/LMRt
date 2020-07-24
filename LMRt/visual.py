@@ -239,6 +239,67 @@ class CartopySettings:
         'OSNI': ccrs.OSNI,
     }
 
+def in_notebook():
+    ''' Check if the code is executed in a Jupyter notebook
+    '''
+    try:
+        from IPython import get_ipython
+        if 'IPKernelApp' not in get_ipython().config:  # pragma: no cover
+            return False
+    except ImportError:
+        return False
+    return True
+
+
+def showfig(fig):
+    if in_notebook:
+        try:
+            from IPython.display import display
+        except ImportError:
+            pass
+
+        plt.close()
+        display(fig)
+
+    else:
+        plt.show()
+
+
+def savefig(fig, path, settings={}, verbose=True):
+    ''' Save a figure to a path
+    Args
+    ----
+    fig : figure
+        the figure to save
+    settings : dict
+        the dictionary of arguments for plt.savefig(); some notes below:
+        - "path" must be specified; it can be any existed or non-existed path,
+          with or without a suffix; if the suffix is not given in "path", it will follow "format"
+        - "format" can be one of {"pdf", "eps", "png", "ps"}
+    '''
+    savefig_args = {'bbox_inches': 'tight'}
+    savefig_args.update(settings)
+
+    path = pathlib.Path(savefig_args['path'])
+    savefig_args.pop('path')
+
+    dirpath = path.parent
+    if not dirpath.exists():
+        dirpath.mkdir(parents=True, exist_ok=True)
+        if verbose:
+            print(f'Directory created at: "{dirpath}"')
+
+    path_str = str(path)
+    if path.suffix not in ['.eps', '.pdf', '.png', '.ps']:
+        path = pathlib.Path(f'{path_str}.pdf')
+
+    fig.savefig(path_str, **savefig_args)
+    plt.close()
+
+    if verbose:
+        print(f'Figure saved at: "{str(path)}"')
+
+
 def setlabel(ax, label, loc=2, borderpad=0.6, **kwargs):
     ''' Enumerate plots
 
@@ -786,6 +847,96 @@ def plot_corr_ce(corr_dict, ce_dict, lw=3, ms=10,
 
     return fig
 
+
+def plot_candlesticks(time, value, upcolor=sns.xkcd_rgb['medium green'], downcolor=sns.xkcd_rgb['pale red'],
+                      ax=None, bar_kws=None, figsize=[8, 3], xlabel=None, ylabel=None, xlim=None, ylim=None, title=None,
+                      mute=False, xticks=None, yticks=None):
+    bar_kwargs = {'alpha':1, 'width': 1}
+    if bar_kws is not None:
+        bar_kwargs.update(bar_kws)
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+    
+    value_left = value[:-1]
+    value_right = value[1:]
+    idx_up = []
+    idx_down = []
+    for idx in range(np.size(value_right)):
+        if value_right[idx] > value_left[idx]:
+            idx_up.append(idx)
+        else:
+            idx_down.append(idx)
+
+    ax.bar(time[1:][idx_up], value_right[idx_up]-value_left[idx_up], bottom=value_left[idx_up], color=upcolor, **bar_kwargs)
+    ax.bar(time[1:][idx_down], value_left[idx_down]-value_right[idx_down], bottom=value_right[idx_down], color=downcolor, **bar_kwargs)
+
+    if xlabel is not None:
+        ax.set_xlabel(xlabel)
+    if ylabel is not None:
+        ax.set_ylabel(ylabel)
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    if xticks is not None:
+        ax.set_xticks(xticks)
+    if yticks is not None:
+        ax.set_yticks(yticks)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    if title is not None:
+        ax.set_title(title)
+
+    if 'fig' in locals():
+        if not mute:
+            showfig(fig)
+        return fig, ax
+    else:
+        return ax
+
+def plot_candlesticks_comparison(
+        time1, value1, time2, value2, upcolor=sns.xkcd_rgb['medium green'], downcolor=sns.xkcd_rgb['pale red'],
+        bar_kws=None, shade_kws=None, figsize=[14, 6], xlabel1=None, ylabel1=None, xlabel2=None, ylabel2=None,
+        xlim=None, ylim=None, xticks=None, yticks=None, title=None, mute=False, savefig_path=None, savefig_settigns=None):
+    shade_kwargs = {'alpha':0.3, 'width': 1}
+    if shade_kws is not None:
+        shade_kwargs.update(shade_kws)
+
+    fig, ax = plt.subplots(2, figsize=figsize, sharex=True)
+
+    plot_candlesticks(time1, value1, upcolor=upcolor, downcolor=downcolor, bar_kws=bar_kws, xlabel=xlabel1, ylabel=ylabel1, xlim=xlim, ylim=ylim, ax=ax[0], xticks=xticks, yticks=yticks)
+    plot_candlesticks(time2, value2, upcolor=upcolor, downcolor=downcolor, bar_kws=bar_kws, xlabel=xlabel2, ylabel=ylabel2, xlim=xlim, ylim=ylim, ax=ax[1], xticks=xticks, yticks=yticks)
+    ax[0].tick_params(labelbottom=True)
+
+    sign_diff_1 = np.sign(value1[1:] - value1[:-1])
+    sign_diff_2 = np.sign(value2[1:] - value2[:-1])
+
+    mask_up = (sign_diff_1*sign_diff_2==1) & (sign_diff_1 > 0)
+    mask_down = (sign_diff_1*sign_diff_2==1) & (sign_diff_1 < 0)
+
+    idx_up = [i for i, x in enumerate(mask_up) if x]
+    idx_down = [i for i, x in enumerate(mask_down) if x]
+
+    ax[0].bar(time1[1:][idx_up], 1, color=upcolor, transform=ax[0].get_xaxis_transform(), **shade_kwargs)
+    ax[0].bar(time1[1:][idx_down], 1, color=downcolor, transform=ax[0].get_xaxis_transform(), **shade_kwargs)
+    ax[1].bar(time2[1:][idx_up], 1, color=upcolor, transform=ax[1].get_xaxis_transform(), **shade_kwargs)
+    ax[1].bar(time2[1:][idx_down], 1, color=downcolor, transform=ax[1].get_xaxis_transform(), **shade_kwargs)
+
+    tot_length = np.size(sign_diff_1)
+    consistent_up = np.sum(mask_up)
+    consistent_down = np.sum(mask_down)
+    if title is None:
+        ax[0].set_title(
+            f'Synchronized increases: {consistent_up}/{tot_length}={consistent_up/tot_length:.2f}; Synchronized decreases: {consistent_down}/{tot_length}={consistent_down/tot_length:.2f}; Synchronization rate: {consistent_up+consistent_down}/{tot_length}={(consistent_up+consistent_down)/tot_length:.2f}'
+        )
+    else:
+        ax[0].set_title(
+            f'{title}\nSynchronized increases: {consistent_up}/{tot_length}={consistent_up/tot_length:.2f}; Synchronized decreases: {consistent_down}/{tot_length}={consistent_down/tot_length:.2f}; Synchronization rate: {consistent_up+consistent_down}/{tot_length}={(consistent_up+consistent_down)/tot_length:.2f}'
+        )
+    
+    if not mute:
+        showfig(fig)
+
+    return fig, ax
 
 def plot_ts_from_jobs(
     exp_dir, time_span=(0, 2000), savefig_path=None,
