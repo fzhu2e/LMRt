@@ -848,6 +848,109 @@ def plot_corr_ce(corr_dict, ce_dict, lw=3, ms=10,
     return fig
 
 
+def plot_rolling_phase(time, value, window, factor=1, lw=1, ms=3,
+                       clr_value=sns.xkcd_rgb['dark grey'], clr_pos=sns.xkcd_rgb['pale red'], clr_neg=sns.xkcd_rgb['denim blue'],
+                       ax=None, figsize=[8, 3], xlabel=None, ylabel=None, xlim=None, ylim=None, title=None, mute=False,
+                       xticks=None, yticks=None):
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+
+    rolling_std = pd.Series(value).rolling(window).std().values
+    rolling_mean = pd.Series(value).rolling(window).mean().values
+
+    ax.plot(time, value, color=clr_value, lw=lw, marker='o', markersize=ms)
+    ax.plot(time-window//2, rolling_mean+factor*rolling_std, color=clr_pos, lw=lw)
+    ax.plot(time-window//2, rolling_mean-factor*rolling_std, color=clr_neg, lw=lw)
+    
+    if xlabel is not None:
+        ax.set_xlabel(xlabel)
+    if ylabel is not None:
+        ax.set_ylabel(ylabel)
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    if xticks is not None:
+        ax.set_xticks(xticks)
+    if yticks is not None:
+        ax.set_yticks(yticks)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    if title is not None:
+        ax.set_title(title)
+
+    if 'fig' in locals():
+        if not mute:
+            showfig(fig)
+        return fig, ax
+    else:
+        return ax
+
+def plot_rolling_phase_comparison(time1, value1, time2, value2, window, factor=1, lw=1,
+                                  clr_value=sns.xkcd_rgb['dark grey'], clr_norm=sns.xkcd_rgb['grey'],
+                                  clr_pos=sns.xkcd_rgb['pale red'], clr_neg=sns.xkcd_rgb['denim blue'],
+                                  figsize=[12, 6], xlabel1=None, xlabel2=None, ylabel1=None, ylabel2=None,
+                                  xlim=None, ylim=None, title=None, xticks=None, yticks=None, shade_kws=None,
+                                  signif_method='isospec', events=None):
+
+    shade_kwargs = {'alpha':0.5, 'width': 1}
+    if shade_kws is not None:
+        shade_kwargs.update(shade_kws)
+
+    fig, ax = plt.subplots(2, figsize=figsize, sharex=True)
+    plot_rolling_phase(time1, value1, window, clr_value=clr_value, clr_pos=clr_pos, clr_neg=clr_neg, xlabel=xlabel1, ylabel=ylabel1, ax=ax[0], lw=lw, xlim=xlim, ylim=ylim, xticks=xticks, yticks=yticks)
+    plot_rolling_phase(time2, value2, window, clr_value=clr_value, clr_pos=clr_pos, clr_neg=clr_neg, xlabel=xlabel2, ylabel=ylabel2, ax=ax[1], lw=lw, xlim=xlim, ylim=ylim, xticks=xticks, yticks=yticks)
+    ax[0].tick_params(labelbottom=True)
+
+    res_dict = utils.calc_phase_consistent_rate(time1, value1, time2, value2, window, factor=factor)
+    idx_pos = res_dict['idx_pos']
+    idx_neg = res_dict['idx_neg']
+    idx_norm = res_dict['idx_norm']
+    idx_pos_1 = res_dict['idx_pos_1']
+    idx_neg_1 = res_dict['idx_neg_1']
+    idx_norm_1 = res_dict['idx_norm_1']
+    idx_pos_2 = res_dict['idx_pos_2']
+    idx_neg_2 = res_dict['idx_neg_2']
+    idx_norm_2 = res_dict['idx_norm_2']
+    cons_rate = res_dict['cons_rate']
+    t = res_dict['t']
+
+    ax[0].bar(t[idx_pos], 1, color=clr_pos, transform=ax[0].get_xaxis_transform(), **shade_kwargs)
+    ax[0].bar(t[idx_neg], 1, color=clr_neg, transform=ax[0].get_xaxis_transform(), **shade_kwargs)
+    ax[0].bar(t[idx_norm], 1, color=clr_norm, transform=ax[0].get_xaxis_transform(), **shade_kwargs)
+    ax[1].bar(t[idx_pos], 1, color=clr_pos, transform=ax[1].get_xaxis_transform(), **shade_kwargs)
+    ax[1].bar(t[idx_neg], 1, color=clr_neg, transform=ax[1].get_xaxis_transform(), **shade_kwargs)
+    ax[1].bar(t[idx_norm], 1, color=clr_norm, transform=ax[1].get_xaxis_transform(), **shade_kwargs)
+
+    if events is not None:
+        events = np.array(events)
+        mask = (events>=t[0]) & (events<=t[-1])
+        for event in events[mask]:
+            if event in t[idx_pos_1]:
+                clr_event = clr_pos
+            elif event in t[idx_neg_1]:
+                clr_event = clr_neg
+            elif event in t[idx_norm_1]:
+                clr_event = clr_norm
+            ax_ylim = ax[0].get_ylim()
+            ax[0].axvline(x=event, color=clr_event, ls='-', zorder=99, lw=1)
+            ax[0].text(event, 1.05*ax_ylim[-1], event, horizontalalignment='center', color=clr_event)
+
+            if event in t[idx_pos_2]:
+                clr_event = clr_pos
+            elif event in t[idx_neg_2]:
+                clr_event = clr_neg
+            elif event in t[idx_norm_2]:
+                clr_event = clr_norm
+            ax_ylim = ax[1].get_ylim()
+            ax[1].axvline(x=event, color=clr_event, ls='-', zorder=99, lw=1)
+            ax[1].text(event, 1.05*ax_ylim[-1], event, horizontalalignment='center', color=clr_event)
+
+    signif_test = utils.signif_test_consistent_rate(time1, value1, time2, value2, window, factor=factor, qs=[0.95], method=signif_method)
+    signif_q95 = signif_test['cons_rate_qs'][0]
+    if title is None:
+        fig.suptitle(f'Timespan: {int(t[0])}-{int(t[-1])}; Rolling window: {window}; Consistency rate: {cons_rate:.2f} ({signif_method} 95% = {signif_q95:.2f})')
+
+    return fig, ax
+
 def plot_candlesticks(time, value, upcolor=sns.xkcd_rgb['medium green'], downcolor=sns.xkcd_rgb['pale red'],
                       ax=None, bar_kws=None, figsize=[8, 3], xlabel=None, ylabel=None, xlim=None, ylim=None, title=None,
                       mute=False, xticks=None, yticks=None):
@@ -897,7 +1000,8 @@ def plot_candlesticks_comparison(
         time1, value1, time2, value2, signif_method='isospec',
         upcolor=sns.xkcd_rgb['medium green'], downcolor=sns.xkcd_rgb['pale red'],
         bar_kws=None, shade_kws=None, figsize=[14, 6], xlabel1=None, ylabel1=None, xlabel2=None, ylabel2=None,
-        xlim=None, ylim=None, xticks=None, yticks=None, title=None, mute=False, savefig_path=None, savefig_settigns=None):
+        xlim=None, ylim=None, xticks=None, yticks=None, title=None, mute=False, savefig_path=None, savefig_settigns=None,
+        events=None):
     shade_kwargs = {'alpha':0.3, 'width': 1}
     if shade_kws is not None:
         shade_kwargs.update(shade_kws)
@@ -919,18 +1023,41 @@ def plot_candlesticks_comparison(
     tot_length = res_dict['tot_length']
     idx_up = res_dict['idx_up']
     idx_down = res_dict['idx_down']
+    idx_up_1 = res_dict['idx_up_1']
+    idx_down_1 = res_dict['idx_down_1']
+    idx_up_2 = res_dict['idx_up_2']
+    idx_down_2 = res_dict['idx_down_2']
 
     ax[0].bar(time1[1:][idx_up], 1, color=upcolor, transform=ax[0].get_xaxis_transform(), **shade_kwargs)
     ax[0].bar(time1[1:][idx_down], 1, color=downcolor, transform=ax[0].get_xaxis_transform(), **shade_kwargs)
     ax[1].bar(time2[1:][idx_up], 1, color=upcolor, transform=ax[1].get_xaxis_transform(), **shade_kwargs)
     ax[1].bar(time2[1:][idx_down], 1, color=downcolor, transform=ax[1].get_xaxis_transform(), **shade_kwargs)
+    
+    if events is not None:
+        events = np.array(events)
+        mask = (events>=time1[0]) & (events<=time1[-1])
+        for event in events[mask]:
+            if event in time1[1:][idx_up_1]:
+                clr_event = upcolor
+            elif event in time1[1:][idx_down_1]:
+                clr_event = downcolor
+            ax_ylim = ax[0].get_ylim()
+            ax[0].axvline(x=event, color=clr_event, ls='-', zorder=99, lw=1)
+            ax[0].text(event, 1.05*ax_ylim[-1], event, horizontalalignment='center', color=clr_event)
+
+            if event in time1[1:][idx_up_2]:
+                clr_event = upcolor
+            elif event in time1[1:][idx_down_2]:
+                clr_event = downcolor
+            ax_ylim = ax[1].get_ylim()
+            ax[1].axvline(x=event, color=clr_event, ls='-', zorder=99, lw=1)
+            ax[1].text(event, 1.05*ax_ylim[-1], event, horizontalalignment='center', color=clr_event)
 
     signif_test = utils.signif_test_sync_rate(value1, value2, qs=[0.95], method=signif_method)
     signif_q95 = signif_test['sync_rate_qs'][0]
-
     if title is None:
-        ax[0].set_title(
-            f'Synchronization rate: {sync_rate:.2f} ({signif_method} 95% = {signif_q95:.2f})'
+        fig.suptitle(
+            f'Timespan: {int(time1[0])}-{int(time1[-1])}; Synchronization rate: {sync_rate:.2f} ({signif_method} 95% = {signif_q95:.2f})'
         )
     
     if not mute:

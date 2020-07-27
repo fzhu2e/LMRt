@@ -5973,6 +5973,132 @@ def calc_psd_from_proxyDB(proxy_manager, ptype, normalize=False, ntau=11):
 
     return psd, freqs
 
+# -----------------------------------------------
+#  Phase
+# -----------------------------------------------
+def calc_phase(time, value, window, factor=1):
+    rolling_std = pd.Series(value).rolling(window).std().values
+    rolling_mean = pd.Series(value).rolling(window).mean().values
+    rolling_time = time - window//2
+
+    rt, r_std = clean_ts(rolling_time, rolling_std)
+    rt, r_mean = clean_ts(rolling_time, rolling_mean)
+
+    upper_bd = r_mean + factor*r_std
+    lower_bd = r_mean - factor*r_std
+
+    mask = (time>=rt[0]) & (time<=rt[-1])
+    t, v = time[mask], value[mask]
+
+    phase = []
+    for i, y in enumerate(v):
+        if y > upper_bd[i]:
+            phase.append(1)
+        elif y < lower_bd[i]:
+            phase.append(-1)
+        else:
+            phase.append(0)
+
+    return t, phase
+
+def calc_phase_consistent_rate(time1, value1, time2, value2, window, factor=1):
+    t, phase1 = calc_phase(time1, value1, window, factor=factor)
+    t, phase2 = calc_phase(time2, value2, window, factor=factor)
+
+    idx_pos_1 = []
+    idx_pos_2 = []
+    idx_neg_1 = []
+    idx_neg_2 = []
+    idx_norm_1 = []
+    idx_norm_2 = []
+
+    idx_pos = []
+    idx_neg = []
+    idx_norm = []
+    for idx in range(np.size(t)):
+        if (phase1[idx] == phase2[idx]) & (phase1[idx] == 1):
+            idx_pos.append(idx)
+        elif (phase1[idx] == phase2[idx]) & (phase1[idx] == -1):
+            idx_neg.append(idx)
+        elif (phase1[idx] == phase2[idx]) & (phase1[idx] == 0):
+            idx_norm.append(idx)
+
+        if phase1[idx] == 1:
+            idx_pos_1.append(idx)
+        elif phase1[idx] == -1:
+            idx_neg_1.append(idx)
+        else:
+            idx_norm_1.append(idx)
+
+        if phase2[idx] == 1:
+            idx_pos_2.append(idx)
+        elif phase2[idx] == -1:
+            idx_neg_2.append(idx)
+        else:
+            idx_norm_2.append(idx)
+
+    tot_consistent = len(idx_pos) + len(idx_neg) + len(idx_norm)
+    tot_length = len(t)
+    cons_rate = tot_consistent / tot_length
+
+    res_dict = {
+        't': t,
+        'phase1': phase1,
+        'phase2': phase2,
+        'idx_pos_1': idx_pos_1,
+        'idx_neg_1': idx_neg_1,
+        'idx_norm_1': idx_norm_1,
+        'idx_pos_2': idx_pos_2,
+        'idx_neg_2': idx_neg_2,
+        'idx_norm_2': idx_norm_2,
+        'idx_pos': idx_pos,
+        'idx_neg': idx_neg,
+        'idx_norm': idx_norm,
+        'cons_rate':  cons_rate
+    }
+
+    return res_dict
+
+def signif_test_consistent_rate(time1, value1, time2, value2, window, factor=1,
+                                qs=[0.95], seed=None, nsim=1000, method='isospec'):
+    if seed is not None:
+        np.random.seed(seed)
+
+    if method == 'isospec':
+        surr_value1 = phaseran(value1, nsim)
+        surr_value2 = phaseran(value2, nsim)
+        len_value1 = np.shape(surr_value1)[0]
+        len_value2 = np.shape(surr_value2)[0]
+        time1 = time1[:len_value1]
+        time2 = time1[:len_value2]
+
+    elif method == 'AR1':
+        surr_value1 = np.ndarray((np.size(value1), nsim))
+        surr_value2 = np.ndarray((np.size(value2), nsim))
+
+        for v, surr_v in zip([value1, value2], [surr_value1, surr_value2]):
+            mod = sm.tsa.ARMA(v, (1, 0), missing='drop').fit(trend='nc', disp=0)
+            sig = np.std(v)
+            g = mod.params[0]
+            sig_n = sig*np.sqrt(1-g**2)
+            ar = np.r_[1, -g]
+            ma = np.r_[1, 0]
+            for i in range(nsim):
+                surr_v[:, i] = sm.tsa.ArmaProcess(ar, ma).generate_sample(nsample=np.size(v), scale=sig_n, burnin=50)
+
+    cons_rate = []
+    for idx in range(nsim):
+        res_dict = calc_phase_consistent_rate(time1, surr_value1[:, idx], time2, surr_value2[:, idx], window, factor=factor)
+        cons_rate.append(res_dict['cons_rate'])
+
+    cons_rate_qs = mquantiles(cons_rate, qs)
+
+    res_dict = {
+        'cons_rate_qs': cons_rate_qs,
+    }
+
+    return res_dict
+
 
 # -----------------------------------------------
 #  Synchronization rate
@@ -6002,6 +6128,11 @@ def calc_sync_rate(value1, value2):
     idx_up = [i for i, x in enumerate(mask_up) if x]
     idx_down = [i for i, x in enumerate(mask_down) if x]
 
+    idx_up_1 = [i for i, x in enumerate(sign_diff_1>0) if x]
+    idx_down_1 = [i for i, x in enumerate(sign_diff_1<0) if x]
+    idx_up_2 = [i for i, x in enumerate(sign_diff_2>0) if x]
+    idx_down_2 = [i for i, x in enumerate(sign_diff_2<0) if x]
+
     res_dict = {
         'consistent_up': consistent_up,
         'consistent_down': consistent_down,
@@ -6013,6 +6144,10 @@ def calc_sync_rate(value1, value2):
         'sync_down_rate_2': sync_down_rate_2,
         'idx_up': idx_up,
         'idx_down': idx_down,
+        'idx_up_1': idx_up_1,
+        'idx_down_1': idx_down_1,
+        'idx_up_2': idx_up_2,
+        'idx_down_2': idx_down_2,
     }
 
     return res_dict
