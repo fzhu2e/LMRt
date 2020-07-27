@@ -5973,3 +5973,97 @@ def calc_psd_from_proxyDB(proxy_manager, ptype, normalize=False, ntau=11):
 
     return psd, freqs
 
+
+# -----------------------------------------------
+#  Synchronization rate
+# -----------------------------------------------
+def calc_sync_rate(value1, value2):
+    sign_diff_1 = np.sign(value1[1:] - value1[:-1])
+    sign_diff_2 = np.sign(value2[1:] - value2[:-1])
+
+    n_up_1 = np.sum(sign_diff_1 > 0)
+    n_down_1 = np.sum(sign_diff_1 < 0)
+    n_up_2 = np.sum(sign_diff_2 > 0)
+    n_down_2 = np.sum(sign_diff_2 < 0)
+
+    mask_up = (sign_diff_1*sign_diff_2==1) & (sign_diff_1 > 0)
+    mask_down = (sign_diff_1*sign_diff_2==1) & (sign_diff_1 < 0)
+    tot_length = np.size(sign_diff_1)
+    consistent_up = np.sum(mask_up)
+    consistent_down = np.sum(mask_down)
+
+    sync_up_rate_1 = consistent_up / n_up_1
+    sync_up_rate_2 = consistent_up / n_up_2
+    sync_down_rate_1 = consistent_down / n_down_1
+    sync_down_rate_2 = consistent_down / n_down_2
+
+    sync_rate = (consistent_up+consistent_down) / tot_length
+
+    idx_up = [i for i, x in enumerate(mask_up) if x]
+    idx_down = [i for i, x in enumerate(mask_down) if x]
+
+    res_dict = {
+        'consistent_up': consistent_up,
+        'consistent_down': consistent_down,
+        'tot_length': tot_length,
+        'sync_rate': sync_rate,
+        'sync_up_rate_1': sync_up_rate_1,
+        'sync_up_rate_2': sync_up_rate_2,
+        'sync_down_rate_1': sync_down_rate_1,
+        'sync_down_rate_2': sync_down_rate_2,
+        'idx_up': idx_up,
+        'idx_down': idx_down,
+    }
+
+    return res_dict
+
+def signif_test_sync_rate(value1, value2, qs=[0.95], seed=None, nsim=1000, method='isospec'):
+    if seed is not None:
+        np.random.seed(seed)
+
+    if method == 'isospec':
+        surr_value1 = phaseran(value1, nsim)
+        surr_value2 = phaseran(value2, nsim)
+
+    elif method == 'AR1':
+        surr_value1 = np.ndarray((np.size(value1), nsim))
+        surr_value2 = np.ndarray((np.size(value1), nsim))
+
+        for v, surr_v in zip([value1, value2], [surr_value1, surr_value2]):
+            mod = sm.tsa.ARMA(v, (1, 0), missing='drop').fit(trend='nc', disp=0)
+            sig = np.std(v)
+            g = mod.params[0]
+            sig_n = sig*np.sqrt(1-g**2)
+            ar = np.r_[1, -g]
+            ma = np.r_[1, 0]
+            for i in range(nsim):
+                surr_v[:, i] = sm.tsa.ArmaProcess(ar, ma).generate_sample(nsample=np.size(v), scale=sig_n, burnin=50)
+
+    sync_rate = []
+    sync_up_rate_1 = []
+    sync_up_rate_2 = []
+    sync_down_rate_1 = []
+    sync_down_rate_2 = []
+    for idx in range(nsim):
+        res_dict = calc_sync_rate(surr_value1[:, idx], surr_value2[:, idx])
+        sync_rate.append(res_dict['sync_rate'])
+        sync_up_rate_1.append(res_dict['sync_up_rate_1'])
+        sync_up_rate_2.append(res_dict['sync_up_rate_2'])
+        sync_down_rate_1.append(res_dict['sync_down_rate_1'])
+        sync_down_rate_2.append(res_dict['sync_down_rate_2'])
+
+    sync_rate_qs = mquantiles(sync_rate, qs)
+    sync_up_rate_1_qs = mquantiles(sync_up_rate_1, qs)
+    sync_up_rate_2_qs = mquantiles(sync_up_rate_2, qs)
+    sync_down_rate_1_qs = mquantiles(sync_down_rate_1, qs)
+    sync_down_rate_2_qs = mquantiles(sync_down_rate_2, qs)
+
+    res_dict = {
+        'sync_rate_qs': sync_rate_qs,
+        'sync_up_rate_1_qs': sync_up_rate_1_qs,
+        'sync_up_rate_2_qs': sync_up_rate_2_qs,
+        'sync_down_rate_1_qs': sync_down_rate_1_qs,
+        'sync_down_rate_2_qs': sync_down_rate_2_qs,
+    }
+
+    return res_dict

@@ -894,7 +894,8 @@ def plot_candlesticks(time, value, upcolor=sns.xkcd_rgb['medium green'], downcol
         return ax
 
 def plot_candlesticks_comparison(
-        time1, value1, time2, value2, upcolor=sns.xkcd_rgb['medium green'], downcolor=sns.xkcd_rgb['pale red'],
+        time1, value1, time2, value2, signif_method='isospec',
+        upcolor=sns.xkcd_rgb['medium green'], downcolor=sns.xkcd_rgb['pale red'],
         bar_kws=None, shade_kws=None, figsize=[14, 6], xlabel1=None, ylabel1=None, xlabel2=None, ylabel2=None,
         xlim=None, ylim=None, xticks=None, yticks=None, title=None, mute=False, savefig_path=None, savefig_settigns=None):
     shade_kwargs = {'alpha':0.3, 'width': 1}
@@ -907,30 +908,29 @@ def plot_candlesticks_comparison(
     plot_candlesticks(time2, value2, upcolor=upcolor, downcolor=downcolor, bar_kws=bar_kws, xlabel=xlabel2, ylabel=ylabel2, xlim=xlim, ylim=ylim, ax=ax[1], xticks=xticks, yticks=yticks)
     ax[0].tick_params(labelbottom=True)
 
-    sign_diff_1 = np.sign(value1[1:] - value1[:-1])
-    sign_diff_2 = np.sign(value2[1:] - value2[:-1])
-
-    mask_up = (sign_diff_1*sign_diff_2==1) & (sign_diff_1 > 0)
-    mask_down = (sign_diff_1*sign_diff_2==1) & (sign_diff_1 < 0)
-
-    idx_up = [i for i, x in enumerate(mask_up) if x]
-    idx_down = [i for i, x in enumerate(mask_down) if x]
+    res_dict = utils.calc_sync_rate(value1, value2)
+    consistent_up = res_dict['consistent_up']
+    consistent_down = res_dict['consistent_down']
+    sync_rate = res_dict['sync_rate']
+    sync_up_rate_1 = res_dict['sync_up_rate_1']
+    sync_up_rate_2 = res_dict['sync_up_rate_2']
+    sync_down_rate_1 = res_dict['sync_down_rate_1']
+    sync_down_rate_2 = res_dict['sync_down_rate_2']
+    tot_length = res_dict['tot_length']
+    idx_up = res_dict['idx_up']
+    idx_down = res_dict['idx_down']
 
     ax[0].bar(time1[1:][idx_up], 1, color=upcolor, transform=ax[0].get_xaxis_transform(), **shade_kwargs)
     ax[0].bar(time1[1:][idx_down], 1, color=downcolor, transform=ax[0].get_xaxis_transform(), **shade_kwargs)
     ax[1].bar(time2[1:][idx_up], 1, color=upcolor, transform=ax[1].get_xaxis_transform(), **shade_kwargs)
     ax[1].bar(time2[1:][idx_down], 1, color=downcolor, transform=ax[1].get_xaxis_transform(), **shade_kwargs)
 
-    tot_length = np.size(sign_diff_1)
-    consistent_up = np.sum(mask_up)
-    consistent_down = np.sum(mask_down)
+    signif_test = utils.signif_test_sync_rate(value1, value2, qs=[0.95], method=signif_method)
+    signif_q95 = signif_test['sync_rate_qs'][0]
+
     if title is None:
         ax[0].set_title(
-            f'Synchronized increases: {consistent_up}/{tot_length}={consistent_up/tot_length:.2f}; Synchronized decreases: {consistent_down}/{tot_length}={consistent_down/tot_length:.2f}; Synchronization rate: {consistent_up+consistent_down}/{tot_length}={(consistent_up+consistent_down)/tot_length:.2f}'
-        )
-    else:
-        ax[0].set_title(
-            f'{title}\nSynchronized increases: {consistent_up}/{tot_length}={consistent_up/tot_length:.2f}; Synchronized decreases: {consistent_down}/{tot_length}={consistent_down/tot_length:.2f}; Synchronization rate: {consistent_up+consistent_down}/{tot_length}={(consistent_up+consistent_down)/tot_length:.2f}'
+            f'Synchronization rate: {sync_rate:.2f} ({signif_method} 95% = {signif_q95:.2f})'
         )
     
     if not mute:
