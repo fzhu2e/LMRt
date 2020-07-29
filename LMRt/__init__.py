@@ -243,6 +243,248 @@ class ReconJob:
             np.savez(ye_savepath, pid_index_map=pid_map, ye_vals=ye_out)
             print(f'\npid={os.getpid()} >>> Saving Ye to {ye_savepath}')
 
+    def calibrate_PSM_coral(self, seasonal_inst_filesdict, precalib_savepath, calib_period=[1850, 2015], optimal_reg_savepath=None, fig_args={},
+                            metric='fitR2adj', ye_savepath=None, seasonal_GCM_filesdict=None, nobs_lb=25, search_distance=3, verbose=False,
+                            method='bilinear'):
+        ''' Calibrate the coral PSM and generate precalib & Ye files
+
+        Args:
+            seasonal_inst_filesdict (dict): instrumental environmentals
+            seasonal_GCM_filesdict (dict): GCM simulated envrionmentals
+        '''
+        seasonal_avg = {}
+        year_ann = {}
+        lat = {}
+        lon = {}
+
+        for varname, filepath in seasonal_inst_filesdict.items():
+            if varname not in ['sst', 'tas', 'sss', 'd18Osw']:
+                raise ValueError(f'Wrong variable name: {varname}; should be "sst", "tas", "sss", or "d18Osw"')
+
+            if varname == 'sst':
+                vn = 'tas'
+            else:
+                vn = varname
+
+            seasonal_avg[vn], year_ann[vn], lat[vn], lon[vn] = pd.read_pickle(filepath)
+            season_tags = list(seasonal_avg[vn].keys())
+            season_tag = season_tags[0]
+
+        OLSp_args = {
+            'calib_period': calib_period,
+            'auto_choose_p': False,
+            'p_max': 0,
+            'p': 0,
+            'fit_args': fig_args,
+            'verbose': verbose,
+            'nobs_lb': nobs_lb,
+        }
+
+        precalib_dict = {}
+        optimal_reg_dict = {}
+
+        nproxy = len(self.proxy_manager.all_proxies)
+        for proxy_idx, pobj in tqdm(enumerate(self.proxy_manager.all_proxies), desc='Calibrating OLS', total=nproxy):
+            proxy_value = pobj.values.values
+            proxy_time = pobj.time
+
+            lat_obs = pobj.lat
+            lon_obs = pobj.lon
+
+            res_dict_list = []
+            season_tag_list = []
+            R2_adj_list = []
+            mse_list = []
+            proxy_time_adj_list = []
+
+            lat_ind = {}
+            lon_ind = {}
+            for varname in lat.keys():
+                if varname == 'sss':
+                    mode = 'mesh'
+                else:
+                    mode = 'latlon'
+                lat_ind[varname], lon_ind[varname] = utils.find_closest_loc(lat[varname], lon[varname], lat_obs, lon_obs, mode=mode)
+
+            tas_sub = seasonal_avg['tas'][season_tag][:, lat_ind['tas'], lon_ind['tas']]
+            if np.all(np.isnan(tas_sub)):
+                tas_sub, _, _ = utils.search_nearest_not_nan(
+                    seasonal_avg['tas'][season_tag], lat_ind['tas'], lon_ind['tas'],
+                    distance=search_distance,
+                )
+
+            if 'sss' in seasonal_inst_filesdict.keys():
+                # bivariate linear regression
+                sss_sub = seasonal_avg['sss'][season_tag][:, lat_ind['sss'], lon_ind['sss']]
+                if np.all(np.isnan(sss_sub)):
+                    sss_sub, _, _ = utils.search_nearest_not_nan(
+                        seasonal_avg['sss'][season_tag], lat_ind['sss'], lon_ind['sss'],
+                        distance=search_distance,
+                    )
+
+                if method == 'fixed_SST_slope':
+                    t1 = [int(t) for t in proxy_time]
+                    t2 = [int(t) for t in year_ann['tas']]
+                    overlap_yrs = np.intersect1d(t1, t2)
+                    ind1 = np.searchsorted(t1, overlap_yrs)
+                    ind2 = np.searchsorted(t2, overlap_yrs)
+                    res_dict = nn.OLSp(proxy_time[ind1], proxy_value[ind1]+0.22*tas_sub[ind2], year_ann['sss'], sss_sub, **OLSp_args)
+                elif method == 'bilinear':
+                    res_dict = nn.OLSp(proxy_time, proxy_value, year_ann['tas'], tas_sub, time_exog2=year_ann['sss'], exog2=sss_sub, **OLSp_args)
+                else:
+                    raise ValueError('Wrong method!')
+
+                if res_dict['mdl'] is not None:
+                    mdl_resid = res_dict['mdl'].resid
+                    mse = nn.mean_squared(mdl_resid)
+                    mse_list.append(mse)
+                    R2_adj = res_dict['mdl'].rsquared_adj
+                    R2_adj_list.append(R2_adj)
+                    res_dict_list.append(res_dict)
+                    season_tag_list.append(season_tag)
+                    proxy_time_adj_list.append(0)
+                else:
+                    print(f'Skipping {pobj.id} due to nobs < {nobs_lb}')
+            else:
+                # univariate linear regressio
+                res_dict = nn.OLSp(proxy_time, proxy_value, year_ann['tas'], tas_sub, **OLSp_args)
+                if res_dict['mdl'] is not None:
+                    mdl_resid = res_dict['mdl'].resid
+                    mse = nn.mean_squared(mdl_resid)
+                    mse_list.append(mse)
+                    R2_adj = res_dict['mdl'].rsquared_adj
+                    R2_adj_list.append(R2_adj)
+                    res_dict_list.append(res_dict)
+                    season_tag_list.append(season_tag)
+                    proxy_time_adj_list.append(proxy_time)
+                else:
+                    print(f'Skipping {pobj.id} due to nobs < {nobs_lb}')
+
+            if len(res_dict_list) > 0:
+                if metric == 'fitR2adj':
+                    opt_idx = np.argmax(R2_adj_list)
+                elif metric == 'mse':
+                    opt_idx = np.argmin(mse_list)
+                else:
+                    raise ValueError(f'Wrong metric: {metric}; should be "fitR2adj" or "mse"')
+
+                optimal_reg = res_dict_list[opt_idx]
+                optimal_reg_resid = optimal_reg['mdl'].resid
+                optimal_nobs = optimal_reg['mdl'].nobs
+                optimal_mse = mse_list[opt_idx]
+                optimal_R2_adj = R2_adj_list[opt_idx]
+                optimal_seasonality_tag = season_tag_list[opt_idx]
+                optimal_proxy_time_adj = proxy_time_adj_list[opt_idx]
+
+                SNR = np.std(optimal_reg['mdl'].predict()) / np.std(optimal_reg_resid)
+
+                precalib_dict[(pobj.type, pobj.id)] = {
+                    'lat': pobj.lat,
+                    'lon': pobj.lon,
+                    'elev': pobj.elev,
+                    'ptype': pobj.type,
+                    'Seasonality': optimal_seasonality_tag,
+                    'PSMresid': optimal_reg['mdl'].resid,
+                    'PSMmse': optimal_mse,
+                    'fitR2adj': optimal_R2_adj,
+                    'SNR': SNR,
+                    'p': optimal_reg['p'],
+                    'proxy_time_adj': optimal_proxy_time_adj,
+                }
+                optimal_reg_dict[(pobj.type, pobj.id)] = optimal_reg
+            else:
+                print(f'optimal_reg is None for {pobj.id} due to nobs < {nobs_lb}')
+                #  precalib_dict[(pobj.type, pobj.id)] = None
+                #  optimal_reg_dict[pobj.id] = None
+
+        with open(precalib_savepath, 'wb') as f:
+            pickle.dump(precalib_dict, f)
+        print(f'\npid={os.getpid()} >>> Saving calibration results to {precalib_savepath}')
+
+        if optimal_reg_savepath is not None:
+            with open(optimal_reg_savepath, 'wb') as f:
+                pickle.dump(optimal_reg_dict, f)
+            print(f'\npid={os.getpid()} >>> Saving optimal_reg_dict to {optimal_reg_savepath}')
+
+        # Calculate Ye
+        if ye_savepath is not None:
+            seasonal_avg = {}
+            year_ann = {}
+            lat = {}
+            lon = {}
+            for varname, filepath in seasonal_GCM_filesdict.items():
+                if varname not in ['sst', 'tas', 'sss', 'd18Osw']:
+                    raise ValueError(f'Wrong variable name: {varname}; should be "sst", "tas", "sss", or "d18Osw"')
+
+                if varname == 'sst':
+                    vn = 'tas'
+                else:
+                    vn = varname
+
+                seasonal_avg[vn], year_ann[vn], lat[vn], lon[vn] = pd.read_pickle(filepath)
+                season_tags = list(seasonal_avg[vn].keys())
+                season_tag = season_tags[0]
+
+            pid_map = {}
+            nproxy = len(precalib_dict)
+            ye_out = np.ndarray((nproxy, np.size(year_ann['tas'])))
+            i = 0
+            for k, v in tqdm(precalib_dict.items(), desc='Calculating Ye', total=nproxy):
+                ptype, pid = k
+                pid_map[pid] = i
+                optimal_reg = optimal_reg_dict[k]
+                p = optimal_reg['p']
+                season_tag = v['Seasonality']
+
+                lat_obs = v['lat']
+                lon_obs = v['lon']
+
+                lat_ind = {}
+                lon_ind = {}
+                for varname in lat.keys():
+                    if varname == 'sss':
+                        mode = 'mesh'
+                    else:
+                        mode = 'latlon'
+
+                    lat_ind[varname], lon_ind[varname] = utils.find_closest_loc(lat[varname], lon[varname], lat_obs, lon_obs, mode=mode)
+
+                tas_sub = seasonal_avg['tas'][season_tag][:, lat_ind['tas'], lon_ind['tas']]
+                if np.all(np.isnan(tas_sub)):
+                    tas_sub, _, _ = utils.search_nearest_not_nan(
+                        seasonal_avg['tas'][season_tag], lat_ind['tas'], lon_ind['tas'],
+                        distance=search_distance,
+                    )
+
+                exog_dict = {}
+
+                if 'sss' in seasonal_GCM_filesdict.keys():
+                    sss_sub = seasonal_avg['sss'][season_tag][:, lat_ind['sss'], lon_ind['sss']]
+                    if np.all(np.isnan(sss_sub)):
+                        sss_sub, _, _ = utils.search_nearest_not_nan(
+                            seasonal_avg['sss'][season_tag], lat_ind['sss'], lon_ind['sss'],
+                            distance=search_distance,
+                        )
+                    # print(optimal_reg['mdl'].predict(exog=exog_dict))
+                    if method == 'fixed_SST_slope':
+                        exog_dict['exog'] = sss_sub
+                        ye_out[i] = optimal_reg['mdl'].predict(exog=exog_dict) - 0.22*tas_sub
+                    elif method == 'bilinear':
+                        exog_dict['exog'] = tas_sub
+                        exog_dict['exog2'] = sss_sub
+                        ye_out[i] = optimal_reg['mdl'].predict(exog=exog_dict)
+                    else:
+                        raise ValueError('Wrong method!')
+                else:
+                    exog_dict['exog'] = tas_sub
+                    ye_out[i] = optimal_reg['mdl'].predict(exog=exog_dict)
+
+                i += 1
+
+            np.savez(ye_savepath, pid_index_map=pid_map, ye_vals=ye_out)
+            print(f'\npid={os.getpid()} >>> Saving Ye to {ye_savepath}')
+
+
     def calibrate_OLSp(self, seasonal_inst_filesdict, precalib_savepath, load_precalib_data=True,
                        seasonality=None,
                        calib_period=[1850, 2015], auto_choose_p=True, p=0, p_max=4,
