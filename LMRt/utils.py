@@ -5512,8 +5512,21 @@ def calc_volc_nonvolc_anom(year_all, target_series, year_volc, preyr=3, postyr=6
 
         year_nonvolc = np.array(list(set(year_inner)-set(events_expanded)))
 
-    anom_volc = calc_anom(year_all, target_series, year_volc, post_avg_range=post_avg_range, preyr=preyr)
-    anom_nonvolc = calc_anom(year_all, target_series, year_nonvolc, post_avg_range=post_avg_range, preyr=preyr)
+    ndim = len(np.shape(target_series))
+
+    if ndim == 1:
+        anom_volc = calc_anom(year_all, target_series, year_volc, post_avg_range=post_avg_range, preyr=preyr)
+        anom_nonvolc = calc_anom(year_all, target_series, year_nonvolc, post_avg_range=post_avg_range, preyr=preyr)
+    else:
+        anom_volc = []
+        anom_nonvolc = []
+        for ts in target_series:
+            anom_volc.extend( calc_anom(year_all, ts, year_volc, post_avg_range=post_avg_range, preyr=preyr) )
+            anom_nonvolc.extend( calc_anom(year_all, ts, year_nonvolc, post_avg_range=post_avg_range, preyr=preyr) )
+
+        anom_volc = np.array(anom_volc)
+        anom_nonvolc = np.array(anom_nonvolc)
+
 
     draws = []
     for i in range(nboot):
@@ -5525,7 +5538,11 @@ def calc_volc_nonvolc_anom(year_all, target_series, year_volc, preyr=3, postyr=6
 
     anom_nonvolc_draws = []
     for draw in draws:
-        anom_nonvolc_draws.append(calc_anom(year_all, target_series, draw, post_avg_range=post_avg_range, preyr=preyr))
+        if ndim == 1:
+            anom_nonvolc_draws.append(calc_anom(year_all, target_series, draw, post_avg_range=post_avg_range, preyr=preyr))
+        else:
+            for ts in target_series:
+                anom_nonvolc_draws.append(calc_anom(year_all, ts, draw, post_avg_range=post_avg_range, preyr=preyr))
 
     anom_nonvolc_draws = np.array(anom_nonvolc_draws)
 

@@ -1423,7 +1423,7 @@ def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_
                   lw_nonvolc_qs=2, lw_volc_nonvolc=2, xlim=None, title=None, show_ratio_in_title=True,
                   clr_volc_signif=sns.xkcd_rgb['pale red'], clr_volc=sns.xkcd_rgb['black'],
                   clr_nonvolc=sns.xkcd_rgb['grey'], clr_nonvolc_qs=sns.xkcd_rgb['light grey'],
-                  fs=15, ms=100,
+                  fs=15, ms=100, yr_base=2001,
                   label_volc='Volcanic years', label_nonvolc='Non-volcanic years',
                   label_nonvolc_qs='Randomly selected\nnon-volcanic years', plot_lgd=True, ax=None, lgd_style=None):
 
@@ -1468,7 +1468,7 @@ def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_
 
             clr = clr_volc_signif if signif else clr_volc
             ax.scatter(anom_volc[i], n_tmp, marker='^', color=clr, zorder=100, s=ms)
-            ax.text(anom_volc[i]-0.2, n_tmp+0.02, yr, color=clr, zorder=100, fontsize=fs)
+            ax.text(anom_volc[i]-0.2, n_tmp+0.02, yr%yr_base, color=clr, zorder=100, fontsize=fs)
 
         ax.scatter(None, None, marker='^', color=clr_volc, label='Insignificant events')
         ax.scatter(None, None, marker='^', color=clr_volc_signif, label='Significant events')
