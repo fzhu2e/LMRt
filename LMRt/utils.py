@@ -5210,7 +5210,7 @@ def sea(X, events, start_yr=0, preyr=3, postyr=10, qs=[0.05, 0.5, 0.95], highpas
     return res
 
 
-def sea_dbl(time, value, events, preyr=5, postyr=15, seeds=None, nsample=10,
+def sea_dbl(time, value, events, nonevents=None, preyr=5, postyr=15, seeds=None, nsample=10,
             qs=[0.05, 0.5, 0.95], qs_signif=[0.01, 0.05, 0.10, 0.90, 0.95, 0.99],
             nboot_event=1000, verbose=False, draw_mode='all'):
     ''' A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty
@@ -5246,14 +5246,17 @@ def sea_dbl(time, value, events, preyr=5, postyr=15, seeds=None, nsample=10,
     if draw_mode == 'all':
         signif_pool = list(time_inner)
     elif draw_mode == 'non-events':
-        signif_pool = list(time_inner)
-        events_expanded = set()
-        for e in events_inner:
-            idx = list(time_inner).index(e)
-            subset = set(time_inner[idx-preyr:idx+postyr+1])
-            events_expanded |= subset
-        for e in events_expanded:
-            signif_pool.remove(e)
+        if nonevents is None:
+            signif_pool = list(time_inner)
+            events_expanded = set()
+            for e in events_inner:
+                idx = list(time_inner).index(e)
+                subset = set(time_inner[idx:idx+postyr+1])
+                events_expanded |= subset
+            for e in events_expanded:
+                signif_pool.remove(e)
+        else:
+            signif_pool = [e for e in nonevents if e in list(time_inner)]
     else:
         raise ValueError('ERROR: Wrong `draw_mode`; choose between `all` and `non-events`')
 
@@ -5507,10 +5510,13 @@ def calc_volc_nonvolc_anom(year_all, target_series, year_volc, preyr=3, postyr=6
         year_inner = year_all[preyr:-postyr]
         for e in year_volc:
             idx = list(year_inner).index(e)
-            subset = set(year_inner[idx-preyr:idx+postyr+1])
+            subset = set(year_inner[idx:idx+postyr+1])
             events_expanded |= subset
 
         year_nonvolc = np.array(list(set(year_inner)-set(events_expanded)))
+    else:
+        year_inner = year_all[preyr:-postyr]
+        year_nonvolc = [e for e in year_nonvolc if e in list(year_inner)]
 
     ndim = len(np.shape(target_series))
 
