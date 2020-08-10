@@ -28,6 +28,7 @@ from tqdm import tqdm
 
 from scipy.stats import cumfreq
 from matplotlib.lines import Line2D
+from matplotlib.legend_handler import HandlerLine2D
 
 class PAGES2k(object):
     colors_dict = {
@@ -1417,6 +1418,124 @@ def plot_volc_composites(gmt, event_yrs, start_yr=0, before=3, after=10, highpas
 
     return fig
 
+def plot_volc_ranking(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, xlim=None,
+                  qs=[0.05, 0.95], figsize=[5, 5], xlabel=None, ylabel='CDF',
+                  title=None, clr_title='k', show_ratio_in_title=True,
+                  clr_volc_signif=sns.xkcd_rgb['pale red'], clr_volc=sns.xkcd_rgb['black'],
+                  clr_nonvolc=sns.xkcd_rgb['light grey'], clr_nonvolc_qs=sns.xkcd_rgb['grey'],
+                  fs=15, ms=100, plot_qs=True, yticks=None,
+                  label_volc_insignif='Volcanic events (insignificant)',
+                  label_volc_signif='Volcanic events (significant)',
+                  label_nonvolc='Non-volcanic years',
+                  label_nonvolc_qs='Randomly selected\nnon-volcanic years', plot_lgd=True, ax=None, lgd_style=None):
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+
+    n_member, n_volc = np.shape(anom_volc)
+    cdf_levels_volc = np.linspace(1/n_volc, 1, n_volc)
+
+    _, n_nonvolc = np.shape(anom_nonvolc)
+    cdf_levels_nonvolc = np.linspace(1/n_nonvolc, 1, n_nonvolc)
+
+    sorted_volc = np.array([sorted(anom_volc[i]) for i in range(n_member)])
+    sorted_nonvolc = np.array([sorted(anom_nonvolc[i]) for i in range(n_member)])
+
+    n_draw_member, _ = np.shape(anom_nonvolc_draws)
+    sorted_nonvolc_draws = np.array([sorted(anom_nonvolc_draws[i]) for i in range(n_draw_member)])
+
+    draws_qs = []
+    for i, cdf_level in enumerate(cdf_levels_volc):
+        value_nonvolc_draws = sorted_nonvolc_draws[:, i]
+        value_nonvolc_draws_qs = mquantiles(value_nonvolc_draws, qs)
+        label_nonvolc_qs = f'{label_nonvolc_qs} ({qs[0]*100:g}%-{qs[-1]*100:g}%)'
+        lb = label_nonvolc_qs if i == 0 else None
+        draws_qs.append(value_nonvolc_draws_qs)
+        ax.plot(value_nonvolc_draws_qs, [cdf_level, cdf_level], color=clr_nonvolc_qs, marker='.', zorder=98, label=lb)
+
+    sorted_volc_median = np.median(sorted_volc, axis=0)
+    sorted_nonvolc_median = np.median(sorted_nonvolc, axis=0)
+
+    signif_1st = True
+    insignif_1st = True
+    nsig = 0
+    for i, cdf_level in enumerate(cdf_levels_volc):
+        volc_median = sorted_volc_median[i]
+        if volc_median > draws_qs[i][-1]:
+            nsig += 1
+            tmp_clr = clr_volc_signif
+            lb = label_volc_signif if signif_1st else None
+            signif_1st = False
+        else:
+            tmp_clr = clr_volc
+            lb = label_volc_insignif if insignif_1st else None
+            insignif_1st = False
+
+        ax.scatter(volc_median, cdf_level, color=tmp_clr, marker='o', zorder=100, label=lb)
+
+    ax.scatter(sorted_nonvolc_median, cdf_levels_nonvolc, color=clr_nonvolc, marker='o', label=label_nonvolc)
+
+    if plot_qs:
+        for i, cdf_level in enumerate(cdf_levels_volc):
+            volc_median = sorted_volc_median[i]
+            if volc_median > draws_qs[i][-1]:
+                tmp_clr = clr_volc_signif
+            else:
+                tmp_clr = clr_volc
+
+            value_volc = sorted_volc[:, i]
+            value_volc_qs = mquantiles(value_volc, qs)
+            ax.plot(value_volc_qs, [cdf_level, cdf_level], color=tmp_clr, marker='.', zorder=99)
+
+        for i, cdf_level in enumerate(cdf_levels_nonvolc):
+            value_nonvolc = sorted_nonvolc[:, i]
+            value_nonvolc_qs = mquantiles(value_nonvolc, qs)
+            ax.plot(value_nonvolc_qs, [cdf_level, cdf_level], color=clr_nonvolc, marker='.')
+
+
+    ax.set_ylim([0, 1.02])
+    if yticks is None:
+        ax.set_yticks(np.linspace(0, 1, 6))
+    else:
+        ax.set_yticks(yticks)
+
+    if plot_lgd:
+        handles, labels = ax.get_legend_handles_labels()
+        n_handles = len(handles)
+        order = list(range(n_handles))
+        order.append(order.pop(order.index(0)))  # put the 1st to the end
+
+        handles = [handles[idx] for idx in order]
+        labels = [labels[idx] for idx in order]
+
+        lgd_kwargs = {'loc': 'lower right', 'bbox_to_anchor': (2, 0), 'fontsize': fs}
+        lgd_style = {} if lgd_style is None else lgd_style.copy()
+        lgd_kwargs.update(lgd_style)
+
+        new_handler = HandlerLine2D(numpoints=2)
+        ax.legend(handles, labels, **lgd_kwargs, handler_map={Line2D: new_handler})
+
+    if ylabel is not None:    
+        ax.set_ylabel(ylabel)
+
+    if xlabel is not None:    
+        ax.set_xlabel(xlabel)
+
+    if title is not None:    
+        if show_ratio_in_title:
+            nevents = np.size(year_volc)
+            ratio_str = f'{nsig}/{nevents}'
+            title = f'{title} (Signif. ratio: {ratio_str})'
+
+        ax.set_title(title, color=clr_title, fontsize=fs)
+
+    if xlim is not None:
+        ax.set_xlim(xlim)
+
+
+    if 'fig' in locals():
+        return fig, ax
+    else:
+        return ax
 
 def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_range,
                   nbin=2000, qs=[0.05, 0.95], figsize=[5, 5], xlabel=None, ylabel='Cumulative distribution function',
