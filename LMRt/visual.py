@@ -1757,15 +1757,70 @@ def plot_volc_timeseries(timeseries_dict, event_yrs, before=3, after=10, main_al
 
     return fig, ax
 
+def plot_sea_ensemble(res, figsize=[6, 6],
+                      clr_volc=sns.xkcd_rgb['pale red'],
+                      ylim=None, xlim=None, plot_lgd=False, lgd_kws=None,
+                      signif_alpha=0.3, signif_color='k', signif_text_loc_fix=(0.1, -0.01), signif_fontsize=15,
+                      xlabel='Years relative to event year', ylabel='T anom. (K)',
+                      xticks=None, yticks=None, title=None, plot_signif=True, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+
+    year_window = res['year_window']
+    volc_composite_qs = res['volc_composite_qs']
+    nonvolc_draw_composite_qs = res['nonvolc_draw_composite_qs']
+    qs = res['qs']
+    qs_signif = res['qs_signif']
+    nqs = np.size(qs)
+    ax.plot(year_window, volc_composite_qs[int((nqs-1)/2)], '-o', color=clr_volc, label='median')
+    ax.fill_between(year_window, volc_composite_qs[0], volc_composite_qs[-1], facecolor=clr_volc, alpha=signif_alpha,
+                    label=f'{qs[0]*100:g}%-{qs[-1]*100:g}%')
+
+    for i, qs_v in enumerate(res['qs_signif']):
+        ax.plot(year_window, nonvolc_draw_composite_qs[i], '--', color=signif_color, alpha=signif_alpha)
+        ax.text(year_window[-1]+signif_text_loc_fix[0], nonvolc_draw_composite_qs[i][-1]+signif_text_loc_fix[-1],
+                f'{qs_v*100:g}%', color=signif_color, alpha=signif_alpha, fontsize=signif_fontsize)
+
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    ax.axvline(x=0, ls=':', color='grey')
+    ax.axhline(y=0, ls=':', color='grey')
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+
+    if xticks is not None:
+        ax.set_xticks(xticks)
+
+    if yticks is not None:
+        ax.set_yticks(yticks)
+
+    if title is not None:
+        ax.set_title(title)
+
+    if plot_lgd:
+        lgd_kws = {} if lgd_kws is None else lgd_kws.copy()
+        lgd_style = {'frameon': False, 'loc': 'upper left'}
+        lgd_style.update(lgd_kws)
+        ax.legend(**lgd_style)
+
+    if 'fig' in locals():
+        return fig, ax
+    else:
+        return ax
+
+
 def plot_sea_res(res, style='ticks', font_scale=2, figsize=[6, 6],
                  ls='-o', lw=3, color='k', label=None, label_shade=None, alpha=1, shade_alpha=0.3,
-                 ylim=None, xlim=None, plot_mode='composite_qs',
+                 ylim=None, xlim=None, plot_mode='composite_qs', lgd_individual_yrs=False,
                  signif_alpha=0.3, signif_color='k', signif_text_loc_fix=(0.1, -0.01), signif_fontsize=15,
-                 xlabel='Years relative to event year', ylabel='T anom. (K)',
-                 xticks=None, title=None, plot_signif=True, ax=None):
+                 xlabel='Years relative to event year', ylabel='T anom. (K)', plot_lgd=False,
+                 xticks=None, yticks=None, title=None, plot_signif=True, ax=None):
     ''' Plot SEA results
     '''
-    sns.set(style=style, font_scale=font_scale)
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
 
@@ -1778,7 +1833,14 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[6, 6],
         elif plot_mode == 'composite_norm':
             ax.plot(res['composite_yr'], res['composite_qs'][1], ls, color=color, label=label, lw=lw, alpha=1)
             for i, individual_curve in enumerate(res['composite_norm'][0, :, :, 0]):
-                ax.plot(res['composite_yr'], individual_curve, '--', label=res['events'][i], lw=1, alpha=alpha)
+                if lgd_individual_yrs:
+                    lb = res['events'][i]
+                    clr = None
+                else:
+                    lb = 'individual events' if i==0 else None
+                    clr = color
+
+                ax.plot(res['composite_yr'], individual_curve, '--', label=lb, lw=1, alpha=alpha, color=clr)
     else:
         raise KeyError('Wrong plot_mode!')
 
@@ -1793,19 +1855,26 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[6, 6],
 
     ax.set_ylabel(ylabel)
     ax.set_xlabel(xlabel)
-    if ylim:
+    if ylim is not None:
         ax.set_ylim(ylim)
-    if xlim:
+    if xlim is not None:
         ax.set_xlim(xlim)
     ax.axvline(x=0, ls=':', color='grey')
     ax.axhline(y=0, ls=':', color='grey')
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
 
-    if xticks:
+    if xticks is not None:
         ax.set_xticks(xticks)
-    if title:
+
+    if yticks is not None:
+        ax.set_yticks(yticks)
+
+    if title is not None:
         ax.set_title(title)
+
+    if plot_lgd:
+        ax.legend(frameon=False, loc='upper left')
 
     if 'fig' in locals():
         return fig, ax

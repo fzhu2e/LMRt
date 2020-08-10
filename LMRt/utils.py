@@ -5210,9 +5210,71 @@ def sea(X, events, start_yr=0, preyr=3, postyr=10, qs=[0.05, 0.5, 0.95], highpas
     return res
 
 
+def sea_ensemble(time, value, events, nonevents, preyr=3, postyr=6, seeds=None,
+                 qs=[0.05, 0.5, 0.95], qs_signif=[0.01, 0.05, 0.10, 0.90, 0.95, 0.99], nboot_event=1000):
+    ''' SEA for ensemble reconstructions
+
+    Args:
+        time (array): time axis of value
+        value (ndarray): the fisrt dimension is ensemble member, and the last dimension is time
+        events (array): the list of volcanic events
+        nonevents (array): the list of nonvolcanic events
+    '''
+    if type(events) is list:
+        events = np.array(events)
+
+    nevents = np.size(events)
+    time_inner = time[preyr:-postyr]
+    events_inner = events[(events>=np.min(time_inner)) & (events<=np.max(time_inner))]
+    nonevents_pool = [e for e in nonevents if e in list(time_inner)]
+
+    volc_composite = []
+    for e in events_inner:
+        center_yr = list(time).index(e)
+        value_window = value[:, center_yr-preyr:center_yr+postyr+1]
+        value_pre = value[:, center_yr-preyr:center_yr]
+        value_slice = value_window - np.average(value_pre, axis=-1)
+        volc_composite.extend(value_slice)
+
+    volc_composite = np.array(volc_composite)
+    volc_composite_qs = mquantiles(volc_composite, qs, axis=0)
+
+    draws_signif = []
+    for i in range(nboot_event):
+        if seeds is not None:
+            np.random.seed(seeds[i])
+        draw_tmp = np.random.choice(nonevents_pool, nevents, replace=False)
+        draws_signif.append(np.sort(draw_tmp))
+
+    draws_signif = np.array(draws_signif)
+    nonvolc_draw_composite = []
+    for draw in draws_signif:
+        nonvolc_tmp = []
+        for e in draw:
+            center_yr = list(time).index(e)
+            value_window = value[:, center_yr-preyr:center_yr+postyr+1]
+            value_pre = value[:, center_yr-preyr:center_yr]
+            value_slice = value_window - np.average(value_pre, axis=-1)
+            nonvolc_tmp.extend(value_slice)
+
+        nonvolc_draw_composite.extend(nonvolc_tmp)
+
+    nonvolc_draw_composite = np.array(nonvolc_draw_composite)
+    nonvolc_draw_composite_qs = mquantiles(nonvolc_draw_composite, qs_signif, axis=0)
+
+    res_dict = {
+        'volc_composite_qs': volc_composite_qs,
+        'qs': qs,
+        'year_window': np.arange(-preyr, postyr+1),
+        'nonvolc_draw_composite_qs': nonvolc_draw_composite_qs,
+        'qs_signif': qs_signif,
+    }
+
+    return res_dict
+
 def sea_dbl(time, value, events, nonevents=None, preyr=5, postyr=15, seeds=None, nsample=10,
             qs=[0.05, 0.5, 0.95], qs_signif=[0.01, 0.05, 0.10, 0.90, 0.95, 0.99],
-            nboot_event=1000, verbose=False, draw_mode='all'):
+            nboot_event=1000, verbose=False, draw_mode='non-events'):
     ''' A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty
 
     Args:
