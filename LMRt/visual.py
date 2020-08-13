@@ -28,6 +28,7 @@ from tqdm import tqdm
 
 from scipy.stats import cumfreq
 from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 from matplotlib.legend_handler import HandlerLine2D
 
 class PAGES2k(object):
@@ -1417,6 +1418,100 @@ def plot_volc_composites(gmt, event_yrs, start_yr=0, before=3, after=10, highpas
     ax.set_ylabel(ylabel)
 
     return fig
+
+def plot_volc_ranking_ana(year_volc, anom_volc, anom_nonvolc_draws, xlim=None,
+                  figsize=[5, 5], xlabel=None, ylabel=None,
+                  title=None, clr_title='k', show_ratio_in_title=True,
+                  clr_volc_signif=sns.xkcd_rgb['pale red'], clr_volc=sns.xkcd_rgb['black'],
+                  clr_nonvolc=sns.xkcd_rgb['grey'], clr_nonvolc_light=sns.xkcd_rgb['light grey'],
+                  title_fs=15, lgd_fs=15, volc_ms=10, violin_width=0.08, yticks=None,
+                  lgd_style=None,
+                  label_volc_insignif='Volcanic events (insignificant)',
+                  label_volc_signif='Volcanic events (significant)',
+                  label_nonvolc='Non-volcanic years',
+                  label_nonvolc_qs='Distribution of randomly\nselected non-volcanic years\n(bars: 0%,5%,50%,95%,100%)', plot_lgd=True, ax=None):
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+
+    n_member, n_volc = np.shape(anom_volc)
+    cdf_levels_volc = np.linspace(1/n_volc, 1, n_volc) - 1/n_volc/2
+    sorted_volc = np.array([sorted(anom_volc[i]) for i in range(n_member)])
+
+    n_draw_member, _ = np.shape(anom_nonvolc_draws)
+    sorted_nonvolc_draws = np.array([sorted(anom_nonvolc_draws[i]) for i in range(n_draw_member)])
+
+    quantiles = [[0.05, 0.95] for i in range(n_volc)]
+    violin_plot = ax.violinplot(
+        sorted_nonvolc_draws, positions=cdf_levels_volc,
+        vert=False, widths=violin_width,
+        showmedians=True, quantiles=quantiles,
+    )
+    for pc in violin_plot['bodies']:
+        pc.set_color(clr_nonvolc)
+    for partname in ('cbars', 'cquantiles','cmins','cmaxes','cmedians'):
+        vp = violin_plot[partname]
+        vp.set_edgecolor(clr_nonvolc)
+
+    signif_1st = True
+    insignif_1st = True
+    nsig = 0
+    for i, cdf_level in enumerate(cdf_levels_volc):
+        xs = sorted_volc[:, i]
+        nonvolc_draws_q95 = mquantiles(sorted_nonvolc_draws[:, i], [0.95])[0]
+
+        for x in xs:
+            if x > nonvolc_draws_q95:
+                nsig += 1
+                tmp_clr = clr_volc_signif
+            else:
+                tmp_clr = clr_volc
+
+            ax.scatter(x, cdf_level, color=tmp_clr, marker='o', zorder=100, s=volc_ms)
+
+    ax.set_ylim([0, 1])
+    if yticks is None:
+        ax.set_yticks(np.linspace(0, 1, 6))
+    else:
+        ax.set_yticks(yticks)
+
+    if ylabel is not None:    
+        ax.set_ylabel(ylabel)
+
+    if xlabel is not None:    
+        ax.set_xlabel(xlabel)
+
+    if title is not None:    
+        if show_ratio_in_title:
+            ratio_str = f'{nsig}/{n_volc*n_member}'
+            title = f'{title} (Signif. ratio: {ratio_str})'
+
+        ax.set_title(title, color=clr_title, fontsize=title_fs)
+
+    if xlim is not None:
+        ax.set_xlim(xlim)
+
+    ax.spines['left'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.yaxis.set_visible(False)
+    ax.grid(True, which='major')
+
+    if plot_lgd:
+        lgd_kwargs = {'loc': 'lower right', 'bbox_to_anchor': (2, 0), 'fontsize': lgd_fs}
+        lgd_style = {} if lgd_style is None else lgd_style.copy()
+        lgd_kwargs.update(lgd_style)
+
+        legend_elements = [
+            Line2D([], [], marker='o', color=clr_volc, label=label_volc_insignif, linestyle='None'),
+            Line2D([], [], marker='o', color=clr_volc_signif, label=label_volc_signif, linestyle='None'),
+            Patch(facecolor=clr_nonvolc_light, edgecolor=clr_nonvolc, label=label_nonvolc_qs)
+        ]
+
+        ax.legend(handles=legend_elements, **lgd_kwargs)
+
+    if 'fig' in locals():
+        return fig, ax
+    else:
+        return ax
 
 def plot_volc_ranking(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, xlim=None,
                   qs=[0.05, 0.95], figsize=[5, 5], xlabel=None, ylabel='CDF',
