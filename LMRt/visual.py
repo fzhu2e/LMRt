@@ -27,6 +27,7 @@ from pandas.plotting import autocorrelation_plot
 from tqdm import tqdm
 
 from scipy.stats import cumfreq
+from scipy.integrate import cumtrapz
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 from matplotlib.legend_handler import HandlerLine2D
@@ -1421,17 +1422,20 @@ def plot_volc_composites(gmt, event_yrs, start_yr=0, before=3, after=10, highpas
 
 def plot_volc_ranking_ana(year_volc, anom_volc, anom_nonvolc_draws, xlim=None,
                   figsize=[5, 5], xlabel=None, ylabel=None,
-                  title=None, clr_title='k', show_ratio_in_title=True,
+                  title=None, clr_title='k', show_ratio_in_title=True, style='ridge',
                   clr_volc_signif=sns.xkcd_rgb['pale red'], clr_volc=sns.xkcd_rgb['black'],
                   clr_nonvolc=sns.xkcd_rgb['grey'], clr_nonvolc_light=sns.xkcd_rgb['light grey'],
-                  title_fs=15, lgd_fs=15, volc_ms=10, violin_width=0.08, yticks=None,
-                  lgd_style=None,
-                  label_volc_insignif='Volcanic events (insignificant)',
-                  label_volc_signif='Volcanic events (significant)',
-                  label_nonvolc='Non-volcanic years',
-                  label_nonvolc_qs='Distribution of randomly\nselected non-volcanic years\n(bars: 0%,5%,50%,95%,100%)', plot_lgd=True, ax=None):
+                  title_fs=15, dist_height=0.05, yticks=None, xticks=None,
+                  lgd_style=None, lgd_fs=15, volc_ms_large=40, volc_ms_small=20, signif_qs=[0.8, 0.9, 0.95],
+                  label_nonvolc_qs='Distribution of randomly selected non-volcanic years', plot_lgd=True, ax=None):
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
+
+    if len(np.shape(anom_volc)) == 1:
+        anom_volc = np.expand_dims(anom_volc, axis=0)
+
+    if len(np.shape(anom_nonvolc_draws)) == 1:
+        anom_nonvolc_draws = np.expand_dims(anom_nonvolc_draws, axis=0)
 
     n_member, n_volc = np.shape(anom_volc)
     cdf_levels_volc = np.linspace(1/n_volc, 1, n_volc) - 1/n_volc/2
@@ -1440,39 +1444,82 @@ def plot_volc_ranking_ana(year_volc, anom_volc, anom_nonvolc_draws, xlim=None,
     n_draw_member, _ = np.shape(anom_nonvolc_draws)
     sorted_nonvolc_draws = np.array([sorted(anom_nonvolc_draws[i]) for i in range(n_draw_member)])
 
-    quantiles = [[0.05, 0.95] for i in range(n_volc)]
+    nonvolc_draws_qs = np.percentile(sorted_nonvolc_draws, signif_qs, axis=0)
     violin_plot = ax.violinplot(
         sorted_nonvolc_draws, positions=cdf_levels_volc,
-        vert=False, widths=violin_width,
-        showmedians=True, quantiles=quantiles,
+        vert=False, widths=dist_height*2,
+        showextrema=False,
+        # showmedians=True,
+        # quantiles=quantiles,
     )
+
     for pc in violin_plot['bodies']:
-        pc.set_color(clr_nonvolc)
-    for partname in ('cbars', 'cquantiles','cmins','cmaxes','cmedians'):
-        vp = violin_plot[partname]
-        vp.set_edgecolor(clr_nonvolc)
+        pc.set_edgecolor(clr_nonvolc)
+        pc.set_facecolor(clr_nonvolc_light)
+        pc.set_alpha(1)
+        if style == 'ridge':
+            m = np.mean(pc.get_paths()[0].vertices[:, 1])
+            # clip the lower half of the violin to make it a ridge
+            pc.get_paths()[0].vertices[:, 1] = np.clip(pc.get_paths()[0].vertices[:, 1], m, np.inf)
+        elif style == 'violin':
+            pass
+        else:
+            raise ValueError('Wong `style` value. Should be `ridge` or `violin`.')
+
+    # for partname in ['cquantiles']:
+    #     vp = violin_plot[partname]
+    #     vp.set_edgecolor(clr_nonvolc)
 
     signif_1st = True
     insignif_1st = True
-    nsig = 0
+    nsig_dict = {}
+    clr_dict = {}
+    for i in range(np.size(signif_qs)+1):
+        nsig_dict[i] = 0
+        clr_dict[i] = clr_volc if i==0 else clr_volc_signif
+
+    signif_markers = {
+        0: 'o',
+        1: 'v',
+        2: '^',
+        3: 'd',
+    }
     for i, cdf_level in enumerate(cdf_levels_volc):
         xs = sorted_volc[:, i]
-        nonvolc_draws_q95 = mquantiles(sorted_nonvolc_draws[:, i], [0.95])[0]
+        # kde = sorted_nonvolc_draws[:, i]
+        # cdf = cumtrapz(kde, x=np.arange(0, 100), initial=0)
+        nonvolc_draws_median = mquantiles(sorted_nonvolc_draws[:, i], [0.5])[0]
+        ax.vlines(nonvolc_draws_median, cdf_level, cdf_level+dist_height, linestyle='--', color=clr_nonvolc, lw=2)
+
+        nonvolc_draws_qs = mquantiles(sorted_nonvolc_draws[:, i], signif_qs)
+        for nonvolc_draws_q in nonvolc_draws_qs:
+            ax.vlines(nonvolc_draws_q, cdf_level, cdf_level+dist_height, linestyle='--', color=clr_nonvolc, lw=2)
 
         for x in xs:
-            if x > nonvolc_draws_q95:
-                nsig += 1
-                tmp_clr = clr_volc_signif
-            else:
-                tmp_clr = clr_volc
+            found_loc = False
+            for j, q in enumerate(nonvolc_draws_qs[::-1]):
+                if x > q and not found_loc:
+                    level = np.size(signif_qs)-j
+                    found_loc = True
+                    volc_ms = volc_ms_large
+                    break
+                
+            if not found_loc:
+                volc_ms = volc_ms_small
+                level = 0
 
-            ax.scatter(x, cdf_level, color=tmp_clr, marker='o', zorder=100, s=volc_ms)
+            # print(x, nonvolc_draws_qs, level)
+            nsig_dict[level] += 1
+            ax.scatter(x, cdf_level, color=clr_dict[level], marker=signif_markers[level], zorder=102, s=volc_ms)
 
-    ax.set_ylim([0, 1])
+    ax.set_ylim([0, 1.05])
     if yticks is None:
         ax.set_yticks(np.linspace(0, 1, 6))
     else:
         ax.set_yticks(yticks)
+
+    if xticks is not None:
+        ax.set_xticks(xticks)
 
     if ylabel is not None:    
         ax.set_ylabel(ylabel)
@@ -1482,7 +1529,19 @@ def plot_volc_ranking_ana(year_volc, anom_volc, anom_nonvolc_draws, xlim=None,
 
     if title is not None:    
         if show_ratio_in_title:
-            ratio_str = f'{nsig}/{n_volc*n_member}'
+            nsig_dict_cum = {}
+            for i in range(np.size(signif_qs)+1):
+                nsig_dict_cum[i] = 0
+                for j in range(i, np.size(signif_qs)+1):
+                    nsig_dict_cum[i] += nsig_dict[j]
+
+            nsig_str_list = []
+            for i, q in enumerate(signif_qs):
+                nsig_str_list.append(str(nsig_dict_cum[i+1]))
+
+            nsig_str = ','.join(s for s in nsig_str_list)
+
+            ratio_str = f'[{nsig_str}]/{n_volc*n_member}'
             title = f'{title} (Signif. ratio: {ratio_str})'
 
         ax.set_title(title, color=clr_title, fontsize=title_fs)
@@ -1493,18 +1552,36 @@ def plot_volc_ranking_ana(year_volc, anom_volc, anom_nonvolc_draws, xlim=None,
     ax.spines['left'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.yaxis.set_visible(False)
-    ax.grid(True, which='major')
+    ax.grid(True, which='major', zorder=-1)
 
     if plot_lgd:
-        lgd_kwargs = {'loc': 'lower right', 'bbox_to_anchor': (2, 0), 'fontsize': lgd_fs}
+        lgd_kwargs = {'loc': 'lower left', 'bbox_to_anchor': (0, -0.5), 'fontsize': lgd_fs, 'ncol': 1}
         lgd_style = {} if lgd_style is None else lgd_style.copy()
         lgd_kwargs.update(lgd_style)
 
         legend_elements = [
-            Line2D([], [], marker='o', color=clr_volc, label=label_volc_insignif, linestyle='None'),
-            Line2D([], [], marker='o', color=clr_volc_signif, label=label_volc_signif, linestyle='None'),
-            Patch(facecolor=clr_nonvolc_light, edgecolor=clr_nonvolc, label=label_nonvolc_qs)
+            Line2D([], [], marker='o', markersize=8, color=clr_volc,
+            label=f'Volcanic events (< {signif_qs[0]*100:g}% randomly selected non-volcanic years)', linestyle='None'),
         ]
+
+        for i, q in enumerate(signif_qs):
+            if i < np.size(signif_qs)-1:
+                legend_elements.append(
+                    Line2D([], [], marker=signif_markers[i+1], markersize=8, color=clr_volc_signif,
+                    label=f'Volcanic events (between {signif_qs[i]*100:g}-{signif_qs[i+1]*100:g}% randomly selected non-volcanic years)', linestyle='None'),
+                )
+            else:
+                legend_elements.append(
+                    Line2D([], [], marker=signif_markers[i+1], markersize=8, color=clr_volc_signif,
+                    label=f'Volcanic events (>{signif_qs[i]*100:g}% randomly selected non-volcanic years)', linestyle='None'),
+                )
+
+        signif_str_list = [f'{q*100:g}%' for q in signif_qs]
+        signif_str = ','.join(signif_str_list)
+
+        legend_elements.append(
+            Patch(facecolor=clr_nonvolc_light, edgecolor=clr_nonvolc, label=f'{label_nonvolc_qs} (dashed bars: 50%,{signif_str})')
+        )
 
         ax.legend(handles=legend_elements, **lgd_kwargs)
 
@@ -1911,7 +1988,8 @@ def plot_sea_ensemble(res, figsize=[6, 6],
 def plot_sea_res(res, style='ticks', font_scale=2, figsize=[6, 6],
                  ls='-o', lw=3, color='k', label=None, label_shade=None, alpha=1, shade_alpha=0.3,
                  ylim=None, xlim=None, plot_mode='composite_qs', lgd_individual_yrs=False,
-                 signif_alpha=0.3, signif_color='k', signif_text_loc_fix=(0.1, -0.01), signif_fontsize=15,
+                 signif_alpha=0.5, signif_color=sns.xkcd_rgb['grey'], signif_text_loc_fix=(0.1, -0.01),
+                 signif_fontsize=10, signif_lw=1,
                  xlabel='Years relative to event year', ylabel='T anom. (K)', plot_lgd=False,
                  xticks=None, yticks=None, title=None, plot_signif=True, ax=None):
     ''' Plot SEA results
@@ -1944,7 +2022,7 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[6, 6],
 
     if plot_signif:
         for i, qs_v in enumerate(res['qs_signif']):
-            ax.plot(res['composite_yr'], res['composite_qs_signif'][i], '--', color=signif_color, alpha=signif_alpha)
+            ax.plot(res['composite_yr'], res['composite_qs_signif'][i], '-.', color=signif_color, alpha=signif_alpha, lw=signif_lw)
             ax.text(res['composite_yr'][-1]+signif_text_loc_fix[0], res['composite_qs_signif'][i][-1]+signif_text_loc_fix[-1],
                     f'{qs_v*100:g}%', color=signif_color, alpha=signif_alpha, fontsize=signif_fontsize)
 
