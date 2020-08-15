@@ -1433,6 +1433,7 @@ def plot_volc_ranking_ana(year_volc, anom_volc, anom_nonvolc_draws, xlim=None,
 
     if len(np.shape(anom_volc)) == 1:
         anom_volc = np.expand_dims(anom_volc, axis=0)
+        single_curve = True
 
     if len(np.shape(anom_nonvolc_draws)) == 1:
         anom_nonvolc_draws = np.expand_dims(anom_nonvolc_draws, axis=0)
@@ -1440,6 +1441,14 @@ def plot_volc_ranking_ana(year_volc, anom_volc, anom_nonvolc_draws, xlim=None,
     n_member, n_volc = np.shape(anom_volc)
     cdf_levels_volc = np.linspace(1/n_volc, 1, n_volc) - 1/n_volc/2
     sorted_volc = np.array([sorted(anom_volc[i]) for i in range(n_member)])
+
+    if single_curve:
+        sorted_volc_idx = np.argsort(anom_volc[0])
+        for i, level in enumerate(cdf_levels_volc):
+            ax.text(
+                sorted_volc[0, i], level-0.03, year_volc[sorted_volc_idx[i]],
+                color=clr_volc, zorder=100, fontsize=10,  verticalalignment='center', horizontalalignment='center',
+            )
 
     n_draw_member, _ = np.shape(anom_nonvolc_draws)
     sorted_nonvolc_draws = np.array([sorted(anom_nonvolc_draws[i]) for i in range(n_draw_member)])
