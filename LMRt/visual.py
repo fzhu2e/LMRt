@@ -1816,7 +1816,7 @@ def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_
 
 
 def plot_volc_timeseries(timeseries_dict, event_yrs, before=3, after=10, main_alpha=1, event_alpha=1,
-                         clr_dict=None, ls_dict=None, lw_dict=None, xlabel=None, ylabel=None,
+                         clr_dict=None, ls_dict=None, lw_dict=None, xlabel=None, ylabel=None, figsize=[20, 12],
                          xlim=None, ylim=None, event_ylim=None, ncol=4, lgd_ncol=1, lgd_loc=(0, 1)):
     ''' Plot timeseires around volcanic events
 
@@ -1840,7 +1840,7 @@ def plot_volc_timeseries(timeseries_dict, event_yrs, before=3, after=10, main_al
 
     '''
     sns.set(style="ticks", font_scale=1.5)
-    fig = plt.figure(figsize=[20, 12])
+    fig = plt.figure(figsize=figsize)
 
     nevents = np.size(event_yrs)
     nrow = int(1 + np.ceil(nevents/ncol))
@@ -1888,6 +1888,7 @@ def plot_volc_timeseries(timeseries_dict, event_yrs, before=3, after=10, main_al
 
         if ylabel is not None and idx%ncol == 0:
             ax[event].set_ylabel(ylabel)
+
         if event_ylim is None:
             ax[event].set_ylim(ylim)
         else:
