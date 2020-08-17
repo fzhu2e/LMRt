@@ -26,7 +26,7 @@ from statsmodels.graphics.gofplots import ProbPlot
 from pandas.plotting import autocorrelation_plot
 from tqdm import tqdm
 
-from scipy.stats import cumfreq
+from scipy.stats import cumfreq, gaussian_kde
 from scipy.integrate import cumtrapz
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
@@ -1814,9 +1814,156 @@ def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_
         else:
             return ax
 
+def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
+                  clr_volc=sns.xkcd_rgb['black'], clr_volc_signif=sns.xkcd_rgb['pale red'],
+                  clr_nonvolc=sns.xkcd_rgb['grey'], clr_nonvolc_light=sns.xkcd_rgb['light grey'],
+                  signif_qs=[0.8, 0.9, 0.95], signif_markers=['v', '^', 'd'], insignif_marker='o',
+                  figsize=[8, 3], ax=None, plot_lgd=True, lgd_style=None, lgd_fs=10, lgd_ms=6,
+                  ms_large=30, ms_small=15,
+                  xlabel=None, ylabel=None, title=None, title_style=None,
+                  xlim=None, ylim=None,
+                  xticks=None, yticks=None,
+                  signif_ratio_loc_x=0.02, signif_ratio_loc_y=0.95,
+                 ):
+        if ax is None:
+            fig, ax = plt.subplots(figsize=figsize)
 
-def plot_volc_timeseries(timeseries_dict, event_yrs, before=3, after=10, main_alpha=1, event_alpha=1,
-                         clr_dict=None, ls_dict=None, lw_dict=None, xlabel=None, ylabel=None, figsize=[20, 12],
+        n_volc = np.shape(anom_volc)[0]
+        n_nonvolc = np.shape(anom_nonvolc)[0]
+
+        kde_nonvolc = gaussian_kde(anom_nonvolc)
+        ax.plot(xs, kde_nonvolc(xs), color=clr_nonvolc, label=f'KDE of non-volcanic years (n={n_nonvolc})')
+        ax.fill_between(xs, 0, kde_nonvolc(xs), color=clr_nonvolc_light)
+
+        # quantiles of nonvolc
+        anom_nonvolc_qs = np.quantile(anom_nonvolc, signif_qs)
+        for q, anom_q in zip(signif_qs, anom_nonvolc_qs):
+            idx = np.argmin(np.abs(xs-anom_q))
+            ax.vlines(xs[idx], 0, kde_nonvolc(xs)[idx], linestyle='-.', zorder=98, color=clr_nonvolc)
+            ax.text(xs[idx], kde_nonvolc(xs)[idx], f'{q*100:g}%', zorder=101, color=clr_nonvolc,
+                    horizontalalignment='left', verticalalignment='bottom')
+
+        anom_median = np.quantile(anom_nonvolc, [0.5])[0]
+        idx = np.argmin(np.abs(xs-anom_median))
+        ax.vlines(xs[idx], 0, kde_nonvolc(xs)[idx], linestyle='-.', zorder=98, color=clr_nonvolc)
+        ax.text(xs[idx], kde_nonvolc(xs)[idx], '50%', zorder=101, color=clr_nonvolc,
+                horizontalalignment='left', verticalalignment='bottom')
+
+        anom_volc_sorted = sorted(anom_volc)
+        sort_idx = np.argsort(anom_volc)
+        year_sorted = np.array(year_volc)[sort_idx]
+
+        clr_list = []
+        marker_list = []
+        ms_list = []
+
+        n_qs = np.size(signif_qs)
+        n_signif = np.zeros(n_qs)
+
+        for anom_v in anom_volc_sorted:
+            if anom_v >= anom_nonvolc_qs[0]:
+                clr_list.append(clr_volc_signif)
+            else:
+                clr_list.append(clr_volc)
+
+            loc_found = False
+            # insignificant
+            if (anom_v < anom_nonvolc_qs[0]) & (not loc_found):
+                marker_list.append(insignif_marker)
+                ms_list.append(ms_small)
+                loc_found = True
+
+            for i in range(n_qs-1):
+                if (anom_v >= anom_nonvolc_qs[i]) & (anom_v < anom_nonvolc_qs[i+1]) & (not loc_found):
+                    marker_list.append(signif_markers[i])
+                    n_signif[i] += 1
+                    ms_list.append(ms_large)
+                    loc_found = True
+
+            if (anom_v >= anom_nonvolc_qs[-1]) & (not loc_found):
+                marker_list.append(signif_markers[-1])
+                n_signif[-1] += 1
+                ms_list.append(ms_large)
+                loc_found = True
+
+        i = 0
+        kde_max = np.max(kde_nonvolc(xs))
+        for yr, v in zip(year_sorted, anom_volc_sorted):
+            lb = f'Volcanic events (n={n_volc})' if i==0 else None
+            ax.vlines(v, 0, kde_max/n_volc*(i+1), color=clr_list[i], linestyle='-', zorder=99, label=lb, lw=1)
+            ax.scatter(v, y=kde_max/n_volc*(i+1), color=clr_list[i], marker=marker_list[i], s=ms_list[i], zorder=100)
+            ax.text(v, kde_max/n_volc*(i+1)*1.01, yr, color=clr_list[i], horizontalalignment='right')
+            i += 1
+
+        n_signif_cum = np.copy(n_signif)
+        for i in range(np.size(n_signif_cum)):
+            n_signif_cum[i] = np.sum(n_signif_cum[i:])
+
+        signif_ratio_str = ','.join([str(int(n)) for n in n_signif_cum])
+        ax.text(signif_ratio_loc_x, signif_ratio_loc_y, f'Signif. ratio: ({signif_ratio_str})/{n_volc}', transform=ax.transAxes)
+
+        if xlim is not None:
+            ax.set_xlim(xlim)
+
+        if ylim is not None:
+            ax.set_ylim(ylim)
+
+        if xticks is not None:
+            ax.set_xticks(xticks)
+
+        if yticks is not None:
+            ax.set_xticks(yticks)
+
+        if xlabel is not None:    
+            ax.set_xlabel(xlabel)
+
+        if ylabel is not None:    
+            ax.set_ylabel(ylabel)
+
+        if title is not None:    
+            title_kwargs = {'color': clr_volc_signif}
+            title_style = {} if title_style is None else title_style.copy()
+            ax.set_title(title, **title_kwargs)
+
+        # legend
+        if plot_lgd:
+            lgd_kwargs = {'frameon': False, 'loc': 'lower left', 'bbox_to_anchor': (0, -1), 'fontsize': lgd_fs, 'ncol': 1}
+            lgd_style = {} if lgd_style is None else lgd_style.copy()
+            lgd_kwargs.update(lgd_style)
+
+            legend_elements = [
+                Line2D([], [], marker=insignif_marker, markersize=lgd_ms, color=clr_volc,
+                label=f'Volcanic events (< {signif_qs[0]*100:g}% non-volcanic years)', linestyle='None'),
+            ]
+
+            for i, q in enumerate(signif_qs):
+                if i < np.size(signif_qs)-1:
+                    legend_elements.append(
+                        Line2D([], [], marker=signif_markers[i], markersize=lgd_ms, color=clr_volc,
+                        label=f'Volcanic events (between {signif_qs[i]*100:g}-{signif_qs[i+1]*100:g}% non-volcanic years)', linestyle='None'),
+                    )
+                else:
+                    legend_elements.append(
+                        Line2D([], [], marker=signif_markers[i], markersize=lgd_ms, color=clr_volc,
+                        label=f'Volcanic events (>{signif_qs[i]*100:g}% non-volcanic years)', linestyle='None'),
+                    )
+
+            legend_elements.append(
+                Patch(facecolor=clr_nonvolc_light, edgecolor=clr_nonvolc, label=f'Distribution of non-volcanic years')
+            )
+
+            ax.legend(handles=legend_elements, **lgd_kwargs)
+
+        if 'fig' in locals():
+            return fig, ax
+        else:
+            return ax
+
+
+def plot_volc_timeseries(timeseries_dict, event_yrs, before=3, after=6,
+                         calc_anom=True, normalize=False, main_alpha=1, event_alpha=1,
+                         clr_dict=None, ls_dict=None, lw_dict=None,
+                         xlabel=None, ylabel=None, figsize=[20, 12],
                          xlim=None, ylim=None, event_ylim=None, ncol=4, lgd_ncol=1, lgd_loc=(0, 1)):
     ''' Plot timeseires around volcanic events
 
@@ -1911,7 +2058,14 @@ def plot_volc_timeseries(timeseries_dict, event_yrs, before=3, after=10, main_al
             if event in list(ts_time):
                 i_start = list(ts_time).index(x_start)
                 i_end = list(ts_time).index(x_end)
-                ax[event].plot(ts_time[i_start:i_end+1], ts_value[i_start:i_end+1], alpha=event_alpha, **plot_kwargs)
+                value = ts_value[i_start:i_end+1]
+
+                if normalize:
+                    value /= np.std(value)
+                if calc_anom:
+                    value -= np.mean(ts_value[i_start:i_start+before+1])
+
+                ax[event].plot(ts_time[i_start:i_end+1], value, alpha=event_alpha, **plot_kwargs)
             else:
                 empty_time = np.arange(x_start, x_end+1)
                 empty_value = np.empty(np.size(empty_time))

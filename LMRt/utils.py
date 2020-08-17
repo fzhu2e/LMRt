@@ -5613,6 +5613,7 @@ def calc_volc_nonvolc_anom(year_all, target_series, year_volc, preyr=3, postyr=6
     anom_nonvolc_draws = np.array(anom_nonvolc_draws)
 
     res_dict = {
+        'draws': draws,
         'anom_volc': anom_volc,
         'anom_nonvolc': anom_nonvolc,
         'anom_nonvolc_draws': anom_nonvolc_draws,
