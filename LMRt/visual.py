@@ -1819,8 +1819,8 @@ def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
                   clr_nonvolc=sns.xkcd_rgb['grey'], clr_nonvolc_light=sns.xkcd_rgb['light grey'],
                   signif_qs=[0.8, 0.9, 0.95], signif_markers=['v', '^', 'd'], insignif_marker='o',
                   figsize=[8, 3], ax=None, plot_lgd=True, lgd_style=None, lgd_fs=10, lgd_ms=6,
-                  ms_large=30, ms_small=15,
-                  xlabel=None, ylabel=None, title=None, title_style=None,
+                  ms_large=30, ms_small=15, qs_fs=15,
+                  xlabel=None, ylabel=None, label_style=None, title=None, title_style=None,
                   xlim=None, ylim=None,
                   xticks=None, yticks=None,
                   signif_ratio_loc_x=0.02, signif_ratio_loc_y=0.95,
@@ -1840,13 +1840,13 @@ def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
         for q, anom_q in zip(signif_qs, anom_nonvolc_qs):
             idx = np.argmin(np.abs(xs-anom_q))
             ax.vlines(xs[idx], 0, kde_nonvolc(xs)[idx], linestyle='-.', zorder=98, color=clr_nonvolc)
-            ax.text(xs[idx], kde_nonvolc(xs)[idx], f'{q*100:g}%', zorder=101, color=clr_nonvolc,
+            ax.text(xs[idx], kde_nonvolc(xs)[idx], f'{q*100:g}%', zorder=101, color=clr_nonvolc, fontsize=qs_fs,
                     horizontalalignment='left', verticalalignment='bottom')
 
         anom_median = np.quantile(anom_nonvolc, [0.5])[0]
         idx = np.argmin(np.abs(xs-anom_median))
         ax.vlines(xs[idx], 0, kde_nonvolc(xs)[idx], linestyle='-.', zorder=98, color=clr_nonvolc)
-        ax.text(xs[idx], kde_nonvolc(xs)[idx], '50%', zorder=101, color=clr_nonvolc,
+        ax.text(xs[idx], kde_nonvolc(xs)[idx], '50%', zorder=101, color=clr_nonvolc, fontsize=qs_fs,
                 horizontalalignment='left', verticalalignment='bottom')
 
         anom_volc_sorted = sorted(anom_volc)
@@ -1915,10 +1915,12 @@ def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
             ax.set_xticks(yticks)
 
         if xlabel is not None:    
-            ax.set_xlabel(xlabel)
+            label_style = {} if label_style is None else label_style.copy()
+            ax.set_xlabel(xlabel, **label_style)
 
         if ylabel is not None:    
-            ax.set_ylabel(ylabel)
+            label_style = {} if label_style is None else label_style.copy()
+            ax.set_ylabel(ylabel, **label_style)
 
         if title is not None:    
             title_kwargs = {'color': clr_volc_signif}
@@ -1927,7 +1929,7 @@ def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
 
         # legend
         if plot_lgd:
-            lgd_kwargs = {'frameon': False, 'loc': 'lower left', 'bbox_to_anchor': (0, -1), 'fontsize': lgd_fs, 'ncol': 1}
+            lgd_kwargs = {'frameon': False, 'loc': 'lower left', 'bbox_to_anchor': (0, -1), 'fontsize': lgd_fs, 'ncol': 1, 'handletextpad': 0.1}
             lgd_style = {} if lgd_style is None else lgd_style.copy()
             lgd_kwargs.update(lgd_style)
 
@@ -1949,7 +1951,7 @@ def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
                     )
 
             legend_elements.append(
-                Patch(facecolor=clr_nonvolc_light, edgecolor=clr_nonvolc, label=f'Distribution of non-volcanic years')
+                Patch(facecolor=clr_nonvolc_light, edgecolor=clr_nonvolc, label=f'  Distribution of non-volcanic years')
             )
 
             ax.legend(handles=legend_elements, **lgd_kwargs)
@@ -2153,7 +2155,7 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[6, 6],
                  ls='-o', lw=3, color='k', label=None, label_shade=None, alpha=1, shade_alpha=0.3,
                  ylim=None, xlim=None, plot_mode='composite_qs', lgd_individual_yrs=False,
                  signif_alpha=0.5, signif_color=sns.xkcd_rgb['grey'], signif_text_loc_fix=(0.1, -0.01),
-                 signif_fontsize=10, signif_lw=1,
+                 signif_fontsize=10, signif_lw=1, indi_style='o', indi_alpha=0.5,
                  xlabel='Years relative to event year', ylabel='T anom. (K)', plot_lgd=False,
                  xticks=None, yticks=None, title=None, plot_signif=True, ax=None):
     ''' Plot SEA results
@@ -2177,7 +2179,7 @@ def plot_sea_res(res, style='ticks', font_scale=2, figsize=[6, 6],
                     lb = 'individual events' if i==0 else None
                     clr = color
 
-                ax.plot(res['composite_yr'], individual_curve, '--', label=lb, lw=1, alpha=alpha, color=clr)
+                ax.plot(res['composite_yr'], individual_curve, indi_style, label=lb, lw=1, alpha=indi_alpha, color=clr)
     else:
         raise KeyError('Wrong plot_mode!')
 
