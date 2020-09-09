@@ -1964,8 +1964,8 @@ def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
 
 def plot_volc_timeseries(timeseries_dict, event_yrs, before=3, after=6,
                          calc_anom=True, normalize=False, main_alpha=1, event_alpha=1,
-                         clr_dict=None, ls_dict=None, lw_dict=None,
-                         xlabel=None, ylabel=None, figsize=[20, 12],
+                         clr_dict=None, ls_dict=None, lw_dict=None, ms_dict=None,
+                         xlabel=None, ylabel=None, figsize=[20, 12], event_ls='-o',
                          xlim=None, ylim=None, event_ylim=None, ncol=4, lgd_ncol=1, lgd_loc=(0, 1)):
     ''' Plot timeseires around volcanic events
 
@@ -2007,6 +2007,8 @@ def plot_volc_timeseries(timeseries_dict, event_yrs, before=3, after=6,
             plot_kwargs['color'] = clr_dict[ts_name]
         if ls_dict is not None:
             plot_kwargs['linestyle'] = ls_dict[ts_name]
+        if ms_dict is not None:
+            plot_kwargs['marker'] = ms_dict[ts_name]
         if lw_dict is not None:
             plot_kwargs['linewidth'] = lw_dict[ts_name]
 
@@ -2043,7 +2045,7 @@ def plot_volc_timeseries(timeseries_dict, event_yrs, before=3, after=6,
         else:
             ax[event].set_ylim(event_ylim)
 
-        ax[event].set_xlabel('Years relative to event year')
+        ax[event].set_xlabel('Years relative to eruption')
 
         for ts_name, ts_dict in timeseries_dict.items():
             ts_time = ts_dict['time']
@@ -2067,7 +2069,7 @@ def plot_volc_timeseries(timeseries_dict, event_yrs, before=3, after=6,
                 if calc_anom:
                     value -= np.mean(ts_value[i_start:i_start+before+1])
 
-                ax[event].plot(ts_time[i_start:i_end+1], value, alpha=event_alpha, **plot_kwargs)
+                ax[event].plot(ts_time[i_start:i_end+1], value, event_ls, alpha=event_alpha, **plot_kwargs)
             else:
                 empty_time = np.arange(x_start, x_end+1)
                 empty_value = np.empty(np.size(empty_time))
