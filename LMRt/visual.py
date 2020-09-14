@@ -894,15 +894,15 @@ def plot_rolling_phase_comparison(time1, value1, time2, value2, window, factor=1
                                   clr_pos=sns.xkcd_rgb['pale red'], clr_neg=sns.xkcd_rgb['denim blue'],
                                   figsize=[12, 6], xlabel1=None, xlabel2=None, ylabel1=None, ylabel2=None,
                                   xlim=None, ylim=None, title=None, xticks=None, yticks=None, shade_kws=None,
-                                  signif_method='isospec', events=None):
+                                  signif_method='isospec', events=None, yr_fs=10, qs=[0.95]):
 
     shade_kwargs = {'alpha':0.5, 'width': 1}
     if shade_kws is not None:
         shade_kwargs.update(shade_kws)
 
     fig, ax = plt.subplots(2, figsize=figsize, sharex=True)
-    plot_rolling_phase(time1, value1, window, clr_value=clr_value, clr_pos=clr_pos, clr_neg=clr_neg, xlabel=xlabel1, ylabel=ylabel1, ax=ax[0], lw=lw, xlim=xlim, ylim=ylim, xticks=xticks, yticks=yticks)
-    plot_rolling_phase(time2, value2, window, clr_value=clr_value, clr_pos=clr_pos, clr_neg=clr_neg, xlabel=xlabel2, ylabel=ylabel2, ax=ax[1], lw=lw, xlim=xlim, ylim=ylim, xticks=xticks, yticks=yticks)
+    plot_rolling_phase(time1, value1, window, factor=factor, clr_value=clr_value, clr_pos=clr_pos, clr_neg=clr_neg, xlabel=xlabel1, ylabel=ylabel1, ax=ax[0], lw=lw, xlim=xlim, ylim=ylim, xticks=xticks, yticks=yticks)
+    plot_rolling_phase(time2, value2, window, factor=factor, clr_value=clr_value, clr_pos=clr_pos, clr_neg=clr_neg, xlabel=xlabel2, ylabel=ylabel2, ax=ax[1], lw=lw, xlim=xlim, ylim=ylim, xticks=xticks, yticks=yticks)
     ax[0].tick_params(labelbottom=True)
 
     res_dict = utils.calc_phase_consistent_rate(time1, value1, time2, value2, window, factor=factor)
@@ -937,7 +937,7 @@ def plot_rolling_phase_comparison(time1, value1, time2, value2, window, factor=1
                 clr_event = clr_norm
             ax_ylim = ax[0].get_ylim()
             ax[0].axvline(x=event, color=clr_event, ls='-', zorder=99, lw=1)
-            ax[0].text(event, 1.05*ax_ylim[-1], event, horizontalalignment='center', color=clr_event)
+            ax[0].text(event, 1.05*ax_ylim[-1], event, horizontalalignment='center', color=clr_event, fontsize=yr_fs)
 
             if event in t[idx_pos_2]:
                 clr_event = clr_pos
@@ -947,12 +947,19 @@ def plot_rolling_phase_comparison(time1, value1, time2, value2, window, factor=1
                 clr_event = clr_norm
             ax_ylim = ax[1].get_ylim()
             ax[1].axvline(x=event, color=clr_event, ls='-', zorder=99, lw=1)
-            ax[1].text(event, 1.05*ax_ylim[-1], event, horizontalalignment='center', color=clr_event)
+            ax[1].text(event, 1.05*ax_ylim[-1], event, horizontalalignment='center', color=clr_event, fontsize=yr_fs)
 
-    signif_test = utils.signif_test_consistent_rate(time1, value1, time2, value2, window, factor=factor, qs=[0.95], method=signif_method)
-    signif_q95 = signif_test['cons_rate_qs'][0]
+    signif_test = utils.signif_test_consistent_rate(time1, value1, time2, value2, window, factor=factor, qs=qs, method=signif_method)
+    signif_qs = signif_test['cons_rate_qs']
     if title is None:
-        fig.suptitle(f'Timespan: {int(t[0])}-{int(t[-1])}; Rolling window: {window}; Consistency rate: {cons_rate:.2f} ({signif_method} 95% = {signif_q95:.2f})')
+        str_consist_rate = signif_method
+        for q, signif_q in zip(qs, signif_qs):
+            if q != qs[-1]:
+                str_consist_rate += f' {q*100:g}%={signif_q:.2f};'
+            else:
+                str_consist_rate += f' {q*100:g}%={signif_q:.2f}'
+
+        fig.suptitle(f'Timespan: {int(t[0])}-{int(t[-1])}; Rolling window: {window}; Consistency rate: {cons_rate:.2f} ({str_consist_rate})')
 
     return fig, ax
 
