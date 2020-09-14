@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 from matplotlib.colors import BoundaryNorm, Normalize
 from matplotlib.ticker import MaxNLocator, ScalarFormatter, FormatStrFormatter
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.colors import ListedColormap
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
@@ -1819,11 +1821,13 @@ def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
                   clr_nonvolc=sns.xkcd_rgb['grey'], clr_nonvolc_light=sns.xkcd_rgb['light grey'],
                   signif_qs=[0.8, 0.9, 0.95], signif_markers=['v', '^', 'd'], insignif_marker='o',
                   figsize=[8, 3], ax=None, plot_lgd=True, lgd_style=None, lgd_fs=10, lgd_ms=6,
-                  ms_large=30, ms_small=15, qs_fs=15,
+                  ms_large=30, ms_small=15, qs_fs=15, yr_fs=None,
                   xlabel=None, ylabel=None, label_style=None, title=None, title_style=None,
                   xlim=None, ylim=None,
                   xticks=None, yticks=None,
                   signif_ratio_loc_x=0.02, signif_ratio_loc_y=0.95,
+                  clr_style='signif', cmap_name='viridis_r', nclrs=1000,
+                  clr_yr_range=[1000, 1999], clr_yr_step=100,
                  ):
         if ax is None:
             fig, ax = plt.subplots(figsize=figsize)
@@ -1860,11 +1864,21 @@ def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
         n_qs = np.size(signif_qs)
         n_signif = np.zeros(n_qs)
 
-        for anom_v in anom_volc_sorted:
-            if anom_v >= anom_nonvolc_qs[0]:
-                clr_list.append(clr_volc_signif)
+        for k, anom_v in enumerate(anom_volc_sorted):
+            if clr_style == 'signif':
+                if anom_v >= anom_nonvolc_qs[0]:
+                    clr_list.append(clr_volc_signif)
+                else:
+                    clr_list.append(clr_volc)
+            elif clr_style == 'time':
+                # color the volcanic years according to time
+                year = year_sorted[k]
+                sns_cmap = sns.color_palette(palette=cmap_name, n_colors=nclrs)
+                clr_ind = int((year-clr_yr_range[0])/(clr_yr_range[-1]-clr_yr_range[0])*nclrs)
+                clr_list.append(sns_cmap[clr_ind])
+
             else:
-                clr_list.append(clr_volc)
+                raise ValueError('Wrong `clr_style`: please choose between {"signif", "time"}.')
 
             loc_found = False
             # insignificant
@@ -1892,7 +1906,7 @@ def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
             lb = f'Volcanic events (n={n_volc})' if i==0 else None
             ax.vlines(v, 0, kde_max/n_volc*(i+1), color=clr_list[i], linestyle='-', zorder=99, label=lb, lw=1)
             ax.scatter(v, y=kde_max/n_volc*(i+1), color=clr_list[i], marker=marker_list[i], s=ms_list[i], zorder=100)
-            ax.text(v, kde_max/n_volc*(i+1)*1.01, yr, color=clr_list[i], horizontalalignment='right')
+            ax.text(v, kde_max/n_volc*(i+1)*1.01, yr, color=clr_list[i], horizontalalignment='right', fontsize=yr_fs)
             i += 1
 
         n_signif_cum = np.copy(n_signif)
@@ -1955,6 +1969,18 @@ def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
             )
 
             ax.legend(handles=legend_elements, **lgd_kwargs)
+
+        # colorbar
+        if clr_style == 'time':
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", size="5%", pad=0.05)
+            cmap_obj = ListedColormap(sns_cmap.as_hex())
+            clr_norm = Normalize(vmin=clr_yr_range[0], vmax=clr_yr_range[1]+1)
+            cb = mpl.colorbar.ColorbarBase(
+                cax, cmap=cmap_obj, orientation='vertical', norm=clr_norm,
+            )
+            cb.set_label('Year (CE)')
+
 
         if 'fig' in locals():
             return fig, ax
