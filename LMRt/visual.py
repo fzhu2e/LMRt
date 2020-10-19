@@ -368,7 +368,7 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
         s_plots.append(
             ax['map'].scatter(
                 lons, lats, marker=markers_dict[ptype],
-                c=colors_dict[ptype], edgecolor='k', s=markersize, transform=ccrs.Geodetic()
+                c=colors_dict[ptype], edgecolor='k', s=markersize, transform=ccrs.PlateCarree()
             )
         )
 
@@ -483,14 +483,14 @@ def plot_proxy_age_map(df, lon_col='lon', lat_col='lat', type_col='type', time_c
             s_plots.append(
                 ax_map.scatter(
                     lons, lats, marker=p.markers_dict[ptype], cmap=cmap, norm=color_norm,
-                    c=ages, edgecolor='k', s=markersize, transform=ccrs.Geodetic()
+                    c=ages, edgecolor='k', s=markersize, transform=ccrs.PlateCarree()
                 )
             )
         else:
             s_plots.append(
                 ax_map.scatter(
                     lons, lats, marker=p.markers_dict[ptype], cmap=cmap, norm=color_norm,
-                    c=marker_color, edgecolor='k', s=markersize, transform=ccrs.Geodetic()
+                    c=marker_color, edgecolor='k', s=markersize, transform=ccrs.PlateCarree()
                 )
             )
 
@@ -699,7 +699,7 @@ def plot_scatter_map(df, lon_col='lon', lat_col='lat', type_col='type', value_co
         s_plots.append(
             ax_map.scatter(
                 lons, lats, marker=PAGES2k.markers_dict[ptype], cmap=cmap, norm=color_norm, linewidths=edge_lw,
-                c=values, edgecolor='k', s=markersize, transform=ccrs.Geodetic(), label=f'{ptype} (n={np.size(lats)})',
+                c=values, edgecolor='k', s=markersize, transform=ccrs.PlateCarree(), label=f'{ptype} (n={np.size(lats)})',
             )
         )
 
@@ -1291,7 +1291,7 @@ def plot_vslite_params(lat_obs, lon_obs, T1, T2, M1, M2,
     norm = mpl.colors.Normalize(vmin=np.min(z), vmax=np.max(z))
     im = ax1.scatter(
         lon_obs, lat_obs, marker='o', norm=norm,
-        c=z, cmap='Reds', s=20, transform=ccrs.Geodetic()
+        c=z, cmap='Reds', s=20, transform=ccrs.PlateCarree()
     )
     cbar1 = fig.colorbar(im, ax=ax1, orientation='horizontal', pad=pad, fraction=fraction, extend='both')
     if T1_ticks:
@@ -1307,7 +1307,7 @@ def plot_vslite_params(lat_obs, lon_obs, T1, T2, M1, M2,
     norm = mpl.colors.Normalize(vmin=np.min(z), vmax=np.max(z))
     im = ax2.scatter(
         lon_obs, lat_obs, marker='o', norm=norm,
-        c=z, cmap='Reds', s=20, transform=ccrs.Geodetic()
+        c=z, cmap='Reds', s=20, transform=ccrs.PlateCarree()
     )
     cbar2 = fig.colorbar(im, ax=ax2, orientation='horizontal', pad=pad, fraction=fraction, extend='both')
     if T2_ticks:
@@ -1323,7 +1323,7 @@ def plot_vslite_params(lat_obs, lon_obs, T1, T2, M1, M2,
     norm = mpl.colors.Normalize(vmin=np.min(z), vmax=np.max(z))
     im = ax3.scatter(
         lon_obs, lat_obs, marker='o', norm=norm,
-        c=z, cmap='Blues', s=20, transform=ccrs.Geodetic()
+        c=z, cmap='Blues', s=20, transform=ccrs.PlateCarree()
     )
     cbar3 = fig.colorbar(im, ax=ax3, orientation='horizontal', pad=pad, fraction=fraction, extend='both')
     if M1_ticks:
@@ -1339,7 +1339,7 @@ def plot_vslite_params(lat_obs, lon_obs, T1, T2, M1, M2,
     norm = mpl.colors.Normalize(vmin=np.min(z), vmax=np.max(z))
     im = ax4.scatter(
         lon_obs, lat_obs, marker='o', norm=norm,
-        c=z, cmap='Blues', s=20, transform=ccrs.Geodetic()
+        c=z, cmap='Blues', s=20, transform=ccrs.PlateCarree()
     )
     cbar4 = fig.colorbar(im, ax=ax4, orientation='horizontal', pad=pad, fraction=fraction, extend='both')
     if M2_ticks:
@@ -2555,7 +2555,7 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
     p = PAGES2k()
     ax_map.scatter(
         lon_obs, lat_obs, marker=p.markers_dict['Tree Rings_WidthPages2'],
-        c=p.colors_dict['Tree Rings_WidthPages2'], edgecolor='k', s=50, transform=ccrs.Geodetic()
+        c=p.colors_dict['Tree Rings_WidthPages2'], edgecolor='k', s=50, transform=ccrs.PlateCarree()
     )
 
     #-----------------------------------------------------------
@@ -2813,7 +2813,7 @@ def plot_vsl_dashboard_p2k(p2k_id, vsl_res, meta_dict, vsl_params, xlim=[850, 20
     p = PAGES2k()
     ax_map.scatter(
         lon_obs, lat_obs, marker=p.markers_dict['Tree Rings_WidthPages2'],
-        c=p.colors_dict['Tree Rings_WidthPages2'], edgecolor='k', s=50, transform=ccrs.Geodetic()
+        c=p.colors_dict['Tree Rings_WidthPages2'], edgecolor='k', s=50, transform=ccrs.PlateCarree()
     )
 
     #-----------------------------------------------------------
