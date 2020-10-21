@@ -2837,6 +2837,22 @@ def make_xr(var, year_float):
     var_da = xr.DataArray(var, dims=dims, coords={'time': time})
     return var_da
 
+def sum_by_year(time, value):
+    year_ann = []
+    value_ann = []
+    sum_by_year = 0
+    for t, v in zip(time, value):
+        if int(t) not in year_ann:
+            value_ann.append(sum_by_year)
+            sum_by_year = 0
+            year_ann.append(int(t))
+
+        sum_by_year += v
+
+    value_ann.append(sum_by_year)
+
+    return np.array(year_ann), np.array(value_ann[1:])
+
 
 def annualize_var(var, year_float, resolution='month', weights=None):
     ''' Annualize a variable array
