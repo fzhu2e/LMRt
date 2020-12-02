@@ -34,6 +34,7 @@ import itertools
 from scipy.stats import pearsonr
 from sklearn import preprocessing
 import nitime.algorithms as tsa
+import pyresample
 
 from rpy2.robjects.packages import importr
 import rpy2.robjects.numpy2ri
@@ -2836,6 +2837,22 @@ def make_xr(var, year_float):
     var_da = xr.DataArray(var, dims=dims, coords={'time': time})
     return var_da
 
+def sum_by_year(time, value):
+    year_ann = []
+    value_ann = []
+    sum_by_year = 0
+    for t, v in zip(time, value):
+        if int(t) not in year_ann:
+            value_ann.append(sum_by_year)
+            sum_by_year = 0
+            year_ann.append(int(t))
+
+        sum_by_year += v
+
+    value_ann.append(sum_by_year)
+
+    return np.array(year_ann), np.array(value_ann[1:])
+
 
 def annualize_var(var, year_float, resolution='month', weights=None):
     ''' Annualize a variable array
@@ -3652,6 +3669,35 @@ def regrid_field(field, lat, lon, lat_new, lon_new):
 
     field_new = np.array(field_new)
     return field_new
+
+def regrid_field_curv_rect(field, lat_curv, lon_curv, dlat=1, dlon=1, roi=None, roi_factor=1e6, fill_value=np.nan):
+    ''' Regrid a curvilinear grid to a linear rectilinear grid
+    '''
+    ndim_curv = np.size(np.shape(lat_curv))
+    if ndim_curv == 1:
+        lon_curv, lat_curv = np.meshgrid(lon_curv, lat_curv)
+
+    lons = np.arange(np.min(lon_curv), np.max(lon_curv)+dlon, dlon)
+    lats = np.arange(np.min(lat_curv), np.max(lat_curv)+dlat, dlat)
+    lon_rect, lat_rect = np.meshgrid(lons, lats)
+    lon_rect = pyresample.utils.wrap_longitudes(lon_rect)
+
+    if roi is None:
+        roi = roi_factor * np.abs(dlon)
+
+    old_grid = pyresample.geometry.SwathDefinition(lons=lon_curv, lats=lat_curv)
+    new_grid = pyresample.geometry.SwathDefinition(lons=lon_rect, lats=lat_rect)
+
+    nt, nlat, nlon = np.shape(field)
+    rgd_data = np.ndarray(shape=(nt, np.size(lats), np.size(lons)))
+    for i, d in enumerate(field):
+        rgd_data[i] = pyresample.kd_tree.resample_nearest(
+            old_grid, d, new_grid,
+            radius_of_influence=roi,
+            fill_value=np.nan
+        )
+
+    return rgd_data, lats, lons
 
 # ===============================================
 #  Noise

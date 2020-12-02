@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 from matplotlib.colors import BoundaryNorm, Normalize
 from matplotlib.ticker import MaxNLocator, ScalarFormatter, FormatStrFormatter
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.colors import ListedColormap
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
@@ -366,7 +368,7 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
         s_plots.append(
             ax['map'].scatter(
                 lons, lats, marker=markers_dict[ptype],
-                c=colors_dict[ptype], edgecolor='k', s=markersize, transform=ccrs.Geodetic()
+                c=colors_dict[ptype], edgecolor='k', s=markersize, transform=ccrs.PlateCarree()
             )
         )
 
@@ -481,14 +483,14 @@ def plot_proxy_age_map(df, lon_col='lon', lat_col='lat', type_col='type', time_c
             s_plots.append(
                 ax_map.scatter(
                     lons, lats, marker=p.markers_dict[ptype], cmap=cmap, norm=color_norm,
-                    c=ages, edgecolor='k', s=markersize, transform=ccrs.Geodetic()
+                    c=ages, edgecolor='k', s=markersize, transform=ccrs.PlateCarree()
                 )
             )
         else:
             s_plots.append(
                 ax_map.scatter(
                     lons, lats, marker=p.markers_dict[ptype], cmap=cmap, norm=color_norm,
-                    c=marker_color, edgecolor='k', s=markersize, transform=ccrs.Geodetic()
+                    c=marker_color, edgecolor='k', s=markersize, transform=ccrs.PlateCarree()
                 )
             )
 
@@ -697,7 +699,7 @@ def plot_scatter_map(df, lon_col='lon', lat_col='lat', type_col='type', value_co
         s_plots.append(
             ax_map.scatter(
                 lons, lats, marker=PAGES2k.markers_dict[ptype], cmap=cmap, norm=color_norm, linewidths=edge_lw,
-                c=values, edgecolor='k', s=markersize, transform=ccrs.Geodetic(), label=f'{ptype} (n={np.size(lats)})',
+                c=values, edgecolor='k', s=markersize, transform=ccrs.PlateCarree(), label=f'{ptype} (n={np.size(lats)})',
             )
         )
 
@@ -892,15 +894,15 @@ def plot_rolling_phase_comparison(time1, value1, time2, value2, window, factor=1
                                   clr_pos=sns.xkcd_rgb['pale red'], clr_neg=sns.xkcd_rgb['denim blue'],
                                   figsize=[12, 6], xlabel1=None, xlabel2=None, ylabel1=None, ylabel2=None,
                                   xlim=None, ylim=None, title=None, xticks=None, yticks=None, shade_kws=None,
-                                  signif_method='isospec', events=None):
+                                  signif_method='isospec', events=None, yr_fs=10, qs=[0.95]):
 
     shade_kwargs = {'alpha':0.5, 'width': 1}
     if shade_kws is not None:
         shade_kwargs.update(shade_kws)
 
     fig, ax = plt.subplots(2, figsize=figsize, sharex=True)
-    plot_rolling_phase(time1, value1, window, clr_value=clr_value, clr_pos=clr_pos, clr_neg=clr_neg, xlabel=xlabel1, ylabel=ylabel1, ax=ax[0], lw=lw, xlim=xlim, ylim=ylim, xticks=xticks, yticks=yticks)
-    plot_rolling_phase(time2, value2, window, clr_value=clr_value, clr_pos=clr_pos, clr_neg=clr_neg, xlabel=xlabel2, ylabel=ylabel2, ax=ax[1], lw=lw, xlim=xlim, ylim=ylim, xticks=xticks, yticks=yticks)
+    plot_rolling_phase(time1, value1, window, factor=factor, clr_value=clr_value, clr_pos=clr_pos, clr_neg=clr_neg, xlabel=xlabel1, ylabel=ylabel1, ax=ax[0], lw=lw, xlim=xlim, ylim=ylim, xticks=xticks, yticks=yticks)
+    plot_rolling_phase(time2, value2, window, factor=factor, clr_value=clr_value, clr_pos=clr_pos, clr_neg=clr_neg, xlabel=xlabel2, ylabel=ylabel2, ax=ax[1], lw=lw, xlim=xlim, ylim=ylim, xticks=xticks, yticks=yticks)
     ax[0].tick_params(labelbottom=True)
 
     res_dict = utils.calc_phase_consistent_rate(time1, value1, time2, value2, window, factor=factor)
@@ -935,7 +937,7 @@ def plot_rolling_phase_comparison(time1, value1, time2, value2, window, factor=1
                 clr_event = clr_norm
             ax_ylim = ax[0].get_ylim()
             ax[0].axvline(x=event, color=clr_event, ls='-', zorder=99, lw=1)
-            ax[0].text(event, 1.05*ax_ylim[-1], event, horizontalalignment='center', color=clr_event)
+            ax[0].text(event, 1.05*ax_ylim[-1], event, horizontalalignment='center', color=clr_event, fontsize=yr_fs)
 
             if event in t[idx_pos_2]:
                 clr_event = clr_pos
@@ -945,12 +947,19 @@ def plot_rolling_phase_comparison(time1, value1, time2, value2, window, factor=1
                 clr_event = clr_norm
             ax_ylim = ax[1].get_ylim()
             ax[1].axvline(x=event, color=clr_event, ls='-', zorder=99, lw=1)
-            ax[1].text(event, 1.05*ax_ylim[-1], event, horizontalalignment='center', color=clr_event)
+            ax[1].text(event, 1.05*ax_ylim[-1], event, horizontalalignment='center', color=clr_event, fontsize=yr_fs)
 
-    signif_test = utils.signif_test_consistent_rate(time1, value1, time2, value2, window, factor=factor, qs=[0.95], method=signif_method)
-    signif_q95 = signif_test['cons_rate_qs'][0]
+    signif_test = utils.signif_test_consistent_rate(time1, value1, time2, value2, window, factor=factor, qs=qs, method=signif_method)
+    signif_qs = signif_test['cons_rate_qs']
     if title is None:
-        fig.suptitle(f'Timespan: {int(t[0])}-{int(t[-1])}; Rolling window: {window}; Consistency rate: {cons_rate:.2f} ({signif_method} 95% = {signif_q95:.2f})')
+        str_consist_rate = signif_method
+        for q, signif_q in zip(qs, signif_qs):
+            if q != qs[-1]:
+                str_consist_rate += f' {q*100:g}%={signif_q:.2f};'
+            else:
+                str_consist_rate += f' {q*100:g}%={signif_q:.2f}'
+
+        fig.suptitle(f'Timespan: {int(t[0])}-{int(t[-1])}; Rolling window: {window}; Consistency rate: {cons_rate:.2f} ({str_consist_rate})')
 
     return fig, ax
 
@@ -1282,7 +1291,7 @@ def plot_vslite_params(lat_obs, lon_obs, T1, T2, M1, M2,
     norm = mpl.colors.Normalize(vmin=np.min(z), vmax=np.max(z))
     im = ax1.scatter(
         lon_obs, lat_obs, marker='o', norm=norm,
-        c=z, cmap='Reds', s=20, transform=ccrs.Geodetic()
+        c=z, cmap='Reds', s=20, transform=ccrs.PlateCarree()
     )
     cbar1 = fig.colorbar(im, ax=ax1, orientation='horizontal', pad=pad, fraction=fraction, extend='both')
     if T1_ticks:
@@ -1298,7 +1307,7 @@ def plot_vslite_params(lat_obs, lon_obs, T1, T2, M1, M2,
     norm = mpl.colors.Normalize(vmin=np.min(z), vmax=np.max(z))
     im = ax2.scatter(
         lon_obs, lat_obs, marker='o', norm=norm,
-        c=z, cmap='Reds', s=20, transform=ccrs.Geodetic()
+        c=z, cmap='Reds', s=20, transform=ccrs.PlateCarree()
     )
     cbar2 = fig.colorbar(im, ax=ax2, orientation='horizontal', pad=pad, fraction=fraction, extend='both')
     if T2_ticks:
@@ -1314,7 +1323,7 @@ def plot_vslite_params(lat_obs, lon_obs, T1, T2, M1, M2,
     norm = mpl.colors.Normalize(vmin=np.min(z), vmax=np.max(z))
     im = ax3.scatter(
         lon_obs, lat_obs, marker='o', norm=norm,
-        c=z, cmap='Blues', s=20, transform=ccrs.Geodetic()
+        c=z, cmap='Blues', s=20, transform=ccrs.PlateCarree()
     )
     cbar3 = fig.colorbar(im, ax=ax3, orientation='horizontal', pad=pad, fraction=fraction, extend='both')
     if M1_ticks:
@@ -1330,7 +1339,7 @@ def plot_vslite_params(lat_obs, lon_obs, T1, T2, M1, M2,
     norm = mpl.colors.Normalize(vmin=np.min(z), vmax=np.max(z))
     im = ax4.scatter(
         lon_obs, lat_obs, marker='o', norm=norm,
-        c=z, cmap='Blues', s=20, transform=ccrs.Geodetic()
+        c=z, cmap='Blues', s=20, transform=ccrs.PlateCarree()
     )
     cbar4 = fig.colorbar(im, ax=ax4, orientation='horizontal', pad=pad, fraction=fraction, extend='both')
     if M2_ticks:
@@ -1819,11 +1828,13 @@ def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
                   clr_nonvolc=sns.xkcd_rgb['grey'], clr_nonvolc_light=sns.xkcd_rgb['light grey'],
                   signif_qs=[0.8, 0.9, 0.95], signif_markers=['v', '^', 'd'], insignif_marker='o',
                   figsize=[8, 3], ax=None, plot_lgd=True, lgd_style=None, lgd_fs=10, lgd_ms=6,
-                  ms_large=30, ms_small=15, qs_fs=15,
+                  ms_large=30, ms_small=15, qs_fs=15, yr_fs=None,
                   xlabel=None, ylabel=None, label_style=None, title=None, title_style=None,
                   xlim=None, ylim=None,
                   xticks=None, yticks=None,
                   signif_ratio_loc_x=0.02, signif_ratio_loc_y=0.95,
+                  clr_style='signif', cmap_name='viridis_r', nclrs=1000,
+                  clr_yr_range=[1000, 1999], clr_yr_step=100,
                  ):
         if ax is None:
             fig, ax = plt.subplots(figsize=figsize)
@@ -1860,11 +1871,21 @@ def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
         n_qs = np.size(signif_qs)
         n_signif = np.zeros(n_qs)
 
-        for anom_v in anom_volc_sorted:
-            if anom_v >= anom_nonvolc_qs[0]:
-                clr_list.append(clr_volc_signif)
+        for k, anom_v in enumerate(anom_volc_sorted):
+            if clr_style == 'signif':
+                if anom_v >= anom_nonvolc_qs[0]:
+                    clr_list.append(clr_volc_signif)
+                else:
+                    clr_list.append(clr_volc)
+            elif clr_style == 'time':
+                # color the volcanic years according to time
+                year = year_sorted[k]
+                sns_cmap = sns.color_palette(palette=cmap_name, n_colors=nclrs)
+                clr_ind = int((year-clr_yr_range[0])/(clr_yr_range[-1]-clr_yr_range[0])*nclrs)
+                clr_list.append(sns_cmap[clr_ind])
+
             else:
-                clr_list.append(clr_volc)
+                raise ValueError('Wrong `clr_style`: please choose between {"signif", "time"}.')
 
             loc_found = False
             # insignificant
@@ -1892,7 +1913,7 @@ def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
             lb = f'Volcanic events (n={n_volc})' if i==0 else None
             ax.vlines(v, 0, kde_max/n_volc*(i+1), color=clr_list[i], linestyle='-', zorder=99, label=lb, lw=1)
             ax.scatter(v, y=kde_max/n_volc*(i+1), color=clr_list[i], marker=marker_list[i], s=ms_list[i], zorder=100)
-            ax.text(v, kde_max/n_volc*(i+1)*1.01, yr, color=clr_list[i], horizontalalignment='right')
+            ax.text(v, kde_max/n_volc*(i+1)*1.01, yr, color=clr_list[i], horizontalalignment='right', fontsize=yr_fs)
             i += 1
 
         n_signif_cum = np.copy(n_signif)
@@ -1955,6 +1976,18 @@ def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
             )
 
             ax.legend(handles=legend_elements, **lgd_kwargs)
+
+        # colorbar
+        if clr_style == 'time':
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", size="5%", pad=0.05)
+            cmap_obj = ListedColormap(sns_cmap.as_hex())
+            clr_norm = Normalize(vmin=clr_yr_range[0], vmax=clr_yr_range[1]+1)
+            cb = mpl.colorbar.ColorbarBase(
+                cax, cmap=cmap_obj, orientation='vertical', norm=clr_norm,
+            )
+            cb.set_label('Year (CE)')
+
 
         if 'fig' in locals():
             return fig, ax
@@ -2522,7 +2555,7 @@ def plot_vsl_dashboard(pid, vsl_res, vsl_params,
     p = PAGES2k()
     ax_map.scatter(
         lon_obs, lat_obs, marker=p.markers_dict['Tree Rings_WidthPages2'],
-        c=p.colors_dict['Tree Rings_WidthPages2'], edgecolor='k', s=50, transform=ccrs.Geodetic()
+        c=p.colors_dict['Tree Rings_WidthPages2'], edgecolor='k', s=50, transform=ccrs.PlateCarree()
     )
 
     #-----------------------------------------------------------
@@ -2780,7 +2813,7 @@ def plot_vsl_dashboard_p2k(p2k_id, vsl_res, meta_dict, vsl_params, xlim=[850, 20
     p = PAGES2k()
     ax_map.scatter(
         lon_obs, lat_obs, marker=p.markers_dict['Tree Rings_WidthPages2'],
-        c=p.colors_dict['Tree Rings_WidthPages2'], edgecolor='k', s=50, transform=ccrs.Geodetic()
+        c=p.colors_dict['Tree Rings_WidthPages2'], edgecolor='k', s=50, transform=ccrs.PlateCarree()
     )
 
     #-----------------------------------------------------------
