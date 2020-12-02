@@ -5131,7 +5131,7 @@ def calc_cov_map(field, lat, lon, year, target_ts, target_year, verbose=False,
                     ij_ts_overlap = signal.detrend(ij_ts_overlap, **detrend_kws)
 
                 corr[i, j] = np.corrcoef(target_ts_overlap, ij_ts_overlap)[1, 0]
-                cov[i, j] = corr[i, j] / np.std(target_ts_overlap) / np.std(ij_ts_overlap)
+                cov[i, j] = corr[i, j] * np.std(target_ts_overlap) * np.std(ij_ts_overlap)
 
     return cov
 
