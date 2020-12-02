@@ -3954,6 +3954,19 @@ def geo_mean(field_value, field_lat, field_lon, lats, lons):
     value_avg = np.average(value_array, axis=0, weights=weight_list)
     return value_avg
 
+def rmse_coslat(field_a, field_b, lat):
+    ''' Calculate the RMSE between field_a and field_b with coslat as the weights
+    '''
+    squared_diff = (field_a - field_b)**2
+    lat_weights = np.cos(np.deg2rad(lat))
+    res = np.average(
+            np.average(squared_diff, axis=-1),
+            axis=-1, weights=lat_weights,
+          )
+
+    return res
+
+
 
 def nino_indices(sst, lats, lons):
     ''' Calculate Nino indices
@@ -5021,6 +5034,60 @@ def calc_corr_map(field, lat, lon, year, target_ts, target_year, verbose=False,
                 corr[i, j] = np.corrcoef(target_ts_overlap, ij_ts_overlap)[1, 0]
 
     return corr
+
+def calc_cov_map(field, lat, lon, year, target_ts, target_year, verbose=False,
+                  verif_yrs=np.arange(1880, 2001), npts_lb=25, detrend=False):
+    ''' Calculate the correlation map between the field and the target timeseries
+
+    Args:
+        field (ndarray): the field in dims (nt x nlat x nlon)
+        lat/lon (array): the lat/lon array of the field
+        year (array): the time axis in float
+        target_ts (array): the target timeseres in dims (nt x nlat x nlon)
+        target_year (array): the time axis of the target timeseres
+        verif_yrs (tuple): the time period to calculate correlation
+
+    Returns:
+        corr (ndarray): the correlation map in dims (nlat x nlon)
+    '''
+    nt, nlat, nlon = np.shape(field)
+
+    syear, eyear = verif_yrs[0], verif_yrs[-1]
+    if syear < np.min(year) or eyear > np.max(year):
+        print(f'Year range: {np.min(year), np.max(year)}')
+        print(f'Verification range: {syear, eyear}')
+        raise ValueError('ERROR: The time axis of the field is not fully covering the range of verif_yrs!!!')
+    mask = (year >= syear) & (year <= eyear)
+
+    corr = np.ndarray((nlat, nlon))
+    cov = np.ndarray((nlat, nlon))
+    target_year, target_ts = clean_ts(target_year, target_ts)
+
+    for i in tqdm(range(nlat)):
+        for j in range(nlon):
+            ij_ts = field[mask, i, j]
+            ij_year, ij_ts = clean_ts(year[mask], ij_ts)
+
+            overlap_yrs = np.intersect1d(ij_year, target_year)
+            ind1 = np.searchsorted(ij_year, overlap_yrs)
+            ind2 = np.searchsorted(target_year, overlap_yrs)
+
+            if np.size(ind1) < npts_lb or np.size(ind2) < npts_lb:
+                if verbose:
+                    print('(i, j) >>> Warning: overlapped timeseries is too short for correlation calculation (npts < 25). Returnning NaN ...')
+                corr[i, j] = np.nan
+                cov[i, j] = np.nan
+            else:
+                ij_ts_overlap = ij_ts[ind1]
+                target_ts_overlap = target_ts[ind2]
+                if detrend:
+                    target_ts_overlap = signal.detrend(target_ts_overlap, **detrend_kws)
+                    ij_ts_overlap = signal.detrend(ij_ts_overlap, **detrend_kws)
+
+                corr[i, j] = np.corrcoef(target_ts_overlap, ij_ts_overlap)[1, 0]
+                cov[i, j] = corr[i, j] / np.std(target_ts_overlap) / np.std(ij_ts_overlap)
+
+    return cov
 
 # -----------------------------------------------
 #  Superposed Epoch Analysis
