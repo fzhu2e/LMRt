@@ -4012,6 +4012,17 @@ def rmse_coslat(field_a, field_b, lat):
 
     return res
 
+def average_coslat(field, lat):
+    ''' Calculate the mean field with coslat as the weights
+    '''
+    lat_weights = np.cos(np.deg2rad(lat))
+    res = np.average(
+            np.average(field, axis=-1),
+            axis=-1, weights=lat_weights,
+          )
+
+    return res
+
 
 
 def nino_indices(sst, lats, lons):
