@@ -1988,18 +1988,18 @@ def find_closest_loc(lat, lon, target_lat, target_lon, mode=None, verbose=False)
         else:
             raise ValueError('ERROR: The shape of the lat/lon cannot be processed !!!')
 
-    if mode is 'latlon':
+    if mode == 'latlon':
         # model locations
         mesh = np.meshgrid(lon, lat)
 
         list_of_grids = list(zip(*(grid.flat for grid in mesh)))
         model_lon, model_lat = zip(*list_of_grids)
 
-    elif mode is 'mesh':
+    elif mode == 'mesh':
         model_lat = lat.flatten()
         model_lon = lon.flatten()
 
-    elif mode is 'list':
+    elif mode == 'list':
         model_lat = lat
         model_lon = lon
 
@@ -2587,6 +2587,7 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath, dtype
                 nino3 = nino_ind['nino3']
                 nino34 = nino_ind['nino3.4']
                 nino4 = nino_ind['nino4']
+                wpi = nino_ind['wpi']
 
                 nino12 = np.array(nino12, dtype=dtype)
                 nino3 = np.array(nino3, dtype=dtype)
@@ -2597,6 +2598,7 @@ def save_to_netcdf(prior, field_ens_save, recon_years, seed, save_dirpath, dtype
                 output_dict['nino3'] = (('year', 'ens'), nino3)
                 output_dict['nino3.4'] = (('year', 'ens'), nino34)
                 output_dict['nino4'] = (('year', 'ens'), nino4)
+                output_dict['wpi'] = (('year', 'ens'), wpi)
 
                 # calculate tripole index (TPI)
                 tpi = calc_tpi(field_ens_save[name], lats, lons)
@@ -4064,6 +4066,10 @@ def nino_indices(sst, lats, lons):
     lat_mask['nino4'] = (lats >= -5) & (lats <= 5)
     lon_mask['nino4'] = (lons >= lon360(160)) & (lons <= lon360(-150))
 
+    # West Pacific index
+    lat_mask['wpi'] = (lats >= -10) & (lats <= 10)
+    lon_mask['wpi'] = (lons >= lon360(120)) & (lons <= lon360(150))
+
     for region in lat_mask.keys():
         sst_sub = sst[..., lon_mask[region]]
         sst_sub = sst_sub[..., lat_mask[region], :]
@@ -4076,7 +4082,7 @@ def nino_indices(sst, lats, lons):
 
 
 def calc_tpi(sst, lats, lons):
-    ''' Calculate Nino indices
+    ''' Calculate tripole index
 
     Args:
         sst: sea-surface temperature, the last two dimensions are assumed to be (lat, lon)
@@ -4114,7 +4120,6 @@ def calc_tpi(sst, lats, lons):
 
     tpi = ssta['2'] - (ssta['1'] + ssta['3'])/2
     return tpi
-
 
 def pobjs2df(pobjs,
              col_names=[
