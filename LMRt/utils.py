@@ -4073,8 +4073,9 @@ def nino_indices(sst, lats, lons):
     for region in lat_mask.keys():
         sst_sub = sst[..., lon_mask[region]]
         sst_sub = sst_sub[..., lat_mask[region], :]
+        ma = np.ma.MaskedArray(sst_sub, mask=np.isnan(sst_sub))
         ind[region] = np.average(
-            np.average(sst_sub, axis=-1),
+            np.average(ma, axis=-1),
             axis=-1,
             weights=np.cos(np.deg2rad(lats[lat_mask[region]])),
         )
