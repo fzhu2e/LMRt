@@ -1,405 +1,55 @@
-# Configuration parameters for running an LMR reconstruction.  See LMR_config
-# for a description of each parameter.  Here we provide a default setting as an
-# example, not a best-use scenario.
-#
-# The 'null' value resolves to a default path pattern (using lmr_path) for all
-# directory parameters.  For other parameters 'null' signifies the parameter is
-# not used. This is python-interpreted as None.
+job_id: 20201217_LMRt_recon
+job_dirpath: ./
 
-wrapper:
-  iter_range:  !!python/tuple [0, 49]
-  param_search: null
-  multi_seed: [
-     0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,
-    13,  14,  15,  16,  17,  18,  19,  20,  21,  22,  23,  24,  25,
-    26,  27,  28,  29,  30,  31,  32,  33,  34,  35,  36,  37,  38,
-    39,  40,  41,  42,  43,  44,  45,  46,  47,  48,  49,  50,  51,
-    52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,  64,
-    65,  66,  67,  68,  69,  70,  71,  72,  73,  74,  75,  76,  77,
-    78,  79,  80,  81,  82,  83,  84,  85,  86,  87,  88,  89,  90,
-    91,  92,  93,  94,  95,  96,  97,  98,  99, 100 ]
-
-core:
-  nexp: default_recon_job
-  lmr_path: null
-  datadir_output: null
-  archive_dir: null
-
-  online_reconstruction: False
-  clean_start: True
-  use_precalc_ye: True
-  output_details: False
-  write_posterior_Ye: False
-  # save_full_field: False
-  recon_period: !!python/tuple [0, 2000]
-#  recon_period: !!python/tuple [-120000, 2000]
-  recon_timescale: 1
-#  recon_timescale: 250
-  nens: 100
-  seed: null
-  loc_rad: 25000
-  inflation_fact: null
-
-proxies:
-#  use_from: [PAGES2kv1]
-  use_from: [LMRdb]
-#  use_from: [NCDCdtda]
-  proxy_frac: 0.75
-  proxy_timeseries_kind: asis
-  proxy_availability_filter: False
-  proxy_availability_fraction: 1.0
-
-  PAGES2kv1:
-    datadir_proxy: null
-    datafile_proxy: Pages2kv1_Proxies.df.pckl
-    metafile_proxy: Pages2kv1_Metadata.df.pckl
-    dataformat_proxy: DF
-    regions: [
-      'Antarctica',
-      'Arctic',
-      'Asia',
-      'Australasia',
-      'Europe',
-      'North America',
-      'South America'
-      ]
-    proxy_resolution: [1.0]
-    proxy_blacklist: []
-    proxy_order: [
-      'Tree ring_Width',
-      'Tree ring_Density',
-      'Ice core_d18O',
-      'Ice core_d2H',
-      'Ice core_Accumulation',
-      'Coral_d18O',
-      'Coral_Luminescence',
-      'Lake sediment_All',
-      'Marine sediment_All',
-      'Speleothem_All'
-      ]
-    proxy_psm_type:
-      Tree ring_Width:       linear
-      Tree ring_Density:     linear
-      Ice core_d18O:         linear
-      Ice core_d2H:          linear
-      Ice core_Accumulation: linear
-      Coral_d18O:            linear
-      Coral_Luminescence:    linear
-      Lake sediment_All:     linear
-      Marine sediment_All:   linear
-      Speleothem_All:        linear
-    proxy_assim2:
-      Tree ring_Width: [
-        'Ring width',
-        'Tree ring width',
-        'Total ring width',
-        'TRW'
-        ]
-      Tree ring_Density: [
-        'Maximum density',
-        'Minimum density',
-        'Earlywood density',
-        'Latewood density',
-        'MXD'
-        ]
-      Ice core_d18O: [ 'd18O' ]
-      Ice core_d2H: [ 'd2H' ]
-      Ice core_Accumulation: [ 'Accumulation' ]
-      Coral_d18O: [ 'd18O' ]
-      Coral_Luminescence: [ 'Luminescence' ]
-      Lake sediment_All: [
-        'Varve thickness',
-        'Thickness',
-        'Mass accumulation rate',
-        'Particle-size distribution',
-        'Organic matter',
-        'X-ray density'
-        ]
-      Marine sediment_All: [ 'Mg/Ca' ]
-      Speleothem_All: [ 'Lamina thickness' ]
-
-  LMRdb:
-    dbversion: 'v0.4.0'
-    datadir_proxy: null
-    datafile_proxy: 'LMRdb_{}_Proxies.df.pckl'
-    metafile_proxy: 'LMRdb_{}_Metadata.df.pckl'
-    dataformat_proxy: 'DF'
-    regions: [
-      'Antarctica',
-      'Arctic',
-      'Asia',
-      'Australasia',
-      'Europe',
-      'North America',
-      'South America'
-      ]
-    proxy_resolution: [1.0]
-    database_filter: [
-     'PAGES2kv2',
-#     'Breits'
-      ]
-    proxy_blacklist: []
-
-    SNR:
-        'Tree Rings_WidthPages2': 1
-        'Tree Rings_WidthBreit': 1
-        'Tree Rings_WoodDensity': 1
-        'Tree Rings_Isotopes': 1
-        'Corals and Sclerosponges_d18O': 1
-        'Corals and Sclerosponges_SrCa': 1
-        'Corals and Sclerosponges_Rates': 1
-        'Ice Cores_d18O': 1
-        'Ice Cores_dD': 1
-        'Ice Cores_Accumulation': 1
-        'Ice Cores_MeltFeature': 1
-        'Lake Cores_Varve': 1
-        'Lake Cores_BioMarkers': 1
-        'Lake Cores_GeoChem': 1
-        'Lake Cores_Misc': 1
-        'Marine Cores_d18O': 1
-        'Bivalve_d18O': 1
-
-    proxy_order: [
-      'Tree Rings_WidthPages2',
-      'Tree Rings_WidthBreit',
-      'Tree Rings_WoodDensity',
-      'Tree Rings_Isotopes',
-      'Corals and Sclerosponges_d18O',
-      'Corals and Sclerosponges_SrCa',
-      'Corals and Sclerosponges_Rates',
-      'Ice Cores_d18O',
-      'Ice Cores_dD',
-      'Ice Cores_Accumulation',
-      'Ice Cores_MeltFeature',
-      'Lake Cores_Varve',
-      'Lake Cores_BioMarkers',
-      'Lake Cores_GeoChem',
-      'Lake Cores_Misc',
-      'Marine Cores_d18O',
-#      'Speleothems_d18O',
-      'Bivalve_d18O'
-      ]
-    proxy_psm_type:
-      Corals and Sclerosponges_d18O:  linear
-      Corals and Sclerosponges_SrCa:  linear
-      Corals and Sclerosponges_Rates: linear
-      Ice Cores_d18O:                 linear
-      Ice Cores_dD:                   linear
-      Ice Cores_Accumulation:         linear
-      Ice Cores_MeltFeature:          linear
-      Lake Cores_Varve:               linear
-      Lake Cores_BioMarkers:          linear
-      Lake Cores_GeoChem:             linear
-      Lake Cores_Misc:                linear
-      Marine Cores_d18O:              linear
-      Tree Rings_WidthPages2:         bilinear
-      Tree Rings_WidthBreit:          bilinear
-      Tree Rings_WoodDensity:         linear
-      Tree Rings_Isotopes:            linear
-      Speleothems_d18O:               linear
-      Bivalve_d18O:                   linear
-    proxy_assim2:
-      Corals and Sclerosponges_d18O: [
-        'd18O',
-        'delta18O',
-        'd18o',
-        'd18O_stk',
-        'd18O_int',
-        'd18O_norm',
-        'd18o_avg',
-        'd18o_ave',
-        'dO18',
-        'd18O_4'
-        ]
-      Corals and Sclerosponges_SrCa: [
-        'Sr/Ca',
-        'Sr_Ca',
-        'Sr/Ca_norm',
-        'Sr/Ca_anom',
-        'Sr/Ca_int'
-        ]
-      Corals and Sclerosponges_Rates: [
-        'ext',
-        'calc',
-        'calcification',
-        'calcification rate',
-        'composite'
-        ]
-      Ice Cores_d18O: [
-        'd18O',
-        'delta18O',
-        'delta18o',
-        'd18o',
-        'd18o_int',
-        'd18O_int',
-        'd18O_norm',
-        'd18o_norm',
-        'dO18',
-        'd18O_anom'
-        ]
-      Ice Cores_dD: [
-        'deltaD',
-        'delD',
-        'dD'
-        ]
-      Ice Cores_Accumulation: [
-        'accum',
-        'accumu'
-        ]
-      Ice Cores_MeltFeature: ['MFP','melt']
-      Lake Cores_Varve: [
-        'thickness',
-        'varve',
-        'varve_thickness',
-        'varve thickness'
-        ]
-      Lake Cores_BioMarkers: [
-        'Uk37',
-        'TEX86'
-        ]
-      Lake Cores_GeoChem: [
-        'Sr/Ca',
-        'Mg/Ca',
-        'Cl_cont'
-        ]
-      Lake Cores_Misc: [
-        'RABD660_670',
-        'X_radiograph_dark_layer',
-        'massacum'
-        ]
-      Marine Cores_d18O: ['d18O']
-      Speleothems_d18O: ['d18O']
-      Bivalve_d18O: ['d18O']
-      Tree Rings_WidthBreit: ['trsgi_breit']
-      Tree Rings_WidthPages2: ['trsgi']
-      Tree Rings_WoodDensity: [
-        'max_d',
-        'min_d',
-        'early_d',
-        'earl_d',
-        'density',
-        'late_d',
-        'MXD'
-        ]
-      Tree Rings_Isotopes: ['d18O']
+recon_period: [0, 2000]
+recon_timescale: 1
+recon_nens: 100
+recon_seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+recon_vars: tas
+# recon_vars: [tas, pr]  # reconstruct two fields at once
+recon_loc_rad: 25000  # unit: km
 
 
-  NCDCdtda:
-    dbversion: 'v0.0.1'
-    datadir_proxy: null
-    datafile_proxy: 'DTDA_{}_Proxies.df.pckl'
-    metafile_proxy: 'DTDA_{}_Metadata.df.pckl'
-    dataformat_proxy: 'DF'
-    regions: []
-    proxy_resolution: [!!python/tuple [0.,5000.]]
-    database_filter: []
-    proxy_blacklist: []
-    proxy_order: [
-#     'Marine Cores_uk37',
-     'Marine sediments_uk37'
-     ]
-    proxy_psm_type:
-      Marine Cores_uk37:     bayesreg_uk37
-      Marine sediments_uk37: bayesreg_uk37
-    proxy_assim2:
-      Marine Cores_uk37: [
-        'uk37',
-        'UK37'
-        ]
-      Marine sediments_uk37: [
-        'uk37',
-        'UK37'
-        ]
+# Proxy & PSM related
+proxydb_path: pages2k_dataset.pkl
 
-psm:
-  all_calib_sources:
-    temperature: [GISTEMP, MLOST, HadCRUT, BerkeleyEarth]
-    moisture: [GPCC, DaiPDSI]
+ptype_psm:  # assimilate only listed proxy types
+  # tree.TRW: bilinear
+  # tree.MXD: linear
+  coral.d18O: linear
+  coral.SrCa: linear
+  coral.calc: linear
 
-#  avgPeriod: annual
-  avgPeriod: season
-#  season_source: proxy_metadata
-  season_source: psm_calib
+ptype_season:  # one may list all possible proxy types here
+  coral.d18O: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  # annual
+  coral.SrCa: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  # annual
+  coral.calc: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  # annual
+  tree.TRW: [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]]  # multiple possible seasonalities
+  tree.MXD: [[1,2,3,4,5,6,7,8,9,10,11,12],[6,7,8],[3,4,5,6,7,8],[6,7,8,9,10,11],[-12,1,2],[-9,-10,-11,-12,1,2],[-12,1,2,3,4,5]]
 
-  linear:
-    datatag_calib: GISTEMP
-    pre_calib_datafile: null
-    psm_r_crit: 0.0
+psm_calib_period: [1850, 2015]
+proxy_frac: 0.75  # assimilated fraction of the proxy records
 
-  linear_TorP:
-    datatag_calib_T: GISTEMP
-    datatag_calib_P: GPCC
-    pre_calib_datafile_T: null
-    pre_calib_datafile_P: null
-    psm_r_crit: 0.0
+# Prior related
+prior_path:
+  tas: ./LMR_input/data/model/icesm_last_millennium_historical/tas_sfc_Amon_iCESM_past1000historical_085001-200512.nc
+  pr: ./LMR_input/data/model/icesm_last_millennium_historical/pr_sfc_Amon_iCESM_past1000historical_085001-200512.nc
 
-  bilinear:
-    datatag_calib_T: GISTEMP
-    datatag_calib_P: GPCC
-    pre_calib_datafile: null
-    psm_r_crit: 0.0
+prior_varname:
+  tas: tas
+  pr: pr
 
-  h_interp:
-    radius_influence: 50.0
-    datadir_obsError: ./
-    filename_obsError: R.txt
-    dataformat_obsError: TXT
-    datafile_obsError: None
+anom_period: [1951, 1980]
 
-  bayesreg_uk37:
-    datadir_BayesRegressionData: null
-    filename_BayesRegressionData: null
-    dataformat_BayesRegressionData: MAT
+prior_regrid_ntrunc: 42
 
-prior:
-  # prior_source: ccsm4_last_millenium
-  prior_source: icesm_last_millennium
-#  prior_source: ccsm3_trace21ka
+prior_season: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  # annual
 
-  state_variables:
-    tas_sfc_Amon: anom
-    # pr_sfc_Amon: anom
-    # scpdsi_sfc_Amon: anom
-    # scpdsipm_sfc_Amon: anom
-    # psl_sfc_Amon: anom
-    # zg_500hPa_Amon: anom
-    # wap_500hPa_Amon: anom
-    # wap_700hPa_Amon: anom
-    # wap_850hPa_Amon: anom
-    # d18O_sfc_Amon: full
-    # tos_sfc_Omon: anom
-    # sos_sfc_Omon: anom
-    # ohc_0-700m_Omon: anom
-    # gmt_sfc_Amon: anom
-    # nhmt_sfc_Amon: anom
-    # shmt_sfc_Amon: anom
-    # AMOCindex_Omon: anom
-    # AMOC26Nmax_Omon: anom
-    # AMOC26N1000m_Omon: anom
-    # AMOC45N1000m_Omon: anom
-    # ohcAtlanticNH_0-700m_Omon: anom
-    # ohcAtlanticSH_0-700m_Omon: anom
-    # ohcPacificNH_0-700m_Omon: anom
-    # ohcPacificSH_0-700m_Omon: anom
-    # ohcIndian_0-700m_Omon: anom
-    # ohcSouthern_0-700m_Omon: anom
-    # ohcArctic_0-700m_Omon: anom
-    # tas_sfc_Adec: full
-    # psl_sfc_Adec: full
-    # tos_sfc_Odec: full
-    # sos_sfc_Odec: full
+# Instrumental observations related
+obs_path:
+  tas: ./LMR_input/data/analyses/GISTEMP/gistemp1200_ERSSTv4.nc
+  pr: ./LMR_input/data/analyses/GPCC/GPCC_precip.mon.flux.1x1.v6.nc
 
-  detrend: False
-  # regridding options: null, simple, esmpy or spherical_harmonics
-  regrid_method: spherical_harmonics
-  regrid_resolution: 42
-  esmpy_interp_method: bilinear
-  esmpy_regrid_to: t42
-  state_variables_info:
-    temperature: [
-      'tas_sfc_Amon'
-      ]
-    moisture: [
-      'pr_sfc_Amon',
-      'scpdsi_sfc_Amon',
-      ]
+obs_varname:
+  tas: tempanomaly
+  pr: precip

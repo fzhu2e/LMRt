@@ -1,47 +1,39 @@
 from setuptools import setup, find_packages
-
-__author__ = 'Feng Zhu'
-__email__ = 'fengzhu@usc.edu'
-__version__ = '0.6.8'
+import LMRt
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
 
 setup(
-    name='LMRt',
-    version=__version__,
-    description='A lightweight, packaged version of the Last Millennium Reanalysis (LMR) framework',
+    name='LMRt',  # required
+    version=LMRt.__version__,
+    description="LMR turbo",
     long_description=long_description,
-    long_description_content_type='text/markdown',
-    author='Feng Zhu',
+    long_description_content_type="text/markdown",
+    author="Feng Zhu",
     author_email='fengzhu@usc.edu',
     url='https://github.com/fzhu2e/LMRt',
     packages=find_packages(),
+    include_package_data=True,
     license="MIT license",
     zip_safe=False,
-    package_data={
-        'LMRt': ['cfg/*.yml', 'data/*'],
-    },
-    keywords='Paleoclimate Data Assimilation',
+    scripts=['bin/LMRt'],
+    keywords='LMRt',
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
     install_requires=[
+        'termcolors',
+        'pandas',
+        'cftime',
         'tqdm',
-        'dotmap',
-        'pyyaml',
-        'prysm-api',
         'xarray',
-        'statsmodels',
-        'nitime',
         'netCDF4',
+        'statsmodels',
         'seaborn',
-        'scikit-learn',
-        'keras',
-        'tensorflow',
+        'pyleoclim',
     ],
 )

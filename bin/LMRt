@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+
+import argparse
+import yaml
+
+import os
+import subprocess
+import glob
+import shutil
+import LMRt
+from LMRt.utils import (
+    pp,
+    p_header,
+    p_hint,
+    p_success,
+    p_fail,
+    p_warning,
+)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='''
+========================================================================================
+ CLI of LMRt (Feng Zhu, fengzhu@usc.edu)
+----------------------------------------------------------------------------------------
+ This is the command-line interface (CLI) of the LMRt system.
+
+ Usage example:
+    LMRt recon -c config.yml
+
+========================================================================================
+            ''', formatter_class=argparse.RawTextHelpFormatter)
+
+    parser.add_argument(
+        '-v', '--version', action='version',
+        version=f'LRMt version: {LMRt.__version__}',
+    )
+
+    subparsers = parser.add_subparsers(help='running mode')
+    subparsers.dest = 'mode'
+
+    parser_recon = subparsers.add_parser('recon', help='reconstruction')
+    parser_postproc = subparsers.add_parser('postproc', help='post-processing')
+
+    parser_recon.add_argument('-c', '--config', required=True, help='path of the config YAML file')
+
+
+    args = parser.parse_args()
+
+    if args.mode == 'recon':
+        cfg_path = os.path.abspath(args.config)
+        cfg_dict = yaml.safe_load(open(cfg_path, 'r'))
+        work_dir = os.path.dirname(cfg_path)
+        p_header('LMRt >>> Loading reconstruction configurations ...')
+        pp.pprint(cfg_dict)
+
+
+if __name__ == '__main__':
+    main()
