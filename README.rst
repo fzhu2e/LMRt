@@ -1,11 +1,18 @@
 .. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.2655097.svg
    :target: https://doi.org/10.5281/zenodo.2655097
+
 .. image:: https://img.shields.io/github/last-commit/fzhu2e/LMRt/master
+    :target: https://github.com/fzhu2e/LMRt
+
 .. image:: https://img.shields.io/github/license/fzhu2e/LMRt
     :target: https://github.com/fzhu2e/LMRt/blob/master/LICENSE
+
 .. image:: https://img.shields.io/pypi/pyversions/LMRt
+    :target: https://pypi.org/project/LMRt
+
 .. image:: https://img.shields.io/pypi/v/LMRt.svg
     :target: https://pypi.org/project/LMRt
+
 .. image:: https://img.shields.io/pypi/dm/LMRt
     :target: https://pypi.org/project/LMRt
 
