@@ -549,7 +549,7 @@ class ReconRes:
         return msg
 
 
-    def get_vars(self, varnames, field_varnames=['tas', 'pr'],
+    def get_vars(self, varnames, field_varnames=['tas', 'pr', 'psl', 'u', 'v'],
                 series_varnames=[
                   'tas_gm_ens', 'tas_nhm_ens', 'tas_shm_ens',
                   'pr_gm_ens', 'pr_nhm_ens', 'pr_shm_ens',
@@ -621,4 +621,4 @@ class ReconRes:
                 # self.vars[varname] = ReconSeries(year, var_array, varname=varname)
                 self.vars[varname] = ReconSeries(series_list)
 
-        if verbose: p_success(f'LMRt: res.get_var() >>> res.vars filled w/ varnames: {varnames} and "year | lat | lon"')
+        if verbose: p_success(f"LMRt: res.get_var() >>> res.vars filled w/ varnames: {varnames} and ['year', 'lat', 'lon']")

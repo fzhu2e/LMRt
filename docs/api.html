@@ -1,0 +1,647 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>API &mdash; LMR Turbo  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Assimilate more proxies" href="tutorial/howto_assimilate-more-proxies.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> LMR Turbo
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installallation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#reconjob">ReconJob</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reconres">ReconRes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reconseries">ReconSeries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reconfield">ReconField</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#proxyrecord">ProxyRecord</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#proxydatabase">ProxyDatabase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#field">Field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dataset">Dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#psms">PSMs</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">LMR Turbo</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>API</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="api">
+<h1>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="reconjob">
+<h2>ReconJob<a class="headerlink" href="#reconjob" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="LMRt.reconjob.ReconJob">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">LMRt.reconjob.</span></code><code class="sig-name descname"><span class="pre">ReconJob</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proxydb</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconjob.ReconJob" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reconstruction Job</p>
+<p>General rule of loading parameters:
+- load from the YAML first if availabel, then update with the parameters in the function calling,</p>
+<blockquote>
+<div><p>so the latter has a higher priority</p>
+</div></blockquote>
+<dl class="py method">
+<dt id="LMRt.reconjob.ReconJob.gen_Xb">
+<code class="sig-name descname"><span class="pre">gen_Xb</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recon_vars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nens</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconjob.ReconJob.gen_Xb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate Xb</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="LMRt.reconjob.ReconJob.gen_Ye">
+<code class="sig-name descname"><span class="pre">gen_Ye</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">proxy_frac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconjob.ReconJob.gen_Ye" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate Ye</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="LMRt.reconjob.ReconJob.load_configs">
+<code class="sig-name descname"><span class="pre">load_configs</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_dirpath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconjob.ReconJob.load_configs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the configuration YAML file</p>
+<p>self.configs will be updated</p>
+<dl class="simple">
+<dt>cfg_path<span class="classifier">str</span></dt><dd><p>the path of a configuration YAML file</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="LMRt.reconjob.ReconJob.load_obs">
+<code class="sig-name descname"><span class="pre">load_obs</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varname_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anom_period</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconjob.ReconJob.load_obs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load model prior fields</p>
+<dl class="simple">
+<dt>path_dict: dict</dt><dd><p>a dict of environmental variables</p>
+</dd>
+<dt>varname_dict: dict</dt><dd><p>a dict to map variable names, e.g. {‘tas’: ‘sst’} means ‘tas’ is named ‘sst’ in the input NetCDF file</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="LMRt.reconjob.ReconJob.load_prior">
+<code class="sig-name descname"><span class="pre">load_prior</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varname_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anom_period</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconjob.ReconJob.load_prior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load model prior fields</p>
+<dl class="simple">
+<dt>path_dict: dict</dt><dd><p>a dict of environmental variables</p>
+</dd>
+<dt>varname_dict: dict</dt><dd><p>a dict to map variable names, e.g. {‘tas’: ‘sst’} means ‘tas’ is named ‘sst’ in the input NetCDF file</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="LMRt.reconjob.ReconJob.load_proxydb">
+<code class="sig-name descname"><span class="pre">load_proxydb</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load_df_kws</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconjob.ReconJob.load_proxydb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the proxy database</p>
+<p>self.proxydb will be updated</p>
+<dl class="simple">
+<dt>proxydb_path<span class="classifier">str</span></dt><dd><p>if given, should point to a pickle file with a Pandas DataFrame underlying</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="reconres">
+<h2>ReconRes<a class="headerlink" href="#reconres" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="LMRt.reconres.ReconRes">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">LMRt.reconres.</span></code><code class="sig-name descname"><span class="pre">ReconRes</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job_dirpath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load_num</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconres.ReconRes" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt id="LMRt.reconres.ReconRes.copy">
+<code class="sig-name descname"><span class="pre">copy</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconres.ReconRes.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a copy of the Series object</p>
+<dl class="simple">
+<dt>Series</dt><dd><p>A copy of the Series object</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="reconseries">
+<h2>ReconSeries<a class="headerlink" href="#reconseries" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="LMRt.reconres.ReconSeries">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">LMRt.reconres.</span></code><code class="sig-name descname"><span class="pre">ReconSeries</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">series_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconres.ReconSeries" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt id="LMRt.reconres.ReconSeries.plot">
+<code class="sig-name descname"><span class="pre">plot</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconres.ReconSeries.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot multiple timeseries on the same axis</p>
+<dl>
+<dt>figsize<span class="classifier">list, optional</span></dt><dd><p>Size of the figure. The default is [10, 4].</p>
+</dd>
+<dt>marker<span class="classifier">str, optional</span></dt><dd><p>marker type. The default is None.</p>
+</dd>
+<dt>markersize<span class="classifier">float, optional</span></dt><dd><p>marker size. The default is None.</p>
+</dd>
+<dt>colors<span class="classifier">a list of, or one, Python supported color code (a string of hex code or a tuple of rgba values)</span></dt><dd><p>Colors for plotting.
+If None, the plotting will cycle the ‘tab10’ colormap;
+if only one color is specified, then all curves will be plotted with that single color;
+if a list of colors are specified, then the plotting will cycle that color list.</p>
+</dd>
+<dt>cmap<span class="classifier">str</span></dt><dd><p>The colormap to use when “colors” is None.</p>
+</dd>
+<dt>norm<span class="classifier">matplotlib.colors.Normalize like</span></dt><dd><p>The nomorlization for the colormap.
+If None, a linear normalization will be used.</p>
+</dd>
+<dt>linestyle<span class="classifier">str, optional</span></dt><dd><p>Line style. The default is None.</p>
+</dd>
+<dt>linewidth<span class="classifier">float, optional</span></dt><dd><p>The width of the line. The default is None.</p>
+</dd>
+<dt>xlabel<span class="classifier">str, optional</span></dt><dd><p>x-axis label. The default is None.</p>
+</dd>
+<dt>ylabel<span class="classifier">str, optional</span></dt><dd><p>y-axis label. The default is None.</p>
+</dd>
+<dt>title<span class="classifier">str, optional</span></dt><dd><p>Title. The default is None.</p>
+</dd>
+<dt>legend<span class="classifier">bool, optional</span></dt><dd><p>Wether the show the legend. The default is True.</p>
+</dd>
+<dt>plot_kwargs<span class="classifier">dict, optional</span></dt><dd><p>Plot parameters. The default is None.</p>
+</dd>
+<dt>lgd_kwargs<span class="classifier">dict, optional</span></dt><dd><p>Legend parameters. The default is None.</p>
+</dd>
+<dt>savefig_settings<span class="classifier">dictionary, optional</span></dt><dd><p>the dictionary of arguments for plt.savefig(); some notes below:
+- “path” must be specified; it can be any existed or non-existed path,</p>
+<blockquote>
+<div><p>with or without a suffix; if the suffix is not given in “path”, it will follow “format”</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>“format” can be one of {“pdf”, “eps”, “png”, “ps”} The default is None.</p></li>
+</ul>
+</dd>
+<dt>ax<span class="classifier">matplotlib.ax, optional</span></dt><dd><p>The matplotlib axis onto which to return the figure. The default is None.</p>
+</dd>
+<dt>mute<span class="classifier">bool, optional</span></dt><dd><p>if True, the plot will not show;
+recommend to turn on when more modifications are going to be made on ax</p>
+</dd>
+<dt>invert_xaxis<span class="classifier">bool, optional</span></dt><dd><p>if True, the x-axis of the plot will be inverted</p>
+</dd>
+</dl>
+<p>fig, ax</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="reconfield">
+<h2>ReconField<a class="headerlink" href="#reconfield" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="LMRt.reconres.ReconField">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">LMRt.reconres.</span></code><code class="sig-name descname"><span class="pre">ReconField</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconres.ReconField" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt id="LMRt.reconres.ReconField.copy">
+<code class="sig-name descname"><span class="pre">copy</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconres.ReconField.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a copy of the Series object</p>
+<dl class="simple">
+<dt>Series</dt><dd><p>A copy of the Series object</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="proxyrecord">
+<h2>ProxyRecord<a class="headerlink" href="#proxyrecord" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="LMRt.proxy.ProxyRecord">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">LMRt.proxy.</span></code><code class="sig-name descname"><span class="pre">ProxyRecord</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ptype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psm_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Time'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'yr'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seasonality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ye_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ye_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.proxy.ProxyRecord" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt id="LMRt.proxy.ProxyRecord.copy">
+<code class="sig-name descname"><span class="pre">copy</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.proxy.ProxyRecord.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a copy of the Series object</p>
+<dl class="simple">
+<dt>Series</dt><dd><p>A copy of the Series object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="LMRt.proxy.ProxyRecord.forward_psm">
+<code class="sig-name descname"><span class="pre">forward_psm</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.proxy.ProxyRecord.forward_psm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forward modeling: calculate ye using the PSM according to self.psm</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="LMRt.proxy.ProxyRecord.plot">
+<code class="sig-name descname"><span class="pre">plot</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plot_Ye</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.proxy.ProxyRecord.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot the timeseries</p>
+<dl>
+<dt>figsize<span class="classifier">list</span></dt><dd><p>a list of two integers indicating the figure size</p>
+</dd>
+<dt>marker<span class="classifier">str</span></dt><dd><p>e.g., ‘o’ for dots
+See [matplotlib.markers](<a class="reference external" href="https://matplotlib.org/3.1.3/api/markers_api.html">https://matplotlib.org/3.1.3/api/markers_api.html</a>) for details</p>
+</dd>
+<dt>markersize<span class="classifier">float</span></dt><dd><p>the size of the marker</p>
+</dd>
+<dt>color<span class="classifier">str, list</span></dt><dd><p>the color for the line plot
+e.g., ‘r’ for red
+See [matplotlib colors] (<a class="reference external" href="https://matplotlib.org/3.2.1/tutorials/colors/colors.html">https://matplotlib.org/3.2.1/tutorials/colors/colors.html</a>) for details</p>
+</dd>
+<dt>linestyle<span class="classifier">str</span></dt><dd><p>e.g., ‘–’ for dashed line
+See [matplotlib.linestyles](<a class="reference external" href="https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/linestyles.html">https://matplotlib.org/3.1.0/gallery/lines_bars_and_markers/linestyles.html</a>) for details</p>
+</dd>
+<dt>linewidth<span class="classifier">float</span></dt><dd><p>the width of the line</p>
+</dd>
+<dt>label<span class="classifier">str</span></dt><dd><p>the label for the line</p>
+</dd>
+<dt>xlabel<span class="classifier">str</span></dt><dd><p>the label for the x-axis</p>
+</dd>
+<dt>ylabel<span class="classifier">str</span></dt><dd><p>the label for the y-axis</p>
+</dd>
+<dt>title<span class="classifier">str</span></dt><dd><p>the title for the figure</p>
+</dd>
+<dt>zorder<span class="classifier">int</span></dt><dd><p>The default drawing order for all lines on the plot</p>
+</dd>
+<dt>legend<span class="classifier">{True, False}</span></dt><dd><p>plot legend or not</p>
+</dd>
+<dt>invert_xaxis<span class="classifier">bool, optional</span></dt><dd><p>if True, the x-axis of the plot will be inverted</p>
+</dd>
+<dt>plot_kwargs<span class="classifier">dict</span></dt><dd><p>the dictionary of keyword arguments for ax.plot()
+See [matplotlib.pyplot.plot](<a class="reference external" href="https://matplotlib.org/3.1.3/api/_as_gen/matplotlib.pyplot.plot.html">https://matplotlib.org/3.1.3/api/_as_gen/matplotlib.pyplot.plot.html</a>) for details</p>
+</dd>
+<dt>lgd_kwargs<span class="classifier">dict</span></dt><dd><p>the dictionary of keyword arguments for ax.legend()
+See [matplotlib.pyplot.legend](<a class="reference external" href="https://matplotlib.org/3.1.3/api/_as_gen/matplotlib.pyplot.legend.html">https://matplotlib.org/3.1.3/api/_as_gen/matplotlib.pyplot.legend.html</a>) for details</p>
+</dd>
+<dt>alpha<span class="classifier">float</span></dt><dd><p>Transparency setting</p>
+</dd>
+<dt>savefig_settings<span class="classifier">dict</span></dt><dd><p>the dictionary of arguments for plt.savefig(); some notes below:
+- “path” must be specified; it can be any existed or non-existed path,</p>
+<blockquote>
+<div><p>with or without a suffix; if the suffix is not given in “path”, it will follow “format”</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>“format” can be one of {“pdf”, “eps”, “png”, “ps”}</p></li>
+</ul>
+</dd>
+<dt>ax<span class="classifier">matplotlib.axis, optional</span></dt><dd><p>the axis object from matplotlib
+See [matplotlib.axes](<a class="reference external" href="https://matplotlib.org/api/axes_api.html">https://matplotlib.org/api/axes_api.html</a>) for details.</p>
+</dd>
+<dt>mute<span class="classifier">{True,False}</span></dt><dd><p>if True, the plot will not show;
+recommend to turn on when more modifications are going to be made on ax</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>fig<span class="classifier">matplotlib.figure</span></dt><dd><p>the figure object from matplotlib
+See [matplotlib.pyplot.figure](<a class="reference external" href="https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.pyplot.figure.html">https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.pyplot.figure.html</a>) for details.</p>
+</dd>
+<dt>ax<span class="classifier">matplotlib.axis</span></dt><dd><p>the axis object from matplotlib
+See [matplotlib.axes](<a class="reference external" href="https://matplotlib.org/api/axes_api.html">https://matplotlib.org/api/axes_api.html</a>) for details.</p>
+</dd>
+</dl>
+<p>When <cite>ax</cite> is passed, the return will be <cite>ax</cite> only; otherwise, both <cite>fig</cite> and <cite>ax</cite> will be returned.</p>
+<p>pyleoclim.utils.plotting.savefig : saving figure in Pyleoclim</p>
+<p>Plot the SOI record</p>
+<blockquote>
+<div></div></blockquote>
+<p>Change the line color</p>
+<blockquote>
+<div></div></blockquote>
+<dl class="simple">
+<dt>Save the figure. Two options available:</dt><dd><ul class="simple">
+<li><p>Within the plotting command</p></li>
+<li><p>After the figure has been generated</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="LMRt.proxy.ProxyRecord.seasonalize">
+<code class="sig-name descname"><span class="pre">seasonalize</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">season</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3,</span> <span class="pre">4,</span> <span class="pre">5,</span> <span class="pre">6,</span> <span class="pre">7,</span> <span class="pre">8,</span> <span class="pre">9,</span> <span class="pre">10,</span> <span class="pre">11,</span> <span class="pre">12]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">make_year_mm_nan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.proxy.ProxyRecord.seasonalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Seasonalize the proxy record</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="proxydatabase">
+<h2>ProxyDatabase<a class="headerlink" href="#proxydatabase" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="LMRt.proxy.ProxyDatabase">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">LMRt.proxy.</span></code><code class="sig-name descname"><span class="pre">ProxyDatabase</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">records</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.proxy.ProxyDatabase" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt id="LMRt.proxy.ProxyDatabase.add">
+<code class="sig-name descname"><span class="pre">add</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">records</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.proxy.ProxyDatabase.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a list of records into the database</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="LMRt.proxy.ProxyDatabase.filter_dt">
+<code class="sig-name descname"><span class="pre">filter_dt</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.proxy.ProxyDatabase.filter_dt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter the proxy database according to temporal resolution</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="LMRt.proxy.ProxyDatabase.filter_pids">
+<code class="sig-name descname"><span class="pre">filter_pids</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pids</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.proxy.ProxyDatabase.filter_pids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter the proxy database according to given pids</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="LMRt.proxy.ProxyDatabase.filter_ptype">
+<code class="sig-name descname"><span class="pre">filter_ptype</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ptype_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.proxy.ProxyDatabase.filter_ptype" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter the proxy database according to given ptype list</p>
+<dl class="simple">
+<dt>ptype_list<span class="classifier">list</span></dt><dd><p>a list of ptype’s</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="LMRt.proxy.ProxyDatabase.get_var_from_ds">
+<code class="sig-name descname"><span class="pre">get_var_from_ds</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seasonalized_ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ptype_season</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ds_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.proxy.ProxyDatabase.get_var_from_ds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get environmental variables from prior</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="LMRt.proxy.ProxyDatabase.load_df">
+<code class="sig-name descname"><span class="pre">load_df</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pid_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'paleoData_pages2kID'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'geo_meanLat'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lon_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'geo_meanLon'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'year'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'paleoData_values'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proxy_type_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'paleoData_proxy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">archive_type_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'archiveType'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value_name_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'paleoData_variableName'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value_unit_column</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'paleoData_units'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ptype_season</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ptype_psm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.proxy.ProxyDatabase.load_df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load database from a Pandas DataFrame</p>
+<dl class="simple">
+<dt>df<span class="classifier">Pandas DataFrame</span></dt><dd><p>a Pandas DataFrame include at least lat, lon, time, value, proxy_type</p>
+</dd>
+<dt>ptype_psm<span class="classifier">dict</span></dt><dd><p>a mapping from ptype to psm</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="LMRt.proxy.ProxyDatabase.remove">
+<code class="sig-name descname"><span class="pre">remove</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pids</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.proxy.ProxyDatabase.remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a list of records from the database regardless existing or not</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="LMRt.proxy.ProxyDatabase.seasonalize">
+<code class="sig-name descname"><span class="pre">seasonalize</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ptype_season</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.proxy.ProxyDatabase.seasonalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter the proxy database according to given ptype list</p>
+<dl class="simple">
+<dt>ptype_season<span class="classifier">dict</span></dt><dd><p>a dict of seasonality for each proxy type</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="field">
+<h2>Field<a class="headerlink" href="#field" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="LMRt.gridded.Field">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">LMRt.gridded.</span></code><code class="sig-name descname"><span class="pre">Field</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.gridded.Field" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt id="LMRt.gridded.Field.seasonalize">
+<code class="sig-name descname"><span class="pre">seasonalize</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">season</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3,</span> <span class="pre">4,</span> <span class="pre">5,</span> <span class="pre">6,</span> <span class="pre">7,</span> <span class="pre">8,</span> <span class="pre">9,</span> <span class="pre">10,</span> <span class="pre">11,</span> <span class="pre">12]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">make_year_mm_nan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.gridded.Field.seasonalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Seasonalize the field</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="dataset">
+<h2>Dataset<a class="headerlink" href="#dataset" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="LMRt.gridded.Dataset">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">LMRt.gridded.</span></code><code class="sig-name descname"><span class="pre">Dataset</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.gridded.Dataset" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt id="LMRt.gridded.Dataset.load_nc">
+<code class="sig-name descname"><span class="pre">load_nc</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anom_period</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varname_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.gridded.Dataset.load_nc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a NetCDF file that assumed to include time, lat, lon, value</p>
+<dl class="simple">
+<dt>varname_dict: dict</dt><dd><p>a dict to map variable names, e.g. {‘tas’: ‘tempanomaly’} means ‘tas’ is named ‘tempanomaly’ in the input NetCDF file</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="psms">
+<h2>PSMs<a class="headerlink" href="#psms" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="LMRt.psm.Linear">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">LMRt.psm.</span></code><code class="sig-name descname"><span class="pre">Linear</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">proxy_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proxy_value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_tas_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_tas_value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_tas_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_tas_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.psm.Linear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt id="LMRt.psm.Bilinear">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">LMRt.psm.</span></code><code class="sig-name descname"><span class="pre">Bilinear</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">proxy_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proxy_value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_tas_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_tas_value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_pr_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_pr_value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_tas_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_tas_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_pr_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_pr_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.psm.Bilinear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="tutorial/howto_assimilate-more-proxies.html" class="btn btn-neutral float-left" title="Assimilate more proxies" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, Feng Zhu.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

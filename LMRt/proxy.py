@@ -161,7 +161,7 @@ class ProxyRecord(Series):
         self.ye_time = ye_time
         self.ye_value = ye_value
 
-    def plot(self, **kws):
+    def plot(self, plot_Ye=True, **kws):
         fig, ax = super().plot(mute=True, **kws)
 
         if hasattr(self.psm, 'calib_details') and self.psm.calib_details is not None:
@@ -180,7 +180,7 @@ class ProxyRecord(Series):
             season_str = ''
 
         ax.set_title(f'{self.pid} @ (lat:{self.lat}, lon:{self.lon}) | Proxy type: {self.ptype} | PSM: {self.psm_name}\n{season_str}')
-        if self.ye_value is not None:
+        if self.ye_value is not None and plot_Ye:
             if 'plot_kwargs' in kws:
                 ax.plot(self.ye_time, self.ye_value, label='Ye', **kws['plot_kwargs'])
             else:

@@ -32,6 +32,7 @@
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -87,7 +88,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installallation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ui.html">User Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
 </ul>
 
             
@@ -155,7 +156,31 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <a class="reference external image-reference" href="https://doi.org/10.5281/zenodo.2655097"><img alt="https://zenodo.org/badge/DOI/10.5281/zenodo.2655097.svg" src="https://zenodo.org/badge/DOI/10.5281/zenodo.2655097.svg" /></a>
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<a class="reference external image-reference" href="https://doi.org/10.5281/zenodo.2655097"><img alt="https://zenodo.org/badge/DOI/10.5281/zenodo.2655097.svg" src="https://zenodo.org/badge/DOI/10.5281/zenodo.2655097.svg" /></a>
 <a class="reference external image-reference" href="https://github.com/fzhu2e/LMRt"><img alt="https://img.shields.io/github/last-commit/fzhu2e/LMRt/master" src="https://img.shields.io/github/last-commit/fzhu2e/LMRt/master" /></a>
 <a class="reference external image-reference" href="https://github.com/fzhu2e/LMRt/blob/master/LICENSE"><img alt="https://img.shields.io/github/license/fzhu2e/LMRt" src="https://img.shields.io/github/license/fzhu2e/LMRt" /></a>
 <a class="reference external image-reference" href="https://pypi.org/project/LMRt"><img alt="https://img.shields.io/pypi/pyversions/LMRt" src="https://img.shields.io/pypi/pyversions/LMRt" /></a>
@@ -194,9 +219,10 @@ LMRt aims to provide following extra features:</p>
 <div class="section" id="documentation">
 <h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><p>Documentation website: <a class="reference external" href="https://fzhu.work/LMRt">https://fzhu.work/LMRt</a></p></li>
+<li><p>Homepage: <a class="reference external" href="https://fzhu.work/LMRt">https://fzhu.work/LMRt</a></p></li>
 <li><p>Installation: <a class="reference external" href="https://fzhu.work/LMRt/installation.html">https://fzhu.work/LMRt/installation.html</a></p></li>
-<li><p>Tutorial: <a class="reference external" href="https://fzhu.work/LMRt/tutorial.html">https://fzhu.work/LMRt/tutorial.html</a></p></li>
+<li><p>Tutorial (html): <a class="reference external" href="https://fzhu.work/LMRt/tutorial.html">https://fzhu.work/LMRt/tutorial.html</a></p></li>
+<li><p>Tutorial (Jupyter notebooks): <a class="reference external" href="https://github.com/fzhu2e/LMRt/tree/master/docsrc/tutorial">https://github.com/fzhu2e/LMRt/tree/master/docsrc/tutorial</a></p></li>
 </ul>
 </div>
 <div class="section" id="references-of-the-lmr-framework">
@@ -234,15 +260,31 @@ LMRt aims to provide following extra features:</p>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="tutorial.html#quickstart">Quickstart</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="tutorial/quickstart_low-level-workflow.html">Your 1st LMR reconstruction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial/quickstart_low-level-workflow.html">Your first LMR reconstruction</a></li>
 <li class="toctree-l3"><a class="reference internal" href="tutorial/quickstart_high-level-workflow.html">High-level workflow in LMRt</a></li>
 <li class="toctree-l3"><a class="reference internal" href="tutorial/quickstart_top-level-workflow.html">Top-level workflow in LMRt</a></li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial/quickstart_visualization.html">Visualization functionalities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial/quickstart_visualization.html">Visualization of the results</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#howto">Howto</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorial/howto_reconstruct-multiple-fields.html">Reconstruct multiple fields</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial/howto_assimilate-more-proxies.html">Assimilate more proxies</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="ui.html">User Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api.html#reconjob">ReconJob</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#reconres">ReconRes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#reconseries">ReconSeries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#reconfield">ReconField</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#proxyrecord">ProxyRecord</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#proxydatabase">ProxyDatabase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#field">Field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#dataset">Dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#psms">PSMs</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>

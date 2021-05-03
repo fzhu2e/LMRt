@@ -731,7 +731,7 @@ class ReconJob:
             if verbose: p_header(f'LMRt: job.prepare() >>> job.configs["precalc"]["prep_savepath"] = {prep_savepath}')
 
         if os.path.exists(prep_savepath):
-            job_prep = pd.read_pickle(prep_savepath).copy()
+            job_prep = pd.read_pickle(prep_savepath)
             if verbose: p_header(f'LMRt: job.prepare() >>> Prepration data loaded from: {prep_savepath}')
             self.proxydb = job_prep.proxydb
             self.prior = job_prep.prior
@@ -780,12 +780,9 @@ class ReconJob:
 
         if prep_savepath is None:
             prep_savepath = os.path.join(self.configs['job_dirpath'], f'job.pkl')
-        else:
-            if 'prepcalc' not in self.configs:
-                self.configs['precalc'] = {}
 
-            self.configs['precalc']['prep_savepath'] = prep_savepath
-            if verbose: p_header(f'LMRt: job.save_job() >>> job.configs["precalc"]["prep_savepath"] = {prep_savepath}')
+        if 'prepcalc' not in self.configs:
+            self.configs['precalc'] = {}
 
         pd.to_pickle(self, prep_savepath)
         self.configs['precalc']['prep_savepath'] = prep_savepath
@@ -979,7 +976,7 @@ class ReconJob:
             calib_period=psm_calib_period, seasonalized_prior_path=seasonalized_prior_path, seasonalized_obs_path=seasonalized_obs_path,
             prior_loc_path=prior_loc_path, obs_loc_path=obs_loc_path, calibed_psm_path=calibed_psm_path, verbose=verbose)
 
-        self.save(verbose=verbose)
+        self.save(prep_savepath=prep_savepath, verbose=verbose)
 
         self.run(recon_seeds=recon_seeds, recon_vars=recon_vars, recon_period=recon_period, save_configs=save_configs,
             recon_timescale=recon_timescale, recon_loc_rad=recon_loc_rad, nens=recon_nens, proxy_frac=proxy_frac, verbose=verbose,

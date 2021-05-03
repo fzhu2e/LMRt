@@ -8,4 +8,4 @@
 
    installation
    tutorial
-   ui
+   api

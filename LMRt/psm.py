@@ -3,6 +3,9 @@ import statsmodels.formula.api as smf
 from statsmodels.tsa import stattools as st
 import numpy as np
 import pandas as pd
+from .utils import (
+    clean_ts,
+)
 
 def clean_df(df, mask=None):
     pd.options.mode.chained_assignment = None
@@ -90,11 +93,12 @@ class Linear:
 
     def forward(self):
         sn_tas = self.calib_details['seasonality']
+        clean_t, clean_v = clean_ts(self.prior_tas_time[sn_tas], self.prior_tas_value[sn_tas])
         exog_dict = {
-            'tas': self.prior_tas_value[sn_tas],
+            'tas': clean_v,
         }
         self.ye_value = np.array(self.model.predict(exog=exog_dict).values)
-        self.ye_time = np.array(self.prior_tas_time[sn_tas])
+        self.ye_time = np.array(clean_t)
 
 class Bilinear:
     def __init__(self, proxy_time, proxy_value, obs_tas_time, obs_tas_value, obs_pr_time, obs_pr_value,
