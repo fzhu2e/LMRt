@@ -50,7 +50,7 @@ Documentation
 
 + Documentation website: https://fzhu.work/LMRt
 + Installation: https://fzhu.work/LMRt/installation.html
-+ Tutorial: https://fzhu.work/LMRt/tutorial.html
++ Tutorial notebooks: https://github.com/fzhu2e/LMRt/tree/master/docsrc/tutorial
 
 References of the LMR framework
 ===============================
