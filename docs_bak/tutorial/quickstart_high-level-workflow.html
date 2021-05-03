@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html >
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+      <title>High-level workflow in LMRt</title>
+    
+      <link rel="stylesheet" href="../_static/pygments.css">
+      <link rel="stylesheet" href="../_static/theme.css">
+      <link rel="stylesheet" href="../_static/sphinx_press_theme.css">
+      
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+
+      <!-- sphinx script_files -->
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+
+      
+      <script src="../_static/theme-vendors.js"></script>
+      <script src="../_static/theme.js" defer></script>
+    
+  <link rel="index" title="Index" href="../genindex.html" />
+  <link rel="search" title="Search" href="../search.html" />
+  <link rel="next" title="Top-level workflow in LMRt" href="quickstart_top-level-workflow.html" />
+  <link rel="prev" title="Your 1st LMR reconstruction" href="quickstart_low-level-workflow.html" /> 
+  </head>
+
+  <body>
+    <div id="app" class="theme-container" :class="pageClasses"><navbar @toggle-sidebar="toggleSidebar">
+  <router-link to="../index.html" class="home-link">
+    
+      <span class="site-name">LMR Turbo</span>
+    
+  </router-link>
+
+  <div class="links">
+    <navlinks class="can-hide">
+
+
+
+    </navlinks>
+  </div>
+</navbar>
+
+      
+      <div class="sidebar-mask" @click="toggleSidebar(false)">
+      </div>
+        <sidebar @toggle-sidebar="toggleSidebar">
+          
+          <navlinks>
+            
+
+
+
+            
+          </navlinks><div id="searchbox" class="searchbox" role="search">
+  <div class="caption"><span class="caption-text">Quick search</span>
+    <div class="searchformwrapper">
+      <form class="search" action="../search.html" method="get">
+        <input type="text" name="q" />
+        <input type="submit" value="Search" />
+        <input type="hidden" name="check_keywords" value="yes" />
+        <input type="hidden" name="area" value="default" />
+      </form>
+    </div>
+  </div>
+</div><div class="sidebar-links" role="navigation" aria-label="main navigation">
+  
+    <div class="sidebar-group">
+      <p class="caption">
+        <span class="caption-text"><a href="../index.html#how-to-cite">Contents</a></span>
+      </p>
+      <ul class="">
+        
+          <li class="toctree-l1 "><a href="../tutorial.html" class="reference internal ">Tutorial</a>
+
+            
+          </li>
+
+        
+          <li class="toctree-l1 "><a href="../ui.html" class="reference internal ">User Interface</a>
+
+            
+          </li>
+
+        
+      </ul>
+    </div>
+  
+</div>
+        </sidebar>
+
+      <page>
+          <div class="body-header" role="navigation" aria-label="navigation">
+  
+  <ul class="breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+    
+      <li><a href="../tutorial.html">Tutorial</a> &raquo;</li>
+    
+    <li>High-level workflow in LMRt</li>
+  </ul>
+  
+
+  <ul class="page-nav">
+  <li class="prev">
+    <a href="quickstart_low-level-workflow.html"
+       title="previous chapter">← Your 1st LMR reconstruction</a>
+  </li>
+  <li class="next">
+    <a href="quickstart_top-level-workflow.html"
+       title="next chapter">Top-level workflow in LMRt →</a>
+  </li>
+</ul>
+  
+</div>
+<hr>
+          <div class="content" role="main">
+            
+  <div class="section" id="high-level-workflow-in-lmrt">
+<h1>High-level workflow in LMRt<a class="headerlink" href="#high-level-workflow-in-lmrt" title="Permalink to this headline">¶</a></h1>
+<p>In this tutorial, we demonstrate how to reproduce our 1st LMR
+reconstruction in the previous notebook with the high-level workflow.</p>
+<div class="section" id="test-data-preparation">
+<h2>Test data preparation<a class="headerlink" href="#test-data-preparation" title="Permalink to this headline">¶</a></h2>
+<p>Again, if you haven’t done yet, please prepare test data following the
+steps: 1. Download the test case named “PAGES2k_CCSM4_GISTEMP” with this
+<a class="reference external" href="https://drive.google.com/drive/folders/1UGn-LNd_tGSjPUKa52E6ffEM-ms2VD-N?usp=sharing">link</a>.
+2. Create a directory named “testcases” in the same directory of this
+notebook. 3. Put the unzipped direcotry “PAGES2k_CCSM4_GISTEMP” into
+“testcases”.</p>
+<p>Below, we first load some useful packages, including our <code class="docutils literal notranslate"><span class="pre">LMRt</span></code>.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> autoreload
+<span class="o">%</span><span class="k">autoreload</span> 2
+
+<span class="kn">import</span> <span class="nn">LMRt</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="load-configurations">
+<h2>Load configurations<a class="headerlink" href="#load-configurations" title="Permalink to this headline">¶</a></h2>
+<p>Let’s again create the <code class="docutils literal notranslate"><span class="pre">job</span></code> object and load the configuration YAML
+file. To distinguish between the 1st reconstruction, let’s specify the
+<code class="docutils literal notranslate"><span class="pre">job_dirpath</span></code> in the call, which indicates the path where we store our
+results, to another location.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">job</span> <span class="o">=</span> <span class="n">LMRt</span><span class="o">.</span><span class="n">ReconJob</span><span class="p">()</span>
+<span class="n">job</span><span class="o">.</span><span class="n">load_configs</span><span class="p">(</span>
+    <span class="n">job_dirpath</span><span class="o">=</span><span class="s1">&#39;./testcases/PAGES2k_CCSM4_GISTEMP/recon_high&#39;</span><span class="p">,</span>
+    <span class="n">cfg_path</span><span class="o">=</span><span class="s1">&#39;./testcases/PAGES2k_CCSM4_GISTEMP/configs.yml&#39;</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[1m[36mLMRt: job.load_configs() &gt;&gt;&gt; loading reconstruction configurations from: ./testcases/PAGES2k_CCSM4_GISTEMP/configs.yml[0m
+[1m[32mLMRt: job.load_configs() &gt;&gt;&gt; job.configs created[0m
+[1m[36mLMRt: job.load_configs() &gt;&gt;&gt; job.configs[&quot;job_dirpath&quot;] = /Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_high[0m
+[1m[32mLMRt: job.load_configs() &gt;&gt;&gt; /Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_high created[0m
+{&#39;anom_period&#39;: [1951, 1980],
+ &#39;job_dirpath&#39;: &#39;/Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_high&#39;,
+ &#39;job_id&#39;: &#39;LMRt_quickstart&#39;,
+ &#39;obs_path&#39;: {&#39;tas&#39;: &#39;./data/obs/gistemp1200_ERSSTv4.nc&#39;},
+ &#39;obs_varname&#39;: {&#39;tas&#39;: &#39;tempanomaly&#39;},
+ &#39;prior_path&#39;: {&#39;tas&#39;: &#39;./data/prior/tas_sfc_Amon_CCSM4_past1000_085001-185012.nc&#39;},
+ &#39;prior_regrid_ntrunc&#39;: 42,
+ &#39;prior_season&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+ &#39;prior_varname&#39;: {&#39;tas&#39;: &#39;tas&#39;},
+ &#39;proxy_frac&#39;: 0.75,
+ &#39;proxydb_path&#39;: &#39;./data/proxy/pages2k_dataset.pkl&#39;,
+ &#39;psm_calib_period&#39;: [1850, 2015],
+ &#39;ptype_psm&#39;: {&#39;coral.SrCa&#39;: &#39;linear&#39;,
+               &#39;coral.calc&#39;: &#39;linear&#39;,
+               &#39;coral.d18O&#39;: &#39;linear&#39;},
+ &#39;ptype_season&#39;: {&#39;coral.SrCa&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                  &#39;coral.calc&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                  &#39;coral.d18O&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]},
+ &#39;recon_loc_rad&#39;: 25000,
+ &#39;recon_nens&#39;: 100,
+ &#39;recon_period&#39;: [0, 2000],
+ &#39;recon_seeds&#39;: [0,
+                 1,
+                 2,
+                 3,
+                 4,
+                 5,
+                 6,
+                 7,
+                 8,
+                 9,
+                 10,
+                 11,
+                 12,
+                 13,
+                 14,
+                 15,
+                 16,
+                 17,
+                 18,
+                 19],
+ &#39;recon_timescale&#39;: 1,
+ &#39;recon_vars&#39;: &#39;tas&#39;}
+</pre></div>
+</div>
+<p>Now let’s prepare our <code class="docutils literal notranslate"><span class="pre">job</span></code> with the <code class="docutils literal notranslate"><span class="pre">.prepare()</span></code> method, which will
+take care of the steps prior to the “Data assimilation” section in the
+previous notebook.</p>
+</div>
+<div class="section" id="prepare-the-job">
+<h2>Prepare the <code class="docutils literal notranslate"><span class="pre">job</span></code><a class="headerlink" href="#prepare-the-job" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">job</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[1m[36mLMRt: job.load_proxydb() &gt;&gt;&gt; job.configs[&quot;proxydb_path&quot;] = /Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/proxy/pages2k_dataset.pkl[0m
+[1m[32mLMRt: job.load_proxydb() &gt;&gt;&gt; 692 records loaded[0m
+[1m[32mLMRt: job.load_proxydb() &gt;&gt;&gt; job.proxydb created[0m
+[1m[36mLMRt: job.filter_proxydb() &gt;&gt;&gt; filtering proxy records according to: [&#39;coral.d18O&#39;, &#39;coral.SrCa&#39;, &#39;coral.calc&#39;][0m
+[1m[32mLMRt: job.filter_proxydb() &gt;&gt;&gt; 95 records remaining[0m
+[1m[36mLMRt: job.seasonalize_proxydb() &gt;&gt;&gt; seasonalizing proxy records according to: {&#39;coral.d18O&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], &#39;coral.SrCa&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], &#39;coral.calc&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}[0m
+[1m[32mLMRt: job.seasonalize_proxydb() &gt;&gt;&gt; 95 records remaining[0m
+[1m[32mLMRt: job.seasonalize_proxydb() &gt;&gt;&gt; job.proxydb updated[0m
+[1m[36mLMRt: job.load_prior() &gt;&gt;&gt; loading model prior fields from: {&#39;tas&#39;: &#39;/Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/prior/tas_sfc_Amon_CCSM4_past1000_085001-185012.nc&#39;}[0m
+Time axis not overlap with the reference period [1951, 1980]; use its own time period as reference [850.04, 1850.96].
+[1m[30mLMRt: job.load_prior() &gt;&gt;&gt; raw prior[0m
+Dataset Overview
+-----------------------
+
+     Name:  tas
+   Source:  /Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/prior/tas_sfc_Amon_CCSM4_past1000_085001-185012.nc
+    Shape:  time:12012, lat:192, lon:288
+[1m[32mLMRt: job.load_prior() &gt;&gt;&gt; job.prior created[0m
+[1m[36mLMRt: job.load_obs() &gt;&gt;&gt; loading instrumental observation fields from: {&#39;tas&#39;: &#39;/Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/obs/gistemp1200_ERSSTv4.nc&#39;}[0m
+[1m[32mLMRt: job.load_obs() &gt;&gt;&gt; job.obs created[0m
+[1m[36mLMRt: job.calibrate_psm() &gt;&gt;&gt; job.configs[&quot;precalc&quot;][&quot;seasonalized_prior_path&quot;] = /Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_high/seasonalized_prior.pkl[0m
+[1m[36mLMRt: job.calibrate_psm() &gt;&gt;&gt; job.configs[&quot;precalc&quot;][&quot;seasonalized_obs_path&quot;] = /Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_high/seasonalized_obs.pkl[0m
+[1m[36mLMRt: job.calibrate_psm() &gt;&gt;&gt; job.configs[&quot;precalc&quot;][&quot;prior_loc_path&quot;] = /Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_high/prior_loc.pkl[0m
+[1m[36mLMRt: job.calibrate_psm() &gt;&gt;&gt; job.configs[&quot;precalc&quot;][&quot;obs_loc_path&quot;] = /Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_high/obs_loc.pkl[0m
+[1m[36mLMRt: job.calibrate_psm() &gt;&gt;&gt; job.configs[&quot;precalc&quot;][&quot;calibed_psm_path&quot;] = /Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_high/calibed_psm.pkl[0m
+[1m[36mLMRt: job.seasonalize_ds_for_psm() &gt;&gt;&gt; job.configs[&quot;ptype_season&quot;] = {&#39;coral.d18O&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], &#39;coral.SrCa&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], &#39;coral.calc&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}[0m
+[1m[36mLMRt: job.seasonalize_ds_for_psm() &gt;&gt;&gt; Seasonalizing variables from prior with season: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12][0m
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Searching nearest location:   0%|          | 0/95 [00:00&lt;?, ?it/s]
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[1m[32mLMRt: job.seasonalize_ds_for_psm() &gt;&gt;&gt; job.seasonalized_prior created[0m
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Searching nearest location: 100%|██████████| 95/95 [00:05&lt;00:00, 17.35it/s]
+/Users/fzhu/Github/LMRt/LMRt/utils.py:243: RuntimeWarning: Mean of empty slice
+  tmp = np.nanmean(var[inds, ...], axis=0)
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[1m[32mLMRt: job.proxydb.find_nearest_loc() &gt;&gt;&gt; job.proxydb.prior_lat_idx &amp; job.proxydb.prior_lon_idx created[0m
+[1m[32mLMRt: job.proxydb.get_var_from_ds() &gt;&gt;&gt; job.proxydb.records[pid].prior_time &amp; job.proxydb.records[pid].prior_value created[0m
+[1m[36mLMRt: job.seasonalize_ds_for_psm() &gt;&gt;&gt; job.configs[&quot;ptype_season&quot;] = {&#39;coral.d18O&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], &#39;coral.SrCa&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], &#39;coral.calc&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}[0m
+[1m[36mLMRt: job.seasonalize_ds_for_psm() &gt;&gt;&gt; Seasonalizing variables from obs with season: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12][0m
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Searching nearest location:   6%|▋         | 6/95 [00:00&lt;00:01, 58.38it/s]
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[1m[32mLMRt: job.seasonalize_ds_for_psm() &gt;&gt;&gt; job.seasonalized_obs created[0m
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Searching nearest location: 100%|██████████| 95/95 [00:01&lt;00:00, 61.54it/s]
+Calibrating PSM:   9%|▉         | 9/95 [00:00&lt;00:01, 84.72it/s]
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[1m[32mLMRt: job.proxydb.find_nearest_loc() &gt;&gt;&gt; job.proxydb.obs_lat_idx &amp; job.proxydb.obs_lon_idx created[0m
+[1m[32mLMRt: job.proxydb.get_var_from_ds() &gt;&gt;&gt; job.proxydb.records[pid].obs_time &amp; job.proxydb.records[pid].obs_value created[0m
+[1m[32mLMRt: job.proxydb.init_psm() &gt;&gt;&gt; job.proxydb.records[pid].psm initialized[0m
+[1m[36mLMRt: job.calibrate_psm() &gt;&gt;&gt; PSM calibration period: [1850, 2015][0m
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Calibrating PSM:  62%|██████▏   | 59/95 [00:00&lt;00:00, 90.68it/s]
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">The</span> <span class="n">number</span> <span class="n">of</span> <span class="n">overlapped</span> <span class="n">data</span> <span class="n">points</span> <span class="ow">is</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="mf">25.</span> <span class="n">Skipping</span> <span class="o">...</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Calibrating PSM: 100%|██████████| 95/95 [00:01&lt;00:00, 90.51it/s]
+Forwarding PSM: 100%|██████████| 95/95 [00:00&lt;00:00, 1442.56it/s]
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[1m[32mLMRt: job.proxydb.calib_psm() &gt;&gt;&gt; job.proxydb.records[pid].psm calibrated[0m
+[1m[32mLMRt: job.proxydb.calib_psm() &gt;&gt;&gt; job.proxydb.calibed created[0m
+[1m[32mLMRt: job.proxydb.forward_psm() &gt;&gt;&gt; job.proxydb.records[pid].psm forwarded[0m
+[1m[30mLMRt: job.seasonalize_prior() &gt;&gt;&gt; seasonalized prior w/ season [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12][0m
+Dataset Overview
+-----------------------
+
+     Name:  tas
+   Source:  /Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/prior/tas_sfc_Amon_CCSM4_past1000_085001-185012.nc
+    Shape:  time:1001, lat:192, lon:288
+[1m[32mLMRt: job.seasonalize_ds_for_psm() &gt;&gt;&gt; job.prior updated[0m
+[1m[30mLMRt: job.regrid_prior() &gt;&gt;&gt; regridded prior[0m
+Dataset Overview
+-----------------------
+
+     Name:  tas
+   Source:  /Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/prior/tas_sfc_Amon_CCSM4_past1000_085001-185012.nc
+    Shape:  time:1001, lat:42, lon:63
+[1m[32mLMRt: job.regrid_prior() &gt;&gt;&gt; job.prior updated[0m
+[1m[36mLMRt: job.prepare() &gt;&gt;&gt; Prepration data saved to: /Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_high/job.pkl[0m
+[1m[36mLMRt: job.prepare() &gt;&gt;&gt; job.configs[&quot;precalc&quot;][&quot;prep_savepath&quot;] = /Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_high/job.pkl[0m
+</pre></div>
+</div>
+</div>
+<div class="section" id="run-the-job">
+<h2>Run the <code class="docutils literal notranslate"><span class="pre">job</span></code><a class="headerlink" href="#run-the-job" title="Permalink to this headline">¶</a></h2>
+<p>Okay, now we are ready to run the job.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">job</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">recon_seeds</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>KF updating:   0%|          | 0/2001 [00:00&lt;?, ?it/s]
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[1m[36mLMRt: job.run() &gt;&gt;&gt; job.configs[&quot;recon_seeds&quot;] = [0][0m
+[1m[36mLMRt: job.run() &gt;&gt;&gt; job.configs[&quot;save_settings&quot;] = {&#39;compress_dict&#39;: {&#39;zlib&#39;: True, &#39;least_significant_digit&#39;: 1}, &#39;output_geo_mean&#39;: False, &#39;target_lats&#39;: [], &#39;target_lons&#39;: [], &#39;output_full_ens&#39;: False, &#39;dtype&#39;: 32}[0m
+[1m[36mLMRt: job.run() &gt;&gt;&gt; job.configs saved to: /Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_high/job_configs.yml[0m
+[1m[36mLMRt: job.run() &gt;&gt;&gt; seed: 0 | max: 0[0m
+[1m[36mLMRt: job.run() &gt;&gt;&gt; randomized indices for prior and proxies saved to: /Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_high/job_r00_idx.pkl[0m
+Proxy Database Overview
+-----------------------
+     Source:        /Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/proxy/pages2k_dataset.pkl
+       Size:        70
+Proxy types:        {&#39;coral.calc&#39;: 6, &#39;coral.SrCa&#39;: 19, &#39;coral.d18O&#39;: 45}
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>KF updating: 100%|██████████| 2001/2001 [00:44&lt;00:00, 44.48it/s]
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[1m[36mLMRt: job.save_recon() &gt;&gt;&gt; Reconstructed fields saved to: /Users/fzhu/Github/LMRt/docs/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_high/job_r00_recon.nc[0m
+[1m[36mLMRt: job.run() &gt;&gt;&gt; DONE![0m
+</pre></div>
+</div>
+<p>Once done, we will get the struture below in the “recon_high” directory:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>.
+├── calibed_psm.pkl
+├── job_configs.yml
+├── job_r00_idx.pkl
+├── job_r00_recon.nc
+├── job.pkl
+├── obs_loc.pkl
+├── prior_loc.pkl
+├── seasonalized_obs.pkl
+└── seasonalized_prior.pkl
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+          <div class="page-nav">
+            <div class="inner"><ul class="page-nav">
+  <li class="prev">
+    <a href="quickstart_low-level-workflow.html"
+       title="previous chapter">← Your 1st LMR reconstruction</a>
+  </li>
+  <li class="next">
+    <a href="quickstart_top-level-workflow.html"
+       title="next chapter">Top-level workflow in LMRt →</a>
+  </li>
+</ul><div class="footer" role="contentinfo">
+      &#169; Copyright 2021, Feng Zhu.
+    <br>
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.4 with <a href="https://github.com/schettino72/sphinx_press_theme">Press Theme</a>.
+</div>
+            </div>
+          </div>
+      </page>
+    </div>
+    
+    
+  </body>
+</html>

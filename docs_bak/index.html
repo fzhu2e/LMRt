@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html >
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+      <title>LMR Turbo (LMRt)</title>
+    
+      <link rel="stylesheet" href="_static/pygments.css">
+      <link rel="stylesheet" href="_static/theme.css">
+      <link rel="stylesheet" href="_static/sphinx_press_theme.css">
+      
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+
+      <!-- sphinx script_files -->
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+
+      
+      <script src="_static/theme-vendors.js"></script>
+      <script src="_static/theme.js" defer></script>
+    
+  <link rel="index" title="Index" href="genindex.html" />
+  <link rel="search" title="Search" href="search.html" />
+  <link rel="next" title="Installallation" href="installation.html" /> 
+  </head>
+
+  <body>
+    <div id="app" class="theme-container" :class="pageClasses"><navbar @toggle-sidebar="toggleSidebar">
+  <router-link to="#" class="home-link">
+    
+      <span class="site-name">LMR Turbo</span>
+    
+  </router-link>
+
+  <div class="links">
+    <navlinks class="can-hide">
+
+
+
+    </navlinks>
+  </div>
+</navbar>
+
+      
+      <div class="sidebar-mask" @click="toggleSidebar(false)">
+      </div>
+        <sidebar @toggle-sidebar="toggleSidebar">
+          
+          <navlinks>
+            
+
+
+
+            
+          </navlinks><div id="searchbox" class="searchbox" role="search">
+  <div class="caption"><span class="caption-text">Quick search</span>
+    <div class="searchformwrapper">
+      <form class="search" action="search.html" method="get">
+        <input type="text" name="q" />
+        <input type="submit" value="Search" />
+        <input type="hidden" name="check_keywords" value="yes" />
+        <input type="hidden" name="area" value="default" />
+      </form>
+    </div>
+  </div>
+</div><div class="sidebar-links" role="navigation" aria-label="main navigation">
+  
+    <div class="sidebar-group">
+      <p class="caption">
+        <span class="caption-text"><a href="#how-to-cite">Contents</a></span>
+      </p>
+      <ul class="">
+        
+          <li class="toctree-l1 "><a href="installation.html" class="reference internal ">Installallation</a>
+
+            
+          </li>
+
+        
+          <li class="toctree-l1 "><a href="tutorial.html" class="reference internal ">Tutorial</a>
+
+            
+          </li>
+
+        
+          <li class="toctree-l1 "><a href="ui.html" class="reference internal ">User Interface</a>
+
+            
+          </li>
+
+        
+      </ul>
+    </div>
+  
+</div>
+        </sidebar>
+
+      <page>
+          <div class="body-header" role="navigation" aria-label="navigation">
+  
+  <ul class="breadcrumbs">
+    <li><a href="#">Docs</a> &raquo;</li>
+    
+    <li>LMR Turbo (LMRt)</li>
+  </ul>
+  
+
+  <ul class="page-nav">
+  <li class="next">
+    <a href="installation.html"
+       title="next chapter">Installallation →</a>
+  </li>
+</ul>
+  
+</div>
+<hr>
+          <div class="content" role="main">
+            
+  <a class="reference external image-reference" href="https://doi.org/10.5281/zenodo.2655097"><img alt="https://zenodo.org/badge/DOI/10.5281/zenodo.2655097.svg" src="https://zenodo.org/badge/DOI/10.5281/zenodo.2655097.svg" /></a>
+<img alt="https://img.shields.io/github/last-commit/fzhu2e/LMRt/master" src="https://img.shields.io/github/last-commit/fzhu2e/LMRt/master" />
+<a class="reference external image-reference" href="https://github.com/fzhu2e/LMRt/blob/master/LICENSE"><img alt="https://img.shields.io/github/license/fzhu2e/LMRt" src="https://img.shields.io/github/license/fzhu2e/LMRt" /></a>
+<img alt="https://img.shields.io/pypi/pyversions/LMRt" src="https://img.shields.io/pypi/pyversions/LMRt" />
+<a class="reference external image-reference" href="https://pypi.org/project/LMRt"><img alt="https://img.shields.io/pypi/v/LMRt.svg" src="https://img.shields.io/pypi/v/LMRt.svg" /></a>
+<a class="reference external image-reference" href="https://pypi.org/project/LMRt"><img alt="https://img.shields.io/pypi/dm/LMRt" src="https://img.shields.io/pypi/dm/LMRt" /></a>
+<div class="section" id="lmr-turbo-lmrt">
+<h1>LMR Turbo (LMRt)<a class="headerlink" href="#lmr-turbo-lmrt" title="Permalink to this headline">¶</a></h1>
+<p>LMR Turbo (LMRt) is a lightweight, packaged version of the <a class="reference external" href="https://github.com/modons/LMR">Last Millennium Reanalysia (LMR)</a> framework,
+inspired by LMR_lite.py originated by <a class="reference external" href="https://atmos.washington.edu/~hakim/">Professor Hakim</a>.
+LMRt aims to provide following extra features:</p>
+<ul class="simple">
+<li><p>a package that is easy to install and import in scripts or Jupyter notebooks</p></li>
+<li><p>modularized workflows at different levels:</p>
+<ul>
+<li><p>the low-level workflow focuses on the flexibility and customizability</p></li>
+<li><p>the high-level workflow focuses on the convenience of repeating Monte-Carlo iterations</p></li>
+<li><p>the top-level workflow focuses on the convenience of reproducing an experiment purely based on a given configuration YAML file</p></li>
+</ul>
+</li>
+<li><p>convenient visualization functionalities for diagnosis and validations (leveraging the <code class="code docutils literal notranslate"><span class="pre">Series</span></code> and <code class="code docutils literal notranslate"><span class="pre">EnsembleSeries</span></code> of the <a class="reference external" href="https://github.com/LinkedEarth/Pyleoclim_util">Pyleoclim</a> UI)</p></li>
+</ul>
+<div class="section" id="references-of-the-lmr-framework">
+<h2>References of the LMR framework<a class="headerlink" href="#references-of-the-lmr-framework" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Hakim, G. J., J. Emile‐Geay, E. J. Steig, D. Noone, D. M. Anderson, R. Tardif, N. Steiger, and W. A. Perkins, 2016: The last millennium climate reanalysis project: Framework and first results. Journal of Geophysical Research: Atmospheres, 121, 6745–6764, <a class="reference external" href="https://doi.org/10.1002/2016JD024751">https://doi.org/10.1002/2016JD024751</a>.</p></li>
+<li><p>Tardif, R., Hakim, G. J., Perkins, W. A., Horlick, K. A., Erb, M. P., Emile-Geay, J., et al. (2019). Last Millennium Reanalysis with an expanded proxy database and seasonal proxy modeling. Climate of the Past, 15(4), 1251–1273. <a class="reference external" href="https://doi.org/10.5194/cp-15-1251-2019">https://doi.org/10.5194/cp-15-1251-2019</a></p></li>
+</ul>
+</div>
+<div class="section" id="published-studies-using-lmrt">
+<h2>Published studies using LMRt<a class="headerlink" href="#published-studies-using-lmrt" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Zhu, F., Emile‐Geay, J., Hakim, G. J., King, J., &amp; Anchukaitis, K. J. (2020). Resolving the Differences in the Simulated and Reconstructed Temperature Response to Volcanism. Geophysical Research Letters, 47(8), e2019GL086908. <a class="reference external" href="https://doi.org/10.1029/2019GL086908">https://doi.org/10.1029/2019GL086908</a></p></li>
+<li><p>Zhu, F., Emile-Geay, J., Anchukaitis, K., Hakim, G., Wittenberg, A., Morales, M., &amp; King, J. (2021). Volcanoes and ENSO: a re-appraisal with the Last Millennium Reanalysis. <a class="reference external" href="https://doi.org/10.21203/rs.3.rs-130239/v1">https://doi.org/10.21203/rs.3.rs-130239/v1</a></p></li>
+</ul>
+</div>
+<div class="section" id="how-to-cite">
+<h2>How to cite<a class="headerlink" href="#how-to-cite" title="Permalink to this headline">¶</a></h2>
+<p>If you find this package useful, please cite it with <a class="reference external" href="https://doi.org/10.5281/zenodo.2655097">DOI: 10.5281/zenodo.2655097</a></p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installallation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#install-the-conda-environment">Install the Conda environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="installation.html#step-1-download-the-installation-script-for-miniconda3">Step 1: Download the installation script for miniconda3</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installation.html#step-2-install-miniconda3">Step 2: Install Miniconda3</a></li>
+<li class="toctree-l3"><a class="reference internal" href="installation.html#step-3-test-your-installation">Step 3: Test your Installation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#install-lmrt">Install LMRt</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html#quickstart">Quickstart</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorial/quickstart_low-level-workflow.html">Your 1st LMR reconstruction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial/quickstart_high-level-workflow.html">High-level workflow in LMRt</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial/quickstart_top-level-workflow.html">Top-level workflow in LMRt</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial/quickstart_visualization.html">Visualization functionalities</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ui.html">User Interface</a></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+          <div class="page-nav">
+            <div class="inner"><ul class="page-nav">
+  <li class="next">
+    <a href="installation.html"
+       title="next chapter">Installallation →</a>
+  </li>
+</ul><div class="footer" role="contentinfo">
+      &#169; Copyright 2021, Feng Zhu.
+    <br>
+    Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.5.4 with <a href="https://github.com/schettino72/sphinx_press_theme">Press Theme</a>.
+</div>
+            </div>
+          </div>
+      </page>
+    </div>
+    
+    
+  </body>
+</html>
