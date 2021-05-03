@@ -96,6 +96,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#Test-data-preparation">Test data preparation</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Preprocessing">Preprocessing</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Data-assimilation">Data assimilation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#A-quick-preview-of-the-results">A quick preview of the results</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="quickstart_high-level-workflow.html">High-level workflow in LMRt</a></li>
@@ -686,7 +687,7 @@ Dataset Overview
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Searching nearest location:  12%|█▏        | 11/95 [00:00&lt;00:00, 104.19it/s]
+Searching nearest location:  13%|█▎        | 12/95 [00:00&lt;00:00, 111.06it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -702,7 +703,7 @@ Searching nearest location:  12%|█▏        | 11/95 [00:00&lt;00:00, 104.19it
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Searching nearest location: 100%|██████████| 95/95 [00:00&lt;00:00, 111.14it/s]
+Searching nearest location: 100%|██████████| 95/95 [00:00&lt;00:00, 112.02it/s]
 /Users/fzhu/Github/LMRt/LMRt/utils.py:243: RuntimeWarning: Mean of empty slice
   tmp = np.nanmean(var[inds, ...], axis=0)
 </pre></div></div>
@@ -723,7 +724,7 @@ Searching nearest location: 100%|██████████| 95/95 [00:00&lt
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Searching nearest location:  11%|█         | 10/95 [00:00&lt;00:00, 95.74it/s]
+Searching nearest location:  11%|█         | 10/95 [00:00&lt;00:00, 93.23it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -739,8 +740,8 @@ Searching nearest location:  11%|█         | 10/95 [00:00&lt;00:00, 95.74it/s]
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Searching nearest location: 100%|██████████| 95/95 [00:00&lt;00:00, 99.92it/s]
-Calibrating PSM:   9%|▉         | 9/95 [00:00&lt;00:01, 83.06it/s]
+Searching nearest location: 100%|██████████| 95/95 [00:00&lt;00:00, 102.32it/s]
+Calibrating PSM:   9%|▉         | 9/95 [00:00&lt;00:00, 86.39it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -759,7 +760,7 @@ Calibrating PSM:   9%|▉         | 9/95 [00:00&lt;00:01, 83.06it/s]
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Calibrating PSM:  71%|███████   | 67/95 [00:00&lt;00:00, 88.09it/s]
+Calibrating PSM:  74%|███████▎  | 70/95 [00:00&lt;00:00, 93.70it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -775,7 +776,7 @@ The number of overlapped data points is 0 &lt; 25. Skipping ...
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Calibrating PSM: 100%|██████████| 95/95 [00:01&lt;00:00, 88.92it/s]
+Calibrating PSM: 100%|██████████| 95/95 [00:01&lt;00:00, 91.61it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -785,8 +786,8 @@ Calibrating PSM: 100%|██████████| 95/95 [00:01&lt;00:00, 88.
 <div class="highlight"><pre>
 <span class="ansi-green-intense-fg ansi-bold">LMRt: job.proxydb.calib_psm() &gt;&gt;&gt; job.proxydb.records[pid].psm calibrated</span>
 <span class="ansi-green-intense-fg ansi-bold">LMRt: job.proxydb.calib_psm() &gt;&gt;&gt; job.proxydb.calibed created</span>
-CPU times: user 7.3 s, sys: 915 ms, total: 8.21 s
-Wall time: 8.2 s
+CPU times: user 7.3 s, sys: 888 ms, total: 8.18 s
+Wall time: 8.17 s
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -811,7 +812,7 @@ Wall time: 8.2 s
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Forwarding PSM: 100%|██████████| 95/95 [00:00&lt;00:00, 1388.36it/s]
+Forwarding PSM: 100%|██████████| 95/95 [00:00&lt;00:00, 749.73it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -900,7 +901,7 @@ Dataset Overview
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-KF updating:   3%|▎         | 54/2001 [00:00&lt;00:03, 537.36it/s]
+KF updating:   3%|▎         | 58/2001 [00:00&lt;00:03, 577.94it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -925,7 +926,7 @@ Proxy types:        {&#39;coral.calc&#39;: 6, &#39;coral.SrCa&#39;: 19, &#39;cor
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-KF updating: 100%|██████████| 2001/2001 [01:14&lt;00:00, 26.78it/s]
+KF updating: 100%|██████████| 2001/2001 [01:09&lt;00:00, 28.86it/s]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -935,8 +936,8 @@ KF updating: 100%|██████████| 2001/2001 [01:14&lt;00:00, 26.
 <div class="highlight"><pre>
 <span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.save_recon() &gt;&gt;&gt; Reconstructed fields saved to: /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon/job_r00_recon.nc</span>
 <span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.run() &gt;&gt;&gt; DONE!</span>
-CPU times: user 18min 22s, sys: 1min 9s, total: 19min 32s
-Wall time: 2min 2s
+CPU times: user 17min 53s, sys: 45 s, total: 18min 38s
+Wall time: 2min 1s
 </pre></div></div>
 </div>
 <p>Once done, we will get the struture below in the “recon” directory:</p>
@@ -952,7 +953,112 @@ Wall time: 2min 2s
 └── seasonalized_prior.pkl
 </pre></div>
 </div>
-<p>For the visualization of the results, please move on to the tutorial regarding visualizations.</p>
+<p>We now do a quick preview of the results below. For more details of the visualization of the results, please move on to the tutorial regarding visualizations.</p>
+</div>
+<div class="section" id="A-quick-preview-of-the-results">
+<h2>A quick preview of the results<a class="headerlink" href="#A-quick-preview-of-the-results" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># create the res object for reconstruction results</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">LMRt</span><span class="o">.</span><span class="n">ReconRes</span><span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">configs</span><span class="p">[</span><span class="s1">&#39;job_dirpath&#39;</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+recon_paths: [&#39;/Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon/job_r00_recon.nc&#39;]
+idx_paths: [&#39;/Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon/job_r00_idx.pkl&#39;]
+job_path: /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon/job.pkl
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># get the varialbes from the recon_paths</span>
+<span class="n">res</span><span class="o">.</span><span class="n">get_vars</span><span class="p">([</span><span class="s1">&#39;tas&#39;</span><span class="p">,</span> <span class="s1">&#39;nino3.4&#39;</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-black-intense-fg ansi-bold">LMRt: res.get_var() &gt;&gt;&gt; loading variable: tas</span>
+<span class="ansi-black-intense-fg ansi-bold">LMRt: res.get_var() &gt;&gt;&gt; loading variable: nino3.4</span>
+<span class="ansi-green-intense-fg ansi-bold">LMRt: res.get_var() &gt;&gt;&gt; res.vars filled w/ varnames: [&#39;tas&#39;, &#39;nino3.4&#39;] and [&#39;year&#39;, &#39;lat&#39;, &#39;lon&#39;]</span>
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># plot the tas field</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="s1">&#39;tas&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">field_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/Users/fzhu/Github/LMRt/LMRt/visual.py:218: MatplotlibDeprecationWarning: The &#39;extend&#39; parameter to Colorbar has no effect because it is overridden by the mappable; it is deprecated since 3.3 and will be removed two minor releases later.
+  cbar = fig.colorbar(im, ax=ax, orientation=cbar_orientation, pad=cbar_pad, aspect=cbar_aspect, extend=extend,
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_quickstart_low-level-workflow_26_1.png" src="../_images/tutorial_quickstart_low-level-workflow_26_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># plot and validate the NINO3.4</span>
+<span class="kn">from</span> <span class="nn">scipy.io</span> <span class="kn">import</span> <span class="n">loadmat</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">loadmat</span><span class="p">(</span><span class="s1">&#39;./testcases/PAGES2k_CCSM4_GISTEMP/data/obs/NINO34_BC09.mat&#39;</span><span class="p">)</span>
+<span class="n">syr</span><span class="p">,</span> <span class="n">eyr</span> <span class="o">=</span> <span class="mi">1873</span><span class="p">,</span> <span class="mi">2000</span>
+<span class="n">nyr</span> <span class="o">=</span> <span class="n">eyr</span><span class="o">-</span><span class="n">syr</span><span class="o">+</span><span class="mi">1</span>
+<span class="n">nino34</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nyr</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nyr</span><span class="p">):</span>
+    <span class="n">nino34</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;nino34&#39;</span><span class="p">][</span><span class="n">i</span><span class="o">*</span><span class="mi">12</span><span class="p">:</span><span class="mi">12</span><span class="o">+</span><span class="n">i</span><span class="o">*</span><span class="mi">12</span><span class="p">])</span>
+
+<span class="n">target_series</span> <span class="o">=</span> <span class="n">LMRt</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">syr</span><span class="p">,</span> <span class="n">eyr</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">value</span><span class="o">=</span><span class="n">nino34</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;BC09&#39;</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="s1">&#39;nino3.4&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">target_series</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xlim</span><span class="o">=</span><span class="p">[</span><span class="mi">1880</span><span class="p">,</span> <span class="mi">2000</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-cyan-intense-fg ansi-bold">LMRt: res.ReconSeries.validate() &gt;&gt;&gt; valid_period = [1880, 2000]</span>
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/tutorial_quickstart_low-level-workflow_27_1.png" src="../_images/tutorial_quickstart_low-level-workflow_27_1.png" />
+</div>
+</div>
 </div>
 </div>
 

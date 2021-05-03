@@ -988,7 +988,9 @@ job_path: ./testcases/PAGES2k_CCSM4_GISTEMP/recon_more_proxies/job.pkl
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">scipy.io</span> <span class="kn">import</span> <span class="n">loadmat</span>
+<span></span><span class="c1"># plot and validate the NINO3.4</span>
+
+<span class="kn">from</span> <span class="nn">scipy.io</span> <span class="kn">import</span> <span class="n">loadmat</span>
 
 <span class="n">data</span> <span class="o">=</span> <span class="n">loadmat</span><span class="p">(</span><span class="s1">&#39;./testcases/PAGES2k_CCSM4_GISTEMP/data/obs/NINO34_BC09.mat&#39;</span><span class="p">)</span>
 <span class="n">syr</span><span class="p">,</span> <span class="n">eyr</span> <span class="o">=</span> <span class="mi">1873</span><span class="p">,</span> <span class="mi">2000</span>

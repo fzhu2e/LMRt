@@ -615,7 +615,7 @@ Dataset Overview
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Searching nearest location:   7%|▋         | 7/95 [00:00&lt;00:01, 63.40it/s]
+Searching nearest location:  12%|█▏        | 11/95 [00:00&lt;00:00, 107.50it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -631,7 +631,7 @@ Searching nearest location:   7%|▋         | 7/95 [00:00&lt;00:01, 63.40it/s]
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Searching nearest location: 100%|██████████| 95/95 [00:01&lt;00:00, 65.57it/s]
+Searching nearest location: 100%|██████████| 95/95 [00:00&lt;00:00, 110.08it/s]
 /Users/fzhu/Github/LMRt/LMRt/utils.py:243: RuntimeWarning: Mean of empty slice
   tmp = np.nanmean(var[inds, ...], axis=0)
 </pre></div></div>
@@ -652,7 +652,7 @@ Searching nearest location: 100%|██████████| 95/95 [00:01&lt
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Searching nearest location:   6%|▋         | 6/95 [00:00&lt;00:01, 55.17it/s]
+Searching nearest location:  11%|█         | 10/95 [00:00&lt;00:00, 94.37it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -668,8 +668,8 @@ Searching nearest location:   6%|▋         | 6/95 [00:00&lt;00:01, 55.17it/s]
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Searching nearest location: 100%|██████████| 95/95 [00:01&lt;00:00, 54.51it/s]
-Calibrating PSM:   5%|▌         | 5/95 [00:00&lt;00:01, 49.42it/s]
+Searching nearest location: 100%|██████████| 95/95 [00:00&lt;00:00, 97.94it/s]
+Calibrating PSM:   9%|▉         | 9/95 [00:00&lt;00:01, 82.41it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -688,7 +688,7 @@ Calibrating PSM:   5%|▌         | 5/95 [00:00&lt;00:01, 49.42it/s]
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Calibrating PSM:  62%|██████▏   | 59/95 [00:01&lt;00:00, 51.29it/s]
+Calibrating PSM:  71%|███████   | 67/95 [00:00&lt;00:00, 88.60it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -704,8 +704,8 @@ The number of overlapped data points is 0 &lt; 25. Skipping ...
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Calibrating PSM: 100%|██████████| 95/95 [00:01&lt;00:00, 52.12it/s]
-Forwarding PSM: 100%|██████████| 95/95 [00:00&lt;00:00, 848.83it/s]
+Calibrating PSM: 100%|██████████| 95/95 [00:01&lt;00:00, 88.26it/s]
+Forwarding PSM: 100%|██████████| 95/95 [00:00&lt;00:00, 706.48it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -774,7 +774,7 @@ Dataset Overview
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-KF updating:   0%|          | 0/2001 [00:00&lt;?, ?it/s]
+KF updating:   2%|▏         | 33/2001 [00:00&lt;00:06, 322.18it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -799,7 +799,7 @@ Proxy types:        {&#39;coral.calc&#39;: 6, &#39;coral.SrCa&#39;: 19, &#39;cor
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-KF updating: 100%|██████████| 2001/2001 [03:09&lt;00:00, 10.58it/s]
+KF updating: 100%|██████████| 2001/2001 [02:09&lt;00:00, 15.46it/s]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -809,6 +809,8 @@ KF updating: 100%|██████████| 2001/2001 [03:09&lt;00:00, 10.
 <div class="highlight"><pre>
 <span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.save_recon() &gt;&gt;&gt; Reconstructed fields saved to: ./testcases/PAGES2k_CCSM4_GISTEMP/recon_tas_psl/job_r00_recon.nc</span>
 <span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.run() &gt;&gt;&gt; DONE!</span>
+CPU times: user 33min 23s, sys: 1min 17s, total: 34min 41s
+Wall time: 3min 44s
 </pre></div></div>
 </div>
 <p>Once done, we will get the struture below in the “recon_top” directory:</p>
@@ -849,7 +851,7 @@ job_path: ./testcases/PAGES2k_CCSM4_GISTEMP/recon_tas_psl/job.pkl
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -870,7 +872,7 @@ job_path: ./testcases/PAGES2k_CCSM4_GISTEMP/recon_tas_psl/job.pkl
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -898,7 +900,7 @@ nEns: 1
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -907,15 +909,24 @@ nEns: 1
 </pre></div>
 </div>
 </div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/Users/fzhu/Github/LMRt/LMRt/visual.py:218: MatplotlibDeprecationWarning: The &#39;extend&#39; parameter to Colorbar has no effect because it is overridden by the mappable; it is deprecated since 3.3 and will be removed two minor releases later.
+  cbar = fig.colorbar(im, ax=ax, orientation=cbar_orientation, pad=cbar_pad, aspect=cbar_aspect, extend=extend,
+</pre></div></div>
+</div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_howto_reconstruct-multiple-fields_17_0.png" src="../_images/tutorial_howto_reconstruct-multiple-fields_17_0.png" />
+<img alt="../_images/tutorial_howto_reconstruct-multiple-fields_17_1.png" src="../_images/tutorial_howto_reconstruct-multiple-fields_17_1.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -929,6 +940,15 @@ nEns: 1
 </div>
 <div class="output_area docutils container">
 <img alt="../_images/tutorial_howto_reconstruct-multiple-fields_18_0.png" src="../_images/tutorial_howto_reconstruct-multiple-fields_18_0.png" />
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>
+</pre></div>
 </div>
 </div>
 </div>
