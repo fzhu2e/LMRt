@@ -31,6 +31,20 @@ LMRt aims to provide following extra features:
 
 + convenient visualization functionalities for diagnosis and validations (leveraging the :code:`Series` and :code:`EnsembleSeries` of the `Pyleoclim <https://github.com/LinkedEarth/Pyleoclim_util>`_ UI)
 
+A preview of results
+====================
+
+Mean temperature
+----------------
+.. figure:: https://github.com/fzhu2e/LMRt/raw/master/imgs/gmt.png
+    :alt: Mean temperature
+
+Niño 3.4 index
+--------------
+.. figure:: https://github.com/fzhu2e/LMRt/raw/master/imgs/nino34.png
+    :alt: Niño 3.4
+
+
 Documentation
 =============
 
