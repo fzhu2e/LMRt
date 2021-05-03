@@ -13,9 +13,6 @@
 .. image:: https://img.shields.io/pypi/v/LMRt.svg
     :target: https://pypi.org/project/LMRt
 
-.. image:: https://img.shields.io/pypi/dm/LMRt
-    :target: https://pypi.org/project/LMRt
-
 ****************
 LMR Turbo (LMRt)
 ****************
@@ -33,6 +30,13 @@ LMRt aims to provide following extra features:
   + the top-level workflow focuses on the convenience of reproducing an experiment purely based on a given configuration YAML file
 
 + convenient visualization functionalities for diagnosis and validations (leveraging the :code:`Series` and :code:`EnsembleSeries` of the `Pyleoclim <https://github.com/LinkedEarth/Pyleoclim_util>`_ UI)
+
+Documentation
+=============
+
++ Documentation website: https://fzhu.work/LMRt
++ Installation: https://fzhu.work/LMRt/installation.html
++ Tutorial: https://fzhu.work/LMRt/tutorial.html
 
 References of the LMR framework
 ===============================
