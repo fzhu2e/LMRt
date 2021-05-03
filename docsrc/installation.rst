@@ -63,7 +63,7 @@ Then install two dependencies that is not able to be installed via :code:`pip`:
 
 .. code-block:: bash
 
-    conda install -c conda-forge cartopy pyspharm
+    conda install -c conda-forge cartopy pyspharm jupyterlab
 
 Once the above dependencies have been installed, simply
 
