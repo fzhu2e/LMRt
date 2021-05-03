@@ -894,47 +894,84 @@ class ReconJob:
         p_header(f'LMRt: job.run() >>> DONE!')
 
 
-    def run_cfg(self, cfg_path, verbose=False, save_configs=True):
-
+    def run_cfg(self, cfg_path, job_dirpath=None, recon_seeds=None, verbose=False, save_configs=True):
         self.load_configs(cfg_path, verbose=verbose)
 
-        job_dirpath = self.configs['job_dirpath']
-        proxydb_path = self.configs['proxydb_path']
+        if job_dirpath is None:
+            if os.path.isabs(self.configs['job_dirpath']):
+                job_dirpath = self.configs['job_dirpath']
+            else:
+                job_dirpath = cfg_abspath(self.cfg_path, self.configs['job_dirpath'])
+        else:
+            job_dirpath = cwd_abspath(job_dirpath)
+
+        self.configs['job_dirpath'] = job_dirpath
+        os.makedirs(job_dirpath, exist_ok=True)
+        if verbose:
+            p_header(f'LMRt: job.load_configs() >>> job.configs["job_dirpath"] = {job_dirpath}')
+            p_success(f'LMRt: job.load_configs() >>> {job_dirpath} created')
+
+        proxydb_path = cfg_abspath(cfg_path, self.configs['proxydb_path'])
         ptype_psm = self.configs['ptype_psm']
         ptype_season = self.configs['ptype_season']
-        prior_path = self.configs['prior_path']
+        prior_path = cfg_abspath(cfg_path, self.configs['prior_path'])
         prior_varname_dict = self.configs['prior_varname']
         prior_season = self.configs['prior_season']
         prior_regrid_ntrunc = self.configs['prior_regrid_ntrunc']
-        obs_path = self.configs['obs_path']
+        obs_path = cfg_abspath(cfg_path, self.configs['obs_path'])
         obs_varname_dict = self.configs['obs_varname']
         anom_period = self.configs['anom_period']
         psm_calib_period = self.configs['psm_calib_period']
-        seasonalized_prior_path = self.configs['precalc']['seasonalized_prior_path']
-        seasonalized_obs_path = self.configs['precalc']['seasonalized_obs_path']
-        prior_loc_path = self.configs['precalc']['prior_loc_path']
-        obs_loc_path = self.configs['precalc']['obs_loc_path']
-        calibed_psm_path = self.configs['precalc']['calibed_psm_path']
-        prep_savepath = self.configs['precalc']['prep_savepath']
-        recon_seeds = self.configs['recon_seeds']
+
+        try:
+            seasonalized_prior_path = self.configs['precalc']['seasonalized_prior_path']
+            seasonalized_obs_path = self.configs['precalc']['seasonalized_obs_path']
+            prior_loc_path = self.configs['precalc']['prior_loc_path']
+            obs_loc_path = self.configs['precalc']['obs_loc_path']
+            calibed_psm_path = self.configs['precalc']['calibed_psm_path']
+            prep_savepath = self.configs['precalc']['prep_savepath']
+        except:
+            seasonalized_prior_path = None
+            seasonalized_obs_path = None
+            prior_loc_path = None
+            obs_loc_path = None
+            calibed_psm_path = None
+            prep_savepath = None
+
+        if recon_seeds is None:
+            recon_seeds = self.configs['recon_seeds']
+        else:
+            self.configs['recon_seeds'] = np.array(recon_seeds).tolist()
+            if verbose: p_header(f'LMRt: job.run() >>> job.configs["recon_seeds"] = {recon_seeds}')
+
         recon_vars = self.configs['recon_vars']
         recon_period = self.configs['recon_period']
         recon_timescale = self.configs['recon_timescale']
         recon_loc_rad = self.configs['recon_loc_rad']
         recon_nens = self.configs['recon_nens']
         proxy_frac = self.configs['proxy_frac']
-        compress_dict = self.configs['save_settings']['compress_dict']
-        output_geo_mean = self.configs['save_settings']['output_geo_mean']
-        target_lats = self.configs['save_settings']['target_lats']
-        target_lons = self.configs['save_settings']['target_lons']
-        output_full_ens = self.configs['save_settings']['output_full_ens']
-        dtype_int = self.configs['save_settings']['dtype']
-        if dtype_int == 32:
-            dtype = np.float32
-        elif dtype_int == 64:
-            dtype = np.float64
-        else:
-            raise ValueError(f'Wrong dtype in: {cfg_path}! Should be either 32 or 64.')
+
+        try:
+            compress_dict = self.configs['save_settings']['compress_dict']
+            output_geo_mean = self.configs['save_settings']['output_geo_mean']
+            target_lats = self.configs['save_settings']['target_lats']
+            target_lons = self.configs['save_settings']['target_lons']
+            output_full_ens = self.configs['save_settings']['output_full_ens']
+            dtype_int = self.configs['save_settings']['dtype']
+            if dtype_int == 32:
+                dtype = np.float32
+            elif dtype_int == 64:
+                dtype = np.float64
+            else:
+                raise ValueError(f'Wrong dtype in: {cfg_path}! Should be either 32 or 64.')
+        except:
+            compress_dict={'zlib': True, 'least_significant_digit': 1}
+            output_geo_mean=False
+            target_lats=[]
+            target_lons=[]
+            output_full_ens=False
+            dtype=np.float32
+        
 
         self.prepare(job_dirpath, prep_savepath=prep_savepath, proxydb_path=proxydb_path, ptype_psm=ptype_psm, ptype_season=ptype_season,
             prior_path=prior_path, prior_varname_dict=prior_varname_dict, prior_season=prior_season, prior_regrid_ntrunc=prior_regrid_ntrunc,
