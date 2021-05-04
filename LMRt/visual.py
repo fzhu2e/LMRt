@@ -18,37 +18,79 @@ from scipy import stats
 from scipy.stats.mstats import mquantiles
 from cartopy import util as cutil
 
-class PAGES2k(object):
+class PAGES2k:
     colors_dict = {
-        'bivalve.d18O': sns.xkcd_rgb['gold'],
         'coral.calc': sns.xkcd_rgb['yellow'],
         'coral.SrCa': sns.xkcd_rgb['orange'],
         'coral.d18O': sns.xkcd_rgb['amber'],
         'ice.melt': sns.xkcd_rgb['pale blue'],
         'ice.d18O': sns.xkcd_rgb['light blue'],
         'ice.dD': sns.xkcd_rgb['sky blue'],
-        'lake.varve_thickness': sns.xkcd_rgb['dark blue'],
         'tree.TRW': sns.xkcd_rgb['green'],
         'tree.MXD': sns.xkcd_rgb['forest green'],
         'tree.ENSO': sns.xkcd_rgb['sea green'],
         'tas': sns.xkcd_rgb['pale red'],
         'pr': sns.xkcd_rgb['aqua'],
+        'speleothem.d18O': sns.xkcd_rgb['light brown'],
+        'bivalve.d18O': sns.xkcd_rgb['gold'],
+        'marine.TEX86': sns.xkcd_rgb['brown'],
+        'marine.MgCa': sns.xkcd_rgb['brown'],
+        'marine.d18O': sns.xkcd_rgb['brown'],
+        'marine.MAT': sns.xkcd_rgb['brown'],
+        'marine.alkenone': sns.xkcd_rgb['brown'],
+        'marine.foram': sns.xkcd_rgb['brown'],
+        'marine.diatom': sns.xkcd_rgb['brown'],
+        'lake.varve_thickness': sns.xkcd_rgb['dark blue'],
+        'lake.varve_property': sns.xkcd_rgb['dark blue'],
+        'lake.accumulation': sns.xkcd_rgb['dark blue'],
+        'lake.chironomid': sns.xkcd_rgb['dark blue'],
+        'lake.midge': sns.xkcd_rgb['dark blue'],
+        'lake.TEX86': sns.xkcd_rgb['dark blue'],
+        'lake.BSi': sns.xkcd_rgb['dark blue'],
+        'lake.chrysophyte': sns.xkcd_rgb['dark blue'],
+        'lake.reflectance': sns.xkcd_rgb['dark blue'],
+        'lake.pollen': sns.xkcd_rgb['dark blue'],
+        'lake.alkenone': sns.xkcd_rgb['dark blue'],
+        'borehole': sns.xkcd_rgb['peach'],
+        'hybrid': sns.xkcd_rgb['maroon'],
+        'documents': sns.xkcd_rgb['mauve'],
     }
 
     markers_dict = {
-        'bivalve.d18O': 'p',
         'coral.calc': 'P',
         'coral.SrCa': 'X',
         'coral.d18O': 'o',
-        'ice.metl': '<',
+        'ice.melt': '<',
         'ice.d18O': 'd',
         'ice.dD': '>',
-        'lake.varve_thickness': 's',
         'tree.TRW': '^',
         'tree.MXD': 'v',
         'tree.ENSO': '^',
         'tas': '^',
         'pr': 'o',
+        'speleothem.d18O': 'o',
+        'bivalve.d18O': 'o',
+        'marine.TEX86': '*',
+        'marine.MgCa': 'v',
+        'marine.d18O': 'o',
+        'marine.MAT': 'H',
+        'marine.alkenone': 'h',
+        'marine.foram': '8',
+        'marine.diatom': '^',
+        'lake.varve_thickness': 'H',
+        'lake.varve_property': 's',
+        'lake.accumulation': 'v',
+        'lake.chironomid': 'D',
+        'lake.midge': '>',
+        'lake.TEX86': '*',
+        'lake.BSi': '8',
+        'lake.chrysophyte': 'd',
+        'lake.reflectance': '<',
+        'lake.pollen': '^',
+        'lake.alkenone': 'h',
+        'borehole': '8',
+        'hybrid': 'P',
+        'documents': 'X',
     }
 
 class CartopySettings:
@@ -240,7 +282,7 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
                  plot_timespan=None,  plot_xticks=[850, 1000, 1200, 1400, 1600, 1800, 2000],
                  figsize=[8, 10], projection='Robinson', proj_args=None, central_longitude=180, markersize=50,
                  plot_count=True, nrow=2, ncol=1, wspace=0.5, hspace=0.1,
-                 lgd_ncol=1, lgd_anchor_upper=(1, -0.1), lgd_anchor_lower=(1, -0.05),lgd_frameon=False,
+                 lgd_ncol=None, lgd_anchor_upper=(1, -0.1), lgd_anchor_lower=(1, -0.05),lgd_frameon=False,
                  enumerate_ax=False, enumerate_prop={'weight': 'bold', 'size': 30}, p=PAGES2k,
                  enumerate_anchor_map=[0, 1], enumerate_anchor_count=[0, 1], map_grid_idx=0, count_grid_idx=-1):
 
@@ -278,7 +320,7 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
     type_names = []
     type_set = np.unique(df[type_col])
     max_count = []
-    for ptype in type_set:
+    for ptype in type_set[::-1]:
         selector = df[type_col] == ptype
         max_count.append(len(df[selector]))
         type_names.append(f'{ptype} (n={max_count[-1]})')
@@ -290,6 +332,9 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
                 c=colors_dict[ptype], edgecolor='k', s=markersize, transform=ccrs.PlateCarree()
             )
         )
+
+    if lgd_ncol is None:
+        lgd_ncol = len(type_set) // 20 + 1
 
     ax['map'].legend(
         s_plots, type_names,
@@ -314,13 +359,13 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
                 proxy_count[ptype] = np.zeros(np.size(year))
 
             for k in time:
-                if k < np.max(year):
+                # if k < np.max(year):
+                if k in year:
                     proxy_count[ptype][k] += 1
 
         cumu_count = np.zeros(np.size(year))
         cumu_last = np.copy(cumu_count)
-        idx = np.argsort(max_count)
-        for ptype in type_set[idx]:
+        for ptype in type_set:
             cumu_count += proxy_count[ptype]
             ax['count'].fill_between(
                 year, cumu_last, cumu_count,
@@ -336,7 +381,7 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
             ax['count'].set_xlim(plot_timespan)
             ax['count'].set_xticks(plot_xticks)
         handles, labels = ax['count'].get_legend_handles_labels()
-        ax['count'].legend(handles[::-1], labels[::-1], frameon=lgd_frameon, bbox_to_anchor=lgd_anchor_lower, loc='lower left')
+        ax['count'].legend(handles[::-1], labels[::-1], frameon=lgd_frameon, ncol=lgd_ncol, bbox_to_anchor=lgd_anchor_lower, loc='lower left')
 
         if enumerate_ax:
             setlabel(ax['map'], '(a)', prop=enumerate_prop, bbox_to_anchor=enumerate_anchor_map)

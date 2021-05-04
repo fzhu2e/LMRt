@@ -36,6 +36,7 @@ from .visual import (
     plot_proxies,
     showfig,
     savefig,
+    PAGES2k,
 )
 
 
@@ -162,6 +163,9 @@ class ProxyRecord(Series):
         self.ye_value = ye_value
 
     def plot(self, plot_Ye=True, **kws):
+        if 'color' not in kws and 'c' not in kws:
+            kws['color'] = PAGES2k.colors_dict[self.ptype]
+
         fig, ax = super().plot(mute=True, **kws)
 
         if hasattr(self.psm, 'calib_details') and self.psm.calib_details is not None:

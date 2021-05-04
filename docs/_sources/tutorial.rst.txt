@@ -12,7 +12,7 @@ Quickstart
     tutorial/quickstart_top-level-workflow
     tutorial/quickstart_visualization
 
-Howto
+How-to
 ----------
 
 .. toctree::
@@ -20,3 +20,11 @@ Howto
 
     tutorial/howto_reconstruct-multiple-fields
     tutorial/howto_assimilate-more-proxies
+
+Visualization
+-------------
+
+.. toctree::
+    :maxdepth: 1
+
+    tutorial/viz_plot-proxies

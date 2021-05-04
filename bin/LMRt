@@ -50,10 +50,7 @@ def main():
 
     if args.mode == 'recon':
         cfg_path = os.path.abspath(args.config)
-        cfg_dict = yaml.safe_load(open(cfg_path, 'r'))
-        work_dir = os.path.dirname(cfg_path)
-        p_header('LMRt >>> Loading reconstruction configurations ...')
-        pp.pprint(cfg_dict)
+        LMRt.ReconJob().run_cfg(cfg_path)
 
 
 if __name__ == '__main__':
