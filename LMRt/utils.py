@@ -124,6 +124,21 @@ def clean_ts(ts, ys):
 
     return ts, ys
 
+def dropna_field(time, field):
+    ''' Drop the time if the field has all NaNs; field should have dimensions (time, lat, lon)
+    '''
+    t_keep = []
+    fd_keep = []
+    for idx, t in enumerate(time):
+        if not np.all(np.isnan(field[idx])):
+            t_keep.append(t)
+            fd_keep.append(field[idx])
+    
+    t_keep = np.array(t_keep)
+    fd_keep = np.array(fd_keep)
+    return t_keep, fd_keep
+
+
 def ymd2year_float(year, month, day):
     ''' Convert a set of (year, month, day) to an array of floats in unit of year
     '''

@@ -24,6 +24,7 @@ from .utils import (
     seasonal_var,
     rotate_lon,
     get_anomaly,
+    dropna_field,
 )
 
 class Field:
@@ -45,11 +46,12 @@ class Field:
     def copy(self):
         return copy.deepcopy(self)
 
-    def seasonalize(self, season=list(range(1, 13)), make_year_mm_nan=False, inplace=False):
+    def seasonalize(self, season=list(range(1, 13)), make_year_mm_nan=True, inplace=False):
         ''' Seasonalize the field
         '''
 
         new_time, new_value = seasonal_var(self.time, self.value, avgMonths=season, make_yr_mm_nan=make_year_mm_nan)
+        new_time, new_value = dropna_field(new_time, new_value)
         if inplace:
             self.time = new_time
             self.value = new_value

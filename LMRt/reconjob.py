@@ -438,9 +438,12 @@ class ReconJob:
         self.proxydb.forward_psm(verbose=verbose)
 
 
-    def gen_Xb(self, recon_vars=None, nens=None, seed=0, verbose=False):
+    def gen_Xb(self, recon_vars=None, verbose=False):
         ''' Generate Xb
         '''
+        if not hasattr(self, 'prior_sample_years'):
+            raise ValueError('job.prior_sample_years not existing, please run job.gen_Ye() first!')
+
         if recon_vars is None:
             recon_vars = self.configs['recon_vars']
         else:
@@ -451,17 +454,10 @@ class ReconJob:
             # contains only one variable
             recon_vars = [recon_vars]
 
-        if nens is None:
-            nens = self.configs['recon_nens']
-        else:
-            self.configs['recon_nens'] = nens
-            if verbose: p_header(f'LMRt: job.gen_Xb() >>> job.configs["recon_nens"] = {nens}')
-
-        random.seed(seed)
-
         vn_1st = recon_vars[0]
-        nt = np.shape(self.prior.fields[vn_1st].value)[0]  # nt is assumed to be the same for different vars
-        prior_sample_idx = random.sample(list(range(nt)), nens)
+        self.prior_sample_idx = [list(self.prior.fields[vn_1st].time).index(yr) for yr in self.prior_sample_years]
+        if verbose: p_success(f'LMRt: job.gen_Xb() >>> job.prior_sample_idx created')
+        nens = np.size(self.prior_sample_years)
 
         Xb_var_irow = {}  # index of rows in Xb to store the specific var
         loc = 0
@@ -472,7 +468,7 @@ class ReconJob:
             fd_coords = np.ndarray((nlat*nlon, 2))
             fd_coords[:, 0] = lat2d.flatten()
             fd_coords[:, 1] = lon2d.flatten()
-            fd = self.prior.fields[vn].value[prior_sample_idx]
+            fd = self.prior.fields[vn].value[self.prior_sample_idx]
             fd = np.moveaxis(fd, 0, -1)
             fd_flat = fd.reshape((nlat*nlon, nens))
             if vn == vn_1st:
@@ -484,28 +480,30 @@ class ReconJob:
             Xb_var_irow[vn] = [loc, loc+nlat*nlon-1]
             loc += nlat*nlon
 
-        self.prior_sample_idx = prior_sample_idx
         self.Xb = Xb
         self.Xb_coords = Xb_coords
         self.Xb_var_irow = Xb_var_irow
         if verbose:
-            p_success(f'LMRt: job.gen_Xb() >>> job.prior_sample_idx created')
             p_success(f'LMRt: job.gen_Xb() >>> job.Xb created')
             p_success(f'LMRt: job.gen_Xb() >>> job.Xb_coords created')
             p_success(f'LMRt: job.gen_Xb() >>> job.Xb_var_irow created')
 
 
-    def gen_Ye(self, proxy_frac=None, verbose=False, seed=0):
+    def gen_Ye(self, proxy_frac=None, nens=None, verbose=False, seed=0):
         ''' Generate Ye
         '''
-        if not hasattr(self, 'prior_sample_idx'):
-            raise ValueError('job.prior_sample_idx not existing, please run job.gen_Xb() first!')
 
         if proxy_frac is None:
             proxy_frac = self.configs['proxy_frac']
         else:
             self.configs['proxy_frac'] = proxy_frac
             if verbose: p_header(f'LMRt: job.gen_Ye() >>> job.configs["proxy_frac"] = {proxy_frac}')
+
+        if nens is None:
+            nens = self.configs['recon_nens']
+        else:
+            self.configs['recon_nens'] = nens
+            if verbose: p_header(f'LMRt: job.gen_Xb() >>> job.configs["recon_nens"] = {nens}')
 
         self.proxydb.split(proxy_frac, verbose=verbose, seed=seed)
 
@@ -527,6 +525,7 @@ class ReconJob:
             Ye_assim_lat.append(pobj.lat)
             Ye_assim_lon.append(pobj.lon)
 
+        Ye_assim_df.dropna(inplace=True)
         Ye_assim_coords[:, 0] = Ye_assim_lat
         Ye_assim_coords[:, 1] = Ye_assim_lon
 
@@ -536,19 +535,31 @@ class ReconJob:
             Ye_eval_lat.append(pobj.lat)
             Ye_eval_lon.append(pobj.lon)
 
+        Ye_eval_df.dropna(inplace=True)
         Ye_eval_coords[:, 0] = Ye_eval_lat
         Ye_eval_coords[:, 1] = Ye_eval_lon
+
+        Ye_df = pd.concat([Ye_assim_df, Ye_eval_df], axis=1).dropna()
+        self.Ye_df = Ye_df
+        nt = len(Ye_df)
 
         self.Ye_assim_df = Ye_assim_df
         self.Ye_eval_df = Ye_eval_df
 
+        random.seed(seed)
+        sample_idx = random.sample(list(range(nt)), nens)
+        self.prior_sample_years = Ye_df.index[sample_idx].values
+        if verbose:
+            p_success(f'LMRt: job.gen_Ye() >>> job.prior_sample_years created')
+
         # use self.prior_sample_idx for sampling
-        self.Ye_assim = np.array(Ye_assim_df)[self.prior_sample_idx].T
-        self.Ye_eval = np.array(Ye_eval_df)[self.prior_sample_idx].T
+        self.Ye_assim = np.array(Ye_assim_df)[sample_idx].T
+        self.Ye_eval = np.array(Ye_eval_df)[sample_idx].T
         self.Ye_assim_coords = Ye_assim_coords
         self.Ye_eval_coords = Ye_eval_coords
 
         if verbose:
+            p_success(f'LMRt: job.gen_Ye() >>> job.Ye_df created')
             p_success(f'LMRt: job.gen_Ye() >>> job.Ye_assim_df created')
             p_success(f'LMRt: job.gen_Ye() >>> job.Ye_eval_df created')
             p_success(f'LMRt: job.gen_Ye() >>> job.Ye_assim created')
@@ -876,8 +887,8 @@ class ReconJob:
                 p_header(f'LMRt: job.run() >>> reconstruction existed at: {recon_savepath}')
                 continue
             else:
-                self.gen_Xb(recon_vars=recon_vars, nens=nens, seed=seed)
-                self.gen_Ye(proxy_frac=proxy_frac, seed=seed)
+                self.gen_Ye(proxy_frac=proxy_frac, nens=nens, seed=seed)
+                self.gen_Xb(recon_vars=recon_vars)
                 idx_savepath = os.path.join(job_dirpath, f'job_r{seed:02d}_idx.pkl')
                 pd.to_pickle([self.prior_sample_idx, self.proxydb.calibed_idx_assim, self.proxydb.calibed_idx_eval], idx_savepath)
                 if verbose: p_header(f'LMRt: job.run() >>> randomized indices for prior and proxies saved to: {idx_savepath}')
