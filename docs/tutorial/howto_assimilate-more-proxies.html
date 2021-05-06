@@ -472,7 +472,17 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="section" id="Load-and-modify-configurations">
 <h2>Load and modify configurations<a class="headerlink" href="#Load-and-modify-configurations" title="Permalink to this headline">¶</a></h2>
-<p>We will first load the given example YAML file, which is set to reconstruct the temperature field only. We then modify specific items to set it to assimilate proxy types including: + <code class="docutils literal notranslate"><span class="pre">coral.d18O</span></code> + <code class="docutils literal notranslate"><span class="pre">coral.SrCa</span></code> + <code class="docutils literal notranslate"><span class="pre">coral.calc</span></code> + <code class="docutils literal notranslate"><span class="pre">tree.MXD</span></code> + <code class="docutils literal notranslate"><span class="pre">tree.TRW</span></code> + <code class="docutils literal notranslate"><span class="pre">ice.d18O</span></code> + <code class="docutils literal notranslate"><span class="pre">ice.dD</span></code> + <code class="docutils literal notranslate"><span class="pre">ice.melt</span></code></p>
+<p>We will first load the given example YAML file, which is set to reconstruct the temperature field only. We then modify specific items to set it to assimilate proxy types including:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">coral.d18O</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">coral.SrCa</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">coral.calc</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tree.MXD</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tree.TRW</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ice.d18O</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ice.dD</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ice.melt</span></code></p></li>
+</ul>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
@@ -667,7 +677,7 @@ Dataset Overview
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-/Users/fzhu/Github/LMRt/LMRt/utils.py:243: RuntimeWarning: Mean of empty slice
+/Users/fzhu/Github/LMRt/LMRt/utils.py:258: RuntimeWarning: Mean of empty slice
   tmp = np.nanmean(var[inds, ...], axis=0)
 </pre></div></div>
 </div>
@@ -688,7 +698,7 @@ Dataset Overview
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Searching nearest location:   2%|▏         | 11/547 [00:00&lt;00:04, 108.43it/s]
+Searching nearest location:   2%|▏         | 12/547 [00:00&lt;00:04, 113.20it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -704,8 +714,8 @@ Searching nearest location:   2%|▏         | 11/547 [00:00&lt;00:04, 108.43it/
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Searching nearest location: 100%|██████████| 547/547 [00:04&lt;00:00, 120.69it/s]
-Searching nearest location: 100%|██████████| 547/547 [00:04&lt;00:00, 121.51it/s]
+Searching nearest location: 100%|██████████| 547/547 [00:04&lt;00:00, 116.03it/s]
+Searching nearest location: 100%|██████████| 547/547 [00:04&lt;00:00, 116.79it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -730,7 +740,7 @@ Searching nearest location: 100%|██████████| 547/547 [00:04&
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Searching nearest location:   2%|▏         | 10/547 [00:00&lt;00:05, 99.27it/s]
+Searching nearest location:   2%|▏         | 11/547 [00:00&lt;00:05, 101.93it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -746,8 +756,8 @@ Searching nearest location:   2%|▏         | 10/547 [00:00&lt;00:05, 99.27it/s
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Searching nearest location: 100%|██████████| 547/547 [00:05&lt;00:00, 99.20it/s]
-Searching nearest location: 100%|██████████| 547/547 [00:22&lt;00:00, 24.68it/s]
+Searching nearest location: 100%|██████████| 547/547 [00:05&lt;00:00, 95.47it/s]
+Searching nearest location: 100%|██████████| 547/547 [00:23&lt;00:00, 23.42it/s]
 Calibrating PSM:   0%|          | 0/547 [00:00&lt;?, ?it/s]
 </pre></div></div>
 </div>
@@ -767,7 +777,7 @@ Calibrating PSM:   0%|          | 0/547 [00:00&lt;?, ?it/s]
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Calibrating PSM:  48%|████▊     | 264/547 [01:31&lt;01:07,  4.19it/s]
+Calibrating PSM:  48%|████▊     | 264/547 [01:42&lt;01:21,  3.46it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -783,8 +793,8 @@ The number of overlapped data points is 0 &lt; 25. Skipping ...
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Calibrating PSM: 100%|██████████| 547/547 [03:10&lt;00:00,  2.87it/s]
-Forwarding PSM:   4%|▍         | 23/547 [00:00&lt;00:02, 219.89it/s]
+Calibrating PSM: 100%|██████████| 547/547 [03:35&lt;00:00,  2.53it/s]
+Forwarding PSM:   4%|▎         | 20/547 [00:00&lt;00:02, 198.35it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -801,7 +811,7 @@ Forwarding PSM:   4%|▍         | 23/547 [00:00&lt;00:02, 219.89it/s]
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Forwarding PSM: 100%|██████████| 547/547 [00:02&lt;00:00, 252.65it/s]
+Forwarding PSM: 100%|██████████| 547/547 [00:02&lt;00:00, 225.47it/s]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -816,11 +826,11 @@ Dataset Overview
 
      Name:  tas
    Source:  /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/prior/b.e11.BLMTRC5CN.f19_g16.001.cam.h0.TREFHT.085001-184912.nc
-    Shape:  time:1001, lat:96, lon:144
+    Shape:  time:999, lat:96, lon:144
 
      Name:  pr
    Source:  /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/prior/b.e11.BLMTRC5CN.f19_g16.001.cam.h0.PRECT.085001-184912.nc
-    Shape:  time:1001, lat:96, lon:144
+    Shape:  time:999, lat:96, lon:144
 <span class="ansi-green-intense-fg ansi-bold">LMRt: job.seasonalize_ds_for_psm() &gt;&gt;&gt; job.prior updated</span>
 <span class="ansi-black-intense-fg ansi-bold">LMRt: job.regrid_prior() &gt;&gt;&gt; regridded prior</span>
 Dataset Overview
@@ -828,16 +838,16 @@ Dataset Overview
 
      Name:  tas
    Source:  /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/prior/b.e11.BLMTRC5CN.f19_g16.001.cam.h0.TREFHT.085001-184912.nc
-    Shape:  time:1001, lat:42, lon:63
+    Shape:  time:999, lat:42, lon:63
 
      Name:  pr
    Source:  /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/prior/b.e11.BLMTRC5CN.f19_g16.001.cam.h0.PRECT.085001-184912.nc
-    Shape:  time:1001, lat:42, lon:63
+    Shape:  time:999, lat:42, lon:63
 <span class="ansi-green-intense-fg ansi-bold">LMRt: job.regrid_prior() &gt;&gt;&gt; job.prior updated</span>
 <span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.prepare() &gt;&gt;&gt; Prepration data saved to: ./testcases/PAGES2k_CCSM4_GISTEMP/recon_more_proxies/job.pkl</span>
 <span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.prepare() &gt;&gt;&gt; job.configs[&#34;precalc&#34;][&#34;prep_savepath&#34;] = ./testcases/PAGES2k_CCSM4_GISTEMP/recon_more_proxies/job.pkl</span>
-CPU times: user 7min 45s, sys: 15.1 s, total: 8min
-Wall time: 8min
+CPU times: user 8min 39s, sys: 16.5 s, total: 8min 56s
+Wall time: 8min 56s
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">

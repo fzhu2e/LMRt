@@ -48,9 +48,9 @@ Niño 3.4 index
 Documentation
 =============
 
-+ Homepage: https://fzhu.work/LMRt
-+ Installation: https://fzhu.work/LMRt/installation.html
-+ Tutorial (html): https://fzhu.work/LMRt/tutorial.html
++ Homepage: https://fzhu2e.github.io/LMRt
++ Installation: https://fzhu2e.github.io/LMRt/installation.html
++ Tutorial (html): https://fzhu2e.github.io/LMRt/tutorial.html
 + Tutorial (Jupyter notebooks): https://github.com/fzhu2e/LMRt/tree/master/docsrc/tutorial
 
 References of the LMR framework
