@@ -23,7 +23,7 @@ inspired by LMR_lite.py originated by `Professor Hakim <https://atmos.washington
 LMRt aims to provide following extra features:
 
 + a package that is easy to install and import in scripts or Jupyter notebooks
-+ modularized workflows at different levels: 
++ modularized workflows at different levels:
 
   + the low-level workflow focuses on the flexibility and customizability
   + the high-level workflow focuses on the convenience of repeating Monte-Carlo iterations
@@ -31,8 +31,8 @@ LMRt aims to provide following extra features:
 
 + convenient visualization functionalities for diagnosis and validations (leveraging the :code:`Series` and :code:`EnsembleSeries` of the `Pyleoclim <https://github.com/LinkedEarth/Pyleoclim_util>`_ UI)
 
-A preview of results
-====================
+A preview of the results
+========================
 
 Mean temperature
 ----------------
