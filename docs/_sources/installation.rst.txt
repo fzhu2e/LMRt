@@ -1,4 +1,4 @@
-Installallation
+Installation
 ===============
 
 
@@ -10,7 +10,7 @@ You may skip this step if your Conda environment has been setup already.
 Step 1: Download the installation script for miniconda3
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-MacOS
+macOS
 '''''
 
 .. code-block:: bash
