@@ -11,6 +11,8 @@
    "cell_type": "markdown",
    "metadata": {},
    "source": [
+    "**Expected time to run through: 5 mins**\n",
+    "\n",
     "In this tutorial, we demonstrate the visualization functionalities based on our 1st reconstruction.\n",
     "Note that these functionalities are still in a working-in-process, preliminary stage."
    ]

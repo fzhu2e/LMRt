@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
 
   
   
@@ -29,12 +31,13 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "ignoreClass": "document", "processClass": "math|output_area"}})</script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "document", "processHtmlClass": "math|output_area"}}</script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -448,7 +451,9 @@ div.rendered_html tbody tr:hover {
 </style>
 <div class="section" id="Top-level-workflow-in-LMRt">
 <h1>Top-level workflow in LMRt<a class="headerlink" href="#Top-level-workflow-in-LMRt" title="Permalink to this headline">¶</a></h1>
-<p>In this tutorial, we demonstrate how to reproduce our 1st LMR reconstruction in the previous notebook with the top-level workflow. This top-level workflow is essentailly a shortcut of the <code class="docutils literal notranslate"><span class="pre">job.prepare()</span></code> and <code class="docutils literal notranslate"><span class="pre">job.run()</span></code> we have seen in the previous notebook on the high-level workflow.</p>
+<p><strong>Expected time to run through: 3 mins</strong></p>
+<p>In this tutorial, we demonstrate how to reproduce our 1st LMR reconstruction with the top-level workflow. This top-level workflow is essentailly a shortcut of the <code class="docutils literal notranslate"><span class="pre">job.prepare()</span></code> and <code class="docutils literal notranslate"><span class="pre">job.run()</span></code> we have seen in the previous notebook on the high-level workflow. With the high-level workflow, users still have the flexibilty to perform intermediate steps, while with the top-level workflow, users can only execute the one-line command to reproduce an experiment totally based on the given
+configuration YAML file, without any chance to do any intermediate modification of the experiment.</p>
 <p>We will first generate a configuration YAML file with a different <code class="docutils literal notranslate"><span class="pre">job_dirpath</span></code> so as to store our results to a different location, and then we use the <code class="docutils literal notranslate"><span class="pre">job.run_cfg()</span></code> method to reproduce the reconstruction directly!</p>
 <div class="section" id="Test-data-preparation">
 <h2>Test data preparation<a class="headerlink" href="#Test-data-preparation" title="Permalink to this headline">¶</a></h2>
