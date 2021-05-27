@@ -35,8 +35,7 @@ from .da import (
 class ReconJob:
     ''' Reconstruction Job
 
-    General rule of loading parameters:
-    - load from the YAML first if availabel, then update with the parameters in the function calling,
+    General rule of loading parameters: load from the YAML first if available, then update with the parameters in the function calling,
       so the latter has a higher priority
     '''
     def __init__(self, configs=None, proxydb=None, prior=None, obs=None):
