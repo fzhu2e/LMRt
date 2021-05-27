@@ -28,7 +28,7 @@ Step 2: Install Miniconda3
 
 .. code-block:: bash
 
-  chmod +x Miniconda3-latest-*.sh && ./Miniconda3-latest-Linux-x86_64.sh
+  chmod +x Miniconda3-latest-*.sh && ./Miniconda3-latest-*.sh
 
 During the installation, a path :code:`<base-path>` needs to be specified as the base location of the python environment.
 After the installation is done, we need to add the two lines into your shell environment (e.g., :code:`~/.bashrc` or :code:`~/.zshrc`) as below to enable the :code:`conda` package manager (remember to change :code:`<base-path>` with your real location):
@@ -59,7 +59,7 @@ Taking a clean install as example, first let's create a new environment named :c
     conda create -n LMRt python=3.8
     conda activate LMRt
 
-Then install two dependencies that is not able to be installed via :code:`pip`:
+Then install several dependencies that is not able to be installed via :code:`pip`:
 
 .. code-block:: bash
 
