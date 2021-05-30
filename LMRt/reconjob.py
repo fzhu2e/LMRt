@@ -125,7 +125,7 @@ class ReconJob:
             ptype_psm = self.configs['ptype_psm']
         else:
             self.configs['ptype_psm'] = ptype_psm
-            if verbose: p_header(f'LMRt: job.filter_proxydb() >>> job.configs["ptype_season"] = {ptype_psm}')
+            if verbose: p_header(f'LMRt: job.filter_proxydb() >>> job.configs["ptype_psm"] = {ptype_psm}')
 
         proxydb = self.proxydb.copy()
         if self.configs['ptype_psm'] is not None:
@@ -283,7 +283,7 @@ class ReconJob:
             print(ds)
 
         self.prior = ds
-        if verbose: p_success(f'LMRt: job.seasonalize_ds_for_psm() >>> job.prior updated')
+        if verbose: p_success(f'LMRt: job.seasonalize_prior() >>> job.prior updated')
 
     def regrid_prior(self, ntrunc=None, verbose=False):
         if ntrunc is None:
@@ -300,7 +300,7 @@ class ReconJob:
         if verbose: p_success(f'LMRt: job.regrid_prior() >>> job.prior updated')
 
     def load_obs(self, path_dict=None, varname_dict=None, verbose=False, anom_period=None):
-        ''' Load model prior fields
+        ''' Load instrumental observations fields
 
         Parameters
         ----------
