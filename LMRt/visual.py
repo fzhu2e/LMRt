@@ -16,6 +16,12 @@ import numpy as np
 import os
 from scipy import stats
 from scipy.stats.mstats import mquantiles
+from scipy.stats import cumfreq, gaussian_kde
+from scipy.integrate import cumtrapz
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
+from matplotlib.legend_handler import HandlerLine2D
+
 from cartopy import util as cutil
 
 class PAGES2k:
@@ -719,3 +725,244 @@ def set_style(style='journal', font_scale=1.0):
 
     for d in [style_dict, font_dict]:
         mpl.rcParams.update(d)
+
+
+def plot_sea_res(res, style='ticks', font_scale=2, figsize=[6, 6],
+                 ls='-o', lw=3, color='k', label=None, label_shade=None, alpha=1, shade_alpha=0.3,
+                 ylim=None, xlim=None, plot_mode='composite_qs', lgd_individual_yrs=False,
+                 signif_alpha=0.5, signif_color=sns.xkcd_rgb['grey'], signif_text_loc_fix=(0.1, -0.01),
+                 signif_fontsize=10, signif_lw=1, indi_style='o', indi_alpha=0.5,
+                 xlabel='Years relative to event year', ylabel='T anom. (K)', plot_lgd=False,
+                 xticks=None, yticks=None, title=None, plot_signif=True, ax=None):
+    ''' Plot SEA results
+    '''
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
+
+    if plot_mode in res.keys():
+        if plot_mode == 'composite_qs':
+            ax.plot(res['composite_yr'], res['composite_qs'][1], ls, color=color, label=label, lw=lw, alpha=alpha)
+            ax.fill_between(res['composite_yr'], res['composite_qs'][0], res['composite_qs'][-1], facecolor=color, alpha=shade_alpha, label=label_shade)
+        elif plot_mode == 'composite':
+            ax.plot(res['composite_yr'], res['composite'], ls, color=color, label=label, lw=lw, alpha=alpha)
+        elif plot_mode == 'composite_norm':
+            ax.plot(res['composite_yr'], res['composite_qs'][1], ls, color=color, label=label, lw=lw, alpha=1)
+            for i, individual_curve in enumerate(res['composite_norm'][0, :, :, 0]):
+                if lgd_individual_yrs:
+                    lb = res['events'][i]
+                    clr = None
+                else:
+                    lb = 'individual events' if i==0 else None
+                    clr = color
+
+                ax.plot(res['composite_yr'], individual_curve, indi_style, label=lb, lw=1, alpha=indi_alpha, color=clr)
+    else:
+        raise KeyError('Wrong plot_mode!')
+
+    if 'qs_signif' not in res.keys():
+        plot_signif = False
+
+    if plot_signif:
+        for i, qs_v in enumerate(res['qs_signif']):
+            ax.plot(res['composite_yr'], res['composite_qs_signif'][i], '-.', color=signif_color, alpha=signif_alpha, lw=signif_lw)
+            ax.text(res['composite_yr'][-1]+signif_text_loc_fix[0], res['composite_qs_signif'][i][-1]+signif_text_loc_fix[-1],
+                    f'{qs_v*100:g}%', color=signif_color, alpha=signif_alpha, fontsize=signif_fontsize)
+
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    ax.axvline(x=0, ls=':', color='grey')
+    ax.axhline(y=0, ls=':', color='grey')
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+
+    if xticks is not None:
+        ax.set_xticks(xticks)
+
+    if yticks is not None:
+        ax.set_yticks(yticks)
+
+    if title is not None:
+        ax.set_title(title)
+
+    if plot_lgd:
+        ax.legend(frameon=False, loc='upper left')
+
+    if 'fig' in locals():
+        return fig, ax
+    else:
+        return ax
+
+def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
+                  clr_volc=sns.xkcd_rgb['black'], clr_volc_signif=sns.xkcd_rgb['pale red'],
+                  clr_nonvolc=sns.xkcd_rgb['grey'], clr_nonvolc_light=sns.xkcd_rgb['light grey'],
+                  signif_qs=[0.8, 0.9, 0.95], signif_markers=['v', '^', 'd'], insignif_marker='o',
+                  figsize=[8, 3], ax=None, plot_lgd=True, lgd_style=None, lgd_fs=10, lgd_ms=6,
+                  ms_large=30, ms_small=15, qs_fs=15, yr_fs=None,
+                  xlabel=None, ylabel=None, label_style=None, title=None, title_style=None,
+                  xlim=None, ylim=None,
+                  xticks=None, yticks=None,
+                  signif_ratio_loc_x=0.02, signif_ratio_loc_y=0.95,
+                  clr_style='signif', cmap_name='viridis_r', nclrs=1000,
+                  clr_yr_range=[1000, 1999], clr_yr_step=100,
+                 ):
+        if ax is None:
+            fig, ax = plt.subplots(figsize=figsize)
+
+        n_volc = np.shape(anom_volc)[0]
+        n_nonvolc = np.shape(anom_nonvolc)[0]
+
+        kde_nonvolc = gaussian_kde(anom_nonvolc)
+        ax.plot(xs, kde_nonvolc(xs), color=clr_nonvolc, label=f'KDE of non-volcanic years (n={n_nonvolc})')
+        ax.fill_between(xs, 0, kde_nonvolc(xs), color=clr_nonvolc_light)
+
+        # quantiles of nonvolc
+        anom_nonvolc_qs = np.quantile(anom_nonvolc, signif_qs)
+        for q, anom_q in zip(signif_qs, anom_nonvolc_qs):
+            idx = np.argmin(np.abs(xs-anom_q))
+            ax.vlines(xs[idx], 0, kde_nonvolc(xs)[idx], linestyle='-.', zorder=98, color=clr_nonvolc)
+            ax.text(xs[idx], kde_nonvolc(xs)[idx], f'{q*100:g}%', zorder=101, color=clr_nonvolc, fontsize=qs_fs,
+                    horizontalalignment='left', verticalalignment='bottom')
+
+        anom_median = np.quantile(anom_nonvolc, [0.5])[0]
+        idx = np.argmin(np.abs(xs-anom_median))
+        ax.vlines(xs[idx], 0, kde_nonvolc(xs)[idx], linestyle='-.', zorder=98, color=clr_nonvolc)
+        ax.text(xs[idx], kde_nonvolc(xs)[idx], '50%', zorder=101, color=clr_nonvolc, fontsize=qs_fs,
+                horizontalalignment='left', verticalalignment='bottom')
+
+        anom_volc_sorted = sorted(anom_volc)
+        sort_idx = np.argsort(anom_volc)
+        year_sorted = np.array(year_volc)[sort_idx]
+
+        clr_list = []
+        marker_list = []
+        ms_list = []
+
+        n_qs = np.size(signif_qs)
+        n_signif = np.zeros(n_qs)
+
+        for k, anom_v in enumerate(anom_volc_sorted):
+            if clr_style == 'signif':
+                if anom_v >= anom_nonvolc_qs[0]:
+                    clr_list.append(clr_volc_signif)
+                else:
+                    clr_list.append(clr_volc)
+            elif clr_style == 'time':
+                # color the volcanic years according to time
+                year = year_sorted[k]
+                sns_cmap = sns.color_palette(palette=cmap_name, n_colors=nclrs)
+                clr_ind = int((year-clr_yr_range[0])/(clr_yr_range[-1]-clr_yr_range[0])*nclrs)
+                clr_list.append(sns_cmap[clr_ind])
+
+            else:
+                raise ValueError('Wrong `clr_style`: please choose between {"signif", "time"}.')
+
+            loc_found = False
+            # insignificant
+            if (anom_v < anom_nonvolc_qs[0]) & (not loc_found):
+                marker_list.append(insignif_marker)
+                ms_list.append(ms_small)
+                loc_found = True
+
+            for i in range(n_qs-1):
+                if (anom_v >= anom_nonvolc_qs[i]) & (anom_v < anom_nonvolc_qs[i+1]) & (not loc_found):
+                    marker_list.append(signif_markers[i])
+                    n_signif[i] += 1
+                    ms_list.append(ms_large)
+                    loc_found = True
+
+            if (anom_v >= anom_nonvolc_qs[-1]) & (not loc_found):
+                marker_list.append(signif_markers[-1])
+                n_signif[-1] += 1
+                ms_list.append(ms_large)
+                loc_found = True
+
+        i = 0
+        kde_max = np.max(kde_nonvolc(xs))
+        for yr, v in zip(year_sorted, anom_volc_sorted):
+            lb = f'Volcanic events (n={n_volc})' if i==0 else None
+            ax.vlines(v, 0, kde_max/n_volc*(i+1), color=clr_list[i], linestyle='-', zorder=99, label=lb, lw=1)
+            ax.scatter(v, y=kde_max/n_volc*(i+1), color=clr_list[i], marker=marker_list[i], s=ms_list[i], zorder=100)
+            ax.text(v, kde_max/n_volc*(i+1)*1.01, yr, color=clr_list[i], horizontalalignment='right', fontsize=yr_fs)
+            i += 1
+
+        n_signif_cum = np.copy(n_signif)
+        for i in range(np.size(n_signif_cum)):
+            n_signif_cum[i] = np.sum(n_signif_cum[i:])
+
+        signif_ratio_str = ','.join([str(int(n)) for n in n_signif_cum])
+        ax.text(signif_ratio_loc_x, signif_ratio_loc_y, f'Signif. ratio: ({signif_ratio_str})/{n_volc}', transform=ax.transAxes)
+
+        if xlim is not None:
+            ax.set_xlim(xlim)
+
+        if ylim is not None:
+            ax.set_ylim(ylim)
+
+        if xticks is not None:
+            ax.set_xticks(xticks)
+
+        if yticks is not None:
+            ax.set_xticks(yticks)
+
+        if xlabel is not None:    
+            label_style = {} if label_style is None else label_style.copy()
+            ax.set_xlabel(xlabel, **label_style)
+
+        if ylabel is not None:    
+            label_style = {} if label_style is None else label_style.copy()
+            ax.set_ylabel(ylabel, **label_style)
+
+        if title is not None:    
+            title_kwargs = {'color': clr_volc_signif}
+            title_style = {} if title_style is None else title_style.copy()
+            ax.set_title(title, **title_kwargs)
+
+        # legend
+        if plot_lgd:
+            lgd_kwargs = {'frameon': False, 'loc': 'lower left', 'bbox_to_anchor': (0, -1), 'fontsize': lgd_fs, 'ncol': 1, 'handletextpad': 0.1}
+            lgd_style = {} if lgd_style is None else lgd_style.copy()
+            lgd_kwargs.update(lgd_style)
+
+            legend_elements = [
+                Line2D([], [], marker=insignif_marker, markersize=lgd_ms, color=clr_volc,
+                label=f'Volcanic events (< {signif_qs[0]*100:g}% non-volcanic years)', linestyle='None'),
+            ]
+
+            for i, q in enumerate(signif_qs):
+                if i < np.size(signif_qs)-1:
+                    legend_elements.append(
+                        Line2D([], [], marker=signif_markers[i], markersize=lgd_ms, color=clr_volc,
+                        label=f'Volcanic events (between {signif_qs[i]*100:g}-{signif_qs[i+1]*100:g}% non-volcanic years)', linestyle='None'),
+                    )
+                else:
+                    legend_elements.append(
+                        Line2D([], [], marker=signif_markers[i], markersize=lgd_ms, color=clr_volc,
+                        label=f'Volcanic events (>{signif_qs[i]*100:g}% non-volcanic years)', linestyle='None'),
+                    )
+
+            legend_elements.append(
+                Patch(facecolor=clr_nonvolc_light, edgecolor=clr_nonvolc, label=f'  Distribution of non-volcanic years')
+            )
+
+            ax.legend(handles=legend_elements, **lgd_kwargs)
+
+        # colorbar
+        if clr_style == 'time':
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", size="5%", pad=0.05)
+            cmap_obj = ListedColormap(sns_cmap.as_hex())
+            clr_norm = Normalize(vmin=clr_yr_range[0], vmax=clr_yr_range[1]+1)
+            cb = mpl.colorbar.ColorbarBase(
+                cax, cmap=cmap_obj, orientation='vertical', norm=clr_norm,
+            )
+            cb.set_label('Year (CE)')
+
+
+        if 'fig' in locals():
+            return fig, ax
+        else:
+            return ax

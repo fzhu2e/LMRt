@@ -8,6 +8,9 @@ import os
 from spharm import Spharmt, regrid
 import pandas as pd
 from scipy import spatial
+from scipy.special import factorial
+from scipy.stats.mstats import mquantiles
+import scipy.stats as ss
 from tqdm import tqdm
 import xarray as xr
 
@@ -825,3 +828,207 @@ def get_anomaly(var, year_float, ref_period=[1951, 1980]):
     climatology = var_ref.groupby('time.month').mean('time')
     var_anom = var_da.groupby('time.month') - climatology
     return var_anom.values
+
+def sea_dbl(time, value, events, nonevents=None, preyr=5, postyr=15, seeds=None, nsample=10,
+            qs=[0.05, 0.5, 0.95], qs_signif=[0.01, 0.05, 0.10, 0.90, 0.95, 0.99],
+            nboot_event=1000, verbose=False, draw_mode='non-events'):
+    ''' A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty
+
+    Args:
+        time (array): time axis
+        value (1-D array or 2-D array): value axis; if 2-D, with time as the 1st dimension
+        events (array): event years
+        draw_mode ({'all', 'non-events'}): the pool for significance test
+
+    Returns:
+        res (dict): result dictionary
+
+    References:
+        Rao MP, Cook ER, Cook BI, et al (2019) A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty.
+            Dendrochronologia 55:119–124. doi: 10.1016/j.dendro.2019.05.001
+    '''
+    if type(events) is list:
+        events = np.array(events)
+
+    nevents = np.size(events)
+    if nsample > nevents:
+        print(f'SEA >>> nsample: {nsample} > nevents: {nevents}; setting nsample=nevents: {nevents} ...')
+        nsample = nevents
+
+    total_draws = factorial(nevents)/factorial(nsample)/factorial(nevents-nsample)
+    nyr = preyr + postyr + 1
+
+    # embed()
+    # avoid edges
+    time_inner = time[preyr:-postyr]
+    events_inner = events[(events>=np.min(time_inner)) & (events<=np.max(time_inner))]
+    if draw_mode == 'all':
+        signif_pool = list(time_inner)
+    elif draw_mode == 'non-events':
+        if nonevents is None:
+            signif_pool = list(time_inner)
+            events_expanded = set()
+            for e in events_inner:
+                idx = list(time_inner).index(e)
+                subset = set(time_inner[idx:idx+postyr+1])
+                events_expanded |= subset
+            for e in events_expanded:
+                signif_pool.remove(e)
+        else:
+            signif_pool = [e for e in nonevents if e in list(time_inner)]
+    else:
+        raise ValueError('ERROR: Wrong `draw_mode`; choose between `all` and `non-events`')
+
+    if verbose:
+        print(f'SEA >>> valid events: {events_inner}')
+        print(f'SEA >>> nevents: {nevents}, nsample: {nsample}, total draws: {total_draws:g}')
+        print(f'SEA >>> nboot_event: {nboot_event}')
+        print(f'SEA >>> preyr: {preyr}, postyr: {postyr}, window length: {nyr}')
+        print(f'SEA >>> qs: {qs}, qs_signif: {qs_signif}')
+
+    # generate unique draws without replacement
+    draws = []
+    draws_signif = []
+
+    for i in range(nboot_event):
+        if seeds is not None:
+            np.random.seed(seeds[i])
+
+        draw_tmp = np.random.choice(events_inner, nsample, replace=False)
+        draws.append(np.sort(draw_tmp))
+
+        draw_tmp = np.random.choice(signif_pool, nsample, replace=False)
+        draws_signif.append(np.sort(draw_tmp))
+
+    draws = np.array(draws)
+    draws_signif = np.array(draws_signif)
+
+    # generate composite ndarrays
+    ndim = len(np.shape(value))
+    if ndim == 1:
+        value = value[..., np.newaxis]
+
+    nts = np.shape(value)[-1]
+
+    composite_raw = np.ndarray((nboot_event, nsample, nyr, nts))
+    composite_raw_signif = np.ndarray((nboot_event, nsample, nyr, nts))
+
+    for i in range(nboot_event):
+        sample_yrs = draws[i]
+        sample_yrs_signif = draws_signif[i]
+
+        for j in range(nsample):
+            center_yr = list(time).index(sample_yrs[j])
+            composite_raw[i, j, :, :] = value[center_yr-preyr:center_yr+postyr+1, :]
+
+            center_yr_signif = list(time).index(sample_yrs_signif[j])
+            composite_raw_signif[i, j, :, :] = value[center_yr_signif-preyr:center_yr_signif+postyr+1, :]
+
+    # normalization: remove the mean of the pre-years
+    composite_norm = composite_raw - np.average(composite_raw[:, :, :preyr, ...], axis=2)[:, :, np.newaxis, :]
+    composite_norm_signif = composite_raw_signif - np.average(composite_raw_signif[:, :, :preyr, ...], axis=2)[:, :, np.newaxis, :]
+
+    composite = np.average(composite_norm, axis=1)
+    composite = composite.transpose(0, 2, 1).reshape(nboot_event*nts, -1)
+    composite_qs = mquantiles(composite, qs, axis=0)
+
+    composite_signif = np.average(composite_norm_signif, axis=1)
+    composite_signif = composite_signif.transpose(0, 2, 1).reshape(nboot_event*nts, -1)
+    composite_qs_signif = mquantiles(composite_signif, qs_signif, axis=0)
+
+    composite_yr = np.arange(-preyr, postyr+1)
+
+    res = {
+        'events': events_inner,
+        'draws': draws,
+        'composite': composite,
+        'composite_norm': composite_norm,
+        'qs': qs,
+        'composite_qs': composite_qs,
+        'draws_signif': draws_signif,
+        'composite_signif': composite_signif,
+        'qs_signif': qs_signif,
+        'composite_qs_signif': composite_qs_signif,
+        'composite_yr': composite_yr,
+    }
+
+    if verbose:
+        print(f'SEA >>> shape(composite): {np.shape(composite)}')
+        print(f'SEA >>> res.keys(): {list(res.keys())}')
+
+    return res
+
+def calc_anom(time, value, target_yrs, preyr=5, post_avg_range=[0]):
+    ''' Calculate the anomaly for each target_yr (with a post range) with the pre-target average subtracted.
+    '''
+    def post_avg_func(value, i, post_avg_range):
+        if len(post_avg_range) == 1:
+            return value[i+post_avg_range[0]]
+        else:
+            return np.average(value[i+post_avg_range[0]:i+post_avg_range[-1]+1], axis=0)
+
+    anom = []
+    for yr in target_yrs:
+        i = list(time).index(yr)
+        pre_avg = np.average(value[i-preyr:i], axis=0)
+        post_avg = post_avg_func(value, i, post_avg_range)
+        anom.append(post_avg - pre_avg)
+
+    anom = np.array(anom)
+    return anom
+
+def calc_volc_nonvolc_anom(year_all, target_series, year_volc, preyr=3, postyr=6, year_nonvolc=None, post_avg_range=[1],
+                           seeds=None, nboot=1000):
+    if year_nonvolc is None:
+        events_expanded = set()
+        year_inner = year_all[preyr:-postyr]
+        for e in year_volc:
+            idx = list(year_inner).index(e)
+            subset = set(year_inner[idx:idx+postyr+1])
+            events_expanded |= subset
+
+        year_nonvolc = np.array(list(set(year_inner)-set(events_expanded)))
+    else:
+        year_inner = year_all[preyr:-postyr]
+        year_nonvolc = [e for e in year_nonvolc if e in list(year_inner)]
+
+    ndim = len(np.shape(target_series))
+
+    if ndim == 1:
+        anom_volc = calc_anom(year_all, target_series, year_volc, post_avg_range=post_avg_range, preyr=preyr)
+        anom_nonvolc = calc_anom(year_all, target_series, year_nonvolc, post_avg_range=post_avg_range, preyr=preyr)
+    else:
+        anom_volc = []
+        anom_nonvolc = []
+        for ts in target_series:
+            anom_volc.append( calc_anom(year_all, ts, year_volc, post_avg_range=post_avg_range, preyr=preyr) )
+            anom_nonvolc.append( calc_anom(year_all, ts, year_nonvolc, post_avg_range=post_avg_range, preyr=preyr) )
+
+        anom_volc = np.array(anom_volc)
+        anom_nonvolc = np.array(anom_nonvolc)
+
+    draws = []
+    for i in range(nboot):
+        if seeds is not None:
+            np.random.seed(seeds[i])
+
+        draw_tmp = np.random.choice(year_nonvolc, np.size(year_volc), replace=False)
+        draws.append(np.sort(draw_tmp))
+
+    anom_nonvolc_draws = []
+    for draw in draws:
+        if ndim == 1:
+            anom_nonvolc_draws.append(calc_anom(year_all, target_series, draw, post_avg_range=post_avg_range, preyr=preyr))
+        else:
+            anom_nonvolc_draws.append(calc_anom(year_all, ts, draw, post_avg_range=post_avg_range, preyr=preyr))
+
+    anom_nonvolc_draws = np.array(anom_nonvolc_draws)
+
+    res_dict = {
+        'draws': draws,
+        'anom_volc': anom_volc,
+        'anom_nonvolc': anom_nonvolc,
+        'anom_nonvolc_draws': anom_nonvolc_draws,
+    }
+
+    return res_dict

@@ -3,6 +3,7 @@ import statsmodels.formula.api as smf
 from statsmodels.tsa import stattools as st
 import numpy as np
 import pandas as pd
+# import fbm
 from .utils import (
     clean_ts,
 )
@@ -200,3 +201,129 @@ class Bilinear:
         }
         self.ye_value = np.array(self.model.predict(exog=exog_dict).values)
         self.ye_time = np.array(df.index.values)
+
+
+# def gammify(X, shape=1.5, mean=1, jitter=False, seed=0):
+#     ''' Transform each **row** of data matrix X to a gaussian distribution using the inverse Rosenblatt transform
+#     '''
+#     X = np.matrix(X)
+#     n = np.shape(X)[0]  # number of rows
+#     p = np.shape(X)[1]  # number of columns
+
+#     random.seed(seed)
+#     if jitter:
+#         # add tiny random numbers to aviod ties
+#         X += np.random.normal(0, np.std(X)/1e6, n*p).reshape(n, p)
+
+#     Xn = np.matrix(np.zeros(n*p).reshape(n, p))
+#     for j in range(n):
+#         # sort the data in ascending order and retain permutation indices
+#         R = ss.rankdata(X[j, :])
+#         # the cumulative distribution function
+#         CDF = R/p - 1/(2*p)
+#         # apply the inverse Rosenblatt transformation
+#         rate = shape/mean
+#         Xn[j, :] = ss.gamma.ppf(CDF, shape, scale=1/rate)  # Xn is now gamma distributed
+
+#     return Xn
+
+# def moving_avg(ys, ts, start=0, end=11):
+#     ys_out = []
+#     ts = np.asarray(list(set(np.floor(ts))))
+#     ts_out = ts[:-1]
+#     nt = np.size(ts_out)
+#     for i in range(nt):
+#         ys_out.append(np.mean(ys[12*i+start:12*i+end]))
+
+#     ys_out = np.asarray(ys_out)
+#     return ys_out, ts_out
+
+
+# def simpleVarveModel(signal, H, shape=1.5, mean=1, SNR=.25, seed=0):
+#     ''' The python version of the simple varve model (in R lang) by Nick McKay
+#         Adapted by Feng Zhu
+
+#     Args:
+#         signal (array): the signal matrix, each row is a time series
+#         H (float): Hurst index, should be in (0, 1)
+#     '''
+
+#     # first, gammify the input
+#     gamSig = gammify(signal, shape=shape, mean=mean, seed=seed)
+
+#     # create gammafied autocorrelated fractal brownian motion series
+#     #     wa = Spectral.WaveletAnalysis()
+#     #     fBm_ts = wa.fBMsim(N=np.size(signal), H=H)
+#     fBm_ts = fbm.fgn(np.size(signal), H)
+#     gamNoise = gammify(fBm_ts, shape=shape, mean=mean, seed=seed)
+
+#     # combine the signal with the noise, based on the SNR
+#     varves = (gamSig*SNR + gamNoise*(1/SNR)) / (SNR + 1/SNR)
+
+#     res = {
+#         'signal': signal,
+#         'gamSig': gamSig,
+#         'fBm_ts': fBm_ts,
+#         'gamNoise': gamNoise,
+#         'varves': varves,
+#         'H': H,
+#         'shape': shape,
+#         'mean': mean,
+#         'SNR': SNR,
+#         'seed': seed,
+#     }
+
+#     return res
+
+# class Lake_VarveThickness:
+#     def __init__(self, proxy_time, proxy_value, obs_tas_time, obs_tas_value, prior_tas_time=None, prior_tas_value=None):
+#         self.proxy_time = proxy_time
+#         self.proxy_value = proxy_value
+#         self.obs_tas_time = obs_tas_time
+#         self.obs_tas_value = obs_tas_value
+#         self.season_tas = self.obs_tas_value.keys()  # should be only one season
+#         self.prior_tas_time = prior_tas_time
+#         self.prior_tas_value = prior_tas_value
+
+#     def calibrate(self, calib_period=None):
+#         pass
+
+#     def forward(self):
+#         pass
+
+# class Coral_d18O:
+#     ''' The PSM is based on the forward model published by [Thompson, 2011]:
+#        <Thompson, D. M., T. R. Ault, M. N. Evans, J. E. Cole, and J. Emile-Geay (2011),
+#        Comparison of observed and simulated tropical climate trends using a forward
+#        model of coral \u03b418O, Geophys.Res.Lett., 38, L14706, doi:10.1029/2011GL048224.>
+#        Returns a numpy array that is the same size and shape as the input vectors for SST, SSS.
+#     '''
+#     def __init__(self, proxy_time, proxy_value,
+#             obs_sst_time, obs_sst_value,
+#             prior_sst_time=None, prior_sst_value=None,
+#             obs_sss_time=None, obs_sss_value=None,
+#             prior_sss_time=None, prior_sss_value=None,
+#             obs_d18O_time=None, obs_d18O_value=None,
+#             prior_d18O_time=None, prior_d18O_value=None,
+#         ):
+#         self.proxy_time = proxy_time
+#         self.proxy_value = proxy_value
+#         self.obs_sst_time = obs_sst_time
+#         self.obs_sst_value = obs_sst_value
+#         self.obs_sss_time = obs_sss_time
+#         self.obs_sss_value = obs_sss_value
+#         self.obs_d18O_time = obs_d18O_time
+#         self.obs_d18O_value = obs_d18O_value
+#         self.season_tas = self.obs_tas_value.keys()  # should be only one season
+#         self.prior_sst_time = prior_sst_time
+#         self.prior_sst_value = prior_sst_value
+#         self.prior_sss_time = prior_sss_time
+#         self.prior_sss_value = prior_sss_value
+#         self.prior_d18O_time = prior_d18O_time
+#         self.prior_d18O_value = prior_d18O_value
+
+#     def calibrate(self, calib_period=None):
+#         pass
+
+#     def forward(self):
+#         pass
