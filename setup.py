@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-__version__ = '0.7.6'
+__version__ = '0.7.7'
 
 with open('README.rst', 'r') as fh:
     long_description = fh.read()
@@ -20,7 +20,6 @@ setup(
     scripts=['bin/LMRt'],
     keywords='LMRt',
     classifiers=[
-        'License :: OSI Approved :: GPL-3.0 License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3.8',
     ],
