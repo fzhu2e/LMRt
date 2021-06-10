@@ -71,10 +71,16 @@ class ReconSeries(EnsembleSeries):
                 ts_ref = Series(time=target_item.time, value=target_item.value[:, i, j]).slice(valid_period)
                 if stat == 'corr':
                     corr_res = ts_lmr.correlation(ts_ref, settings=corr_method_kws)
-                    stat_array[0, i, j] = corr_res.r
+                    if type(corr_res) is dict:
+                        stat_array[0, i, j] = corr_res['r']
+                    else:
+                        stat_array[0, i, j] = corr_res.r
                 elif stat == 'R2':
                     corr_res = ts_lmr.correlation(ts_ref, settings=corr_method_kws)
-                    stat_array[0, i, j] = corr_res.r**2
+                    if type(corr_res) is dict:
+                        stat_array[0, i, j] = corr_res['r']**2
+                    else:
+                        stat_array[0, i, j] = corr_res.r**2
                 elif stat == 'CE':
                     stat_array[0, i, j] = coefficient_efficiency(ts_ref.value, ts_lmr.value)
                 elif stat == 'RMSE':
@@ -106,7 +112,10 @@ class ReconSeries(EnsembleSeries):
         ts_ref = target_item.slice(valid_period)
         corr_res = ts_lmr.correlation(ts_ref, settings=corr_method_kws)
         res_dict = {}
-        res_dict['corr'] = corr_res.r
+        if type(corr_res) is dict:
+            res_dict['corr'] = corr_res['r']
+        else:
+            res_dict['corr'] = corr_res.r
         res_dict['CE'] = coefficient_efficiency(ts_ref.value, ts_lmr.value)
         new.valid_dict = res_dict
         new.valid_target = target_item
@@ -430,10 +439,16 @@ class ReconField:
                 ts_ref = Series(time=target_field.time, value=target_field.value[:, i, j]).slice(valid_period)
                 if stat == 'corr':
                     corr_res = ts_lmr.correlation(ts_ref, settings=corr_method_kws)
-                    stat_array[0, i, j] = corr_res.r
+                    if type(corr_res) is dict:
+                        stat_array[0, i, j] = corr_res['r']
+                    else:
+                        stat_array[0, i, j] = corr_res.r
                 elif stat == 'R2':
                     corr_res = ts_lmr.correlation(ts_ref, settings=corr_method_kws)
-                    stat_array[0, i, j] = corr_res.r**2
+                    if type(corr_res) is dict:
+                        stat_array[0, i, j] = corr_res['r']**2
+                    else:
+                        stat_array[0, i, j] = corr_res.r**2
                 elif stat == 'CE':
                     stat_array[0, i, j] = coefficient_efficiency(ts_ref.value, ts_lmr.value)
                 elif stat == 'RMSE':
@@ -471,10 +486,16 @@ class ReconField:
             ts_ref = Series(time=pobj.time[idx2], value=pobj.value[idx2])
             if stat == 'corr':
                 corr_res = ts_lmr.correlation(ts_ref, settings=corr_method_kws)
-                stat_dict[pid] = corr_res.r
+                if type(corr_res) is dict:
+                    stat_dict[pid] = corr_res['r']
+                else:
+                    stat_dict[pid] = corr_res.r
             elif stat == 'R2':
                 corr_res = ts_lmr.correlation(ts_ref, settings=corr_method_kws)
-                stat_dict[pid] = corr_res.r**2
+                if type(corr_res) is dict:
+                    stat_dict[pid] = corr_res['r']**2
+                else:
+                    stat_dict[pid] = corr_res.r**2
             elif stat == 'CE':
                 stat_dict[pid] = coefficient_efficiency(ts_ref.value, ts_lmr.value)
             elif stat == 'RMSE':
