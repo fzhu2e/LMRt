@@ -1,0 +1,55 @@
+job_id: LMRt_quickstart
+job_dirpath: ./recon
+
+recon_period: [0, 2000]
+recon_timescale: 1
+recon_nens: 100
+recon_seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+recon_vars: tas
+# recon_vars: [tas, pr]  # reconstruct two fields at once
+recon_loc_rad: 25000  # unit: km
+
+
+# Proxy & PSM related
+proxydb_path: ./data/proxy/pseudoPAGES2k_dataset_tas_wn.pkl
+
+ptype_psm:  # assimilate only listed proxy types
+  tree.TRW: linear
+  tree.MXD: linear
+  coral.d18O: linear
+  coral.SrCa: linear
+  coral.calc: linear
+  ice.d18O: linear
+  ice.dD: linear
+
+ptype_season:  # one may list all possible proxy types here
+  tree.TRW: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  # annual
+  tree.MXD: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  # annual
+  coral.d18O: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  # annual
+  coral.SrCa: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  # annual
+  coral.calc: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  # annual
+  ice.d18O: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  # annual
+  ice.dD: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  # annual
+
+psm_calib_period: [1850, 2015]
+proxy_frac: 0.75  # assimilated fraction of the proxy records
+
+# Prior related
+anom_period: [1951, 1980]
+
+prior_path:
+  tas: ./data/model/tas_sfc_Amon_iCESM_past1000historical_085001-200512.nc
+
+prior_varname:
+  tas: tas
+
+prior_regrid_ntrunc: 42
+
+prior_season: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  # annual
+
+# Instrumental observations related
+obs_path:
+  tas: ./data/model/tas_sfc_Amon_iCESM_past1000historical_085001-200512.nc
+
+obs_varname:
+  tas: tas

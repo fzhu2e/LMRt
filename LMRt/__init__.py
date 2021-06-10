@@ -35,6 +35,11 @@ from .utils import (
     p_warning,
 )
 
+from .proxy import (
+    ProxyDatabase,
+    ProxyRecord,
+)
+
 # Need a file server for the below functionality...
 #
 # def load_testcase(casename):

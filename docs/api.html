@@ -202,11 +202,10 @@
 <dt class="sig sig-object py" id="LMRt.reconjob.ReconJob">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">LMRt.reconjob.</span></span><span class="sig-name descname"><span class="pre">ReconJob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proxydb</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconjob.ReconJob" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reconstruction Job</p>
-<p>General rule of loading parameters:
-- load from the YAML first if availabel, then update with the parameters in the function calling,</p>
-<blockquote>
-<div><p>so the latter has a higher priority</p>
-</div></blockquote>
+<dl class="simple">
+<dt>General rule of loading parameters: load from the YAML first if available, then update with the parameters in the function calling,</dt><dd><p>so the latter has a higher priority</p>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="LMRt.reconjob.ReconJob.gen_Xb">
 <span class="sig-name descname"><span class="pre">gen_Xb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recon_vars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconjob.ReconJob.gen_Xb" title="Permalink to this definition">¶</a></dt>
@@ -233,7 +232,7 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="LMRt.reconjob.ReconJob.load_obs">
 <span class="sig-name descname"><span class="pre">load_obs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varname_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anom_period</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconjob.ReconJob.load_obs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load model prior fields</p>
+<dd><p>Load instrumental observations fields</p>
 <dl class="simple">
 <dt>path_dict: dict</dt><dd><p>a dict of environmental variables</p>
 </dd>

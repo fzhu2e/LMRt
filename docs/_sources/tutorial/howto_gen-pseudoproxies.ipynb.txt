@@ -1,0 +1,374 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "dfb57495-2952-460f-8f8d-f0301503c3cf",
+   "metadata": {},
+   "source": [
+    "# Generate Pseudoproxies"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7f149555-8988-4245-8b1c-40e3f2c6627e",
+   "metadata": {},
+   "source": [
+    "**Expected time to run through: 10 mins**\n",
+    "\n",
+    "This tutorial demonstrates how to generate pseudoproxies.\n",
+    "We will leverage the spatiotemporal availability of the PAGES2k v2 dataset and the temperature field of iCESM.\n",
+    "Pseudoproxies are generated as temperature plus white noise with certain signal-noise-ratio (SNR)."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "27b50d8b-f7d0-43a6-b916-0c0b063c1489",
+   "metadata": {},
+   "source": [
+    "## Test data preparation\n",
+    "\n",
+    "To go through this tutorial, please prepare test data following the steps:\n",
+    "1. Download the test case named \"pseudoPAGES2k_iCESM\" with this [link](https://drive.google.com/drive/folders/1NKL99Rkgn6YVQn2Pt_2GyxtIBoMm2CVu?usp=sharing).\n",
+    "2. Create a directory named \"testcases\" in the same directory where this notebook sits.\n",
+    "3. Put the unzipped direcotry \"pseudoPAGES2k_iCESM\" into \"testcases\".\n",
+    "\n",
+    "Below, we first load some useful packages, including our `LMRt`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 32,
+   "id": "37125d32-f6c7-4d35-86ae-c56702272ccd",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "The autoreload extension is already loaded. To reload it, use:\n",
+      "  %reload_ext autoreload\n"
+     ]
+    }
+   ],
+   "source": [
+    "%load_ext autoreload\n",
+    "%autoreload 2\n",
+    "\n",
+    "import LMRt\n",
+    "import GraphEM\n",
+    "import os\n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import xarray as xr\n",
+    "import matplotlib.pyplot as  plt\n",
+    "from tqdm import tqdm"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "8712d914-858a-450c-adda-f5635e7457ea",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "proxy_dirpath = './testcases/pseudoPAGES2k_iCESM/data/proxy/'\n",
+    "proxy_filename = 'pages2k_dataset.pkl'\n",
+    "model_dirpath = './testcases/pseudoPAGES2k_iCESM/data/model/'\n",
+    "model_filename = 'tas_sfc_Amon_iCESM_past1000historical_085001-200512.nc'"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "e158eb24-df1d-435c-9193-4b3712abd233",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Dataset Overview\n",
+      "-----------------------\n",
+      "\n",
+      "     Name:  tas\n",
+      "   Source:  ./testcases/pseudoPAGES2k_iCESM/data/model/tas_sfc_Amon_iCESM_past1000historical_085001-200512.nc\n",
+      "    Shape:  time:1156, lat:96, lon:144\n"
+     ]
+    }
+   ],
+   "source": [
+    "# load model simulation\n",
+    "ds = LMRt.Dataset()\n",
+    "ds.load_nc(\n",
+    "    {'tas': os.path.join(model_dirpath, model_filename)},\n",
+    "    varname_dict={'tas': 'tas'},\n",
+    "    inplace=True,\n",
+    "    anom_period=(1951, 1980),\n",
+    ")\n",
+    "ds.seasonalize(list(range(1, 13)), inplace=True)\n",
+    "print(ds)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "id": "bc3cea18-fd6a-478e-b6c1-87445d6b6b66",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Proxy Database Overview\n",
+      "-----------------------\n",
+      "     Source:        None\n",
+      "       Size:        692\n",
+      "Proxy types:        {'tree.TRW': 354, 'documents': 15, 'tree.MXD': 61, 'lake.midge': 5, 'lake.alkenone': 4, 'coral.calc': 8, 'ice.d18O': 39, 'coral.d18O': 67, 'lake.reflectance': 4, 'marine.alkenone': 22, 'marine.MgCa': 24, 'marine.foram': 4, 'lake.pollen': 11, 'coral.SrCa': 29, 'lake.varve_thickness': 8, 'ice.dD': 8, 'borehole': 3, 'lake.chrysophyte': 1, 'ice.melt': 2, 'lake.varve_property': 1, 'marine.d18O': 1, 'lake.chironomid': 3, 'marine.TEX86': 4, 'lake.BSi': 2, 'speleothem.d18O': 4, 'lake.TEX86': 2, 'marine.diatom': 2, 'hybrid': 1, 'lake.accumulation': 1, 'marine.MAT': 1, 'bivalve.d18O': 1}\n"
+     ]
+    }
+   ],
+   "source": [
+    "# load proxy database\n",
+    "proxydb = LMRt.ProxyDatabase()\n",
+    "\n",
+    "df_pages2k = pd.read_pickle(os.path.join(proxy_dirpath, proxy_filename))\n",
+    "proxydb.load_df(df_pages2k)\n",
+    "\n",
+    "\n",
+    "# seasonalize\n",
+    "ptype_season = {}\n",
+    "for k in proxydb.type_list:\n",
+    "    ptype_season[k] = list(range(1, 13))\n",
+    "    \n",
+    "proxydb.seasonalize(ptype_season, inplace=True)\n",
+    "proxydb.refresh()\n",
+    "print(proxydb)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "id": "1f494cb9-4ade-4cc6-8fed-5dad9f84f300",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Index(['paleoData_pages2kID', 'dataSetName', 'archiveType', 'geo_meanElev',\n",
+       "       'geo_meanLat', 'geo_meanLon', 'year', 'yearUnits',\n",
+       "       'paleoData_variableName', 'paleoData_units', 'paleoData_values',\n",
+       "       'paleoData_proxy'],\n",
+       "      dtype='object')"
+      ]
+     },
+     "execution_count": 30,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df_pages2k.columns"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "id": "a8bf2e25-1f8b-4e33-bab5-9dbbcfa636ef",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# find nearest model grid cell to proxy locales\n",
+    "proxydb.find_nearest_loc(\n",
+    "    ['tas'], ds=ds, ds_type='prior',\n",
+    "    ds_loc_path='./testcases/pseudoPAGES2k_iCESM/loc_idx.pkl',\n",
+    "    save_path='./testcases/pseudoPAGES2k_iCESM/loc_idx.pkl',\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "id": "03055419-a2ac-42ac-8a7f-95db710ba644",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# get model variables for each proxy record\n",
+    "season_tag = '_'.join(str(s) for s in list(range(1, 13)))\n",
+    "proxydb.get_var_from_ds(\n",
+    "    {season_tag: ds},\n",
+    "    ptype_season, ds_type='prior')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 45,
+   "id": "b9316f38-2616-4566-9068-82fcdd3b26de",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "100%|██████████| 692/692 [00:14<00:00, 47.12it/s]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# gen pseudoproxy\n",
+    "\n",
+    "# SNR = 1\n",
+    "SNR = 10\n",
+    "\n",
+    "df_pp = df_pages2k.copy()\n",
+    "for idx, row in tqdm(df_pp.iterrows(), total=len(df_pp)):\n",
+    "    # get tas values\n",
+    "    pid = row['paleoData_pages2kID']\n",
+    "    pobj = proxydb.records[pid]\n",
+    "    tas_value = pobj.prior_value['tas'][season_tag]\n",
+    "    tas_time = pobj.prior_time['tas'][season_tag]\n",
+    "    \n",
+    "    # make pseudoproxy values\n",
+    "    np.random.seed(idx)\n",
+    "    nt = np.size(tas_value)\n",
+    "    tas_std = np.std(tas_value)\n",
+    "    noise_std = tas_std / SNR\n",
+    "    noise_value = np.random.normal(0, noise_std, size=nt)\n",
+    "    pp_value = tas_value + noise_value\n",
+    "    pp_time = np.copy(tas_time)\n",
+    "    \n",
+    "    # get realistic temporal availability\n",
+    "    pp_value_r = []\n",
+    "    pp_time_r = []\n",
+    "    for i, t in enumerate(pp_time):\n",
+    "        if t in pobj.time:\n",
+    "            pp_value_r.append(pp_value[i])\n",
+    "            pp_time_r.append(pp_time[i])\n",
+    "            \n",
+    "    row['year'] = np.array(pp_time_r)\n",
+    "    row['paleoData_values'] = np.array(pp_value_r)\n",
+    "    \n",
+    "# df_pp.to_pickle('./testcases/pseudoPAGES2k_iCESM/pseudoPAGES2k_dataset_tas_wn.pkl')\n",
+    "df_pp.to_pickle('./testcases/pseudoPAGES2k_iCESM/pseudoPAGES2k_dataset_tas_wn_SNR10.pkl')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 47,
+   "id": "e5a25a9b-ca3e-4321-9fd9-360ec2ab6b9a",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "100%|██████████| 692/692 [00:00<00:00, 3798.34it/s]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# gen pseudoproxy\n",
+    "\n",
+    "# SNR = 1\n",
+    "SNR = 10\n",
+    "\n",
+    "df_pp = df_pages2k.copy()\n",
+    "for idx, row in tqdm(df_pp.iterrows(), total=len(df_pp)):\n",
+    "    # get tas values\n",
+    "    pid = row['paleoData_pages2kID']\n",
+    "    pobj = proxydb.records[pid]\n",
+    "    tas_value = pobj.prior_value['tas'][season_tag]\n",
+    "    tas_time = pobj.prior_time['tas'][season_tag]\n",
+    "    \n",
+    "    # make pseudoproxy values\n",
+    "    np.random.seed(idx)\n",
+    "    nt = np.size(tas_value)\n",
+    "    tas_std = np.std(tas_value)\n",
+    "    noise_std = tas_std / SNR\n",
+    "    noise_value = np.random.normal(0, noise_std, size=nt)\n",
+    "    pp_value = tas_value + noise_value\n",
+    "    pp_time = np.copy(tas_time)\n",
+    "    \n",
+    "    row['year'] = np.array(pp_time)\n",
+    "    row['paleoData_values'] = np.array(pp_value)\n",
+    "    \n",
+    "# df_pp.to_pickle('./testcases/pseudoPAGES2k_iCESM/pseudoPAGES2k_dataset_tas_wn_full_temporal_availability.pkl')\n",
+    "df_pp.to_pickle('./testcases/pseudoPAGES2k_iCESM/pseudoPAGES2k_dataset_tas_wn_SNR10_full_temporal_availability.pkl')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 42,
+   "id": "d1dc62e2-7222-41fc-b29b-7a4a8d05d9f2",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Dataset Overview\n",
+      "-----------------------\n",
+      "\n",
+      "     Name:  tas\n",
+      "   Source:  ./testcases/pseudoPAGES2k_iCESM/data/model/tas_sfc_Amon_iCESM_past1000historical_085001-200512.nc\n",
+      "    Shape:  time:1156, lat:96, lon:144\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(ds)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 43,
+   "id": "bcfbe478-03a5-4335-8fe9-45c014b0c627",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import cftime\n",
+    "\n",
+    "output_dict = {}\n",
+    "output_dict['tas'] = (('time', 'lat', 'lon'), ds.fields['tas'].value)\n",
+    "\n",
+    "ds_out = xr.Dataset(\n",
+    "    data_vars=output_dict,\n",
+    "    coords={\n",
+    "        'time': [cftime.DatetimeNoLeap(y, 1, 1) for y in range(850, 2006)],\n",
+    "        'lat': ds.fields['tas'].lat,\n",
+    "        'lon': ds.fields['tas'].lon,\n",
+    "    }\n",
+    ")\n",
+    "ds_out.to_netcdf('./testcases/pseudoPAGES2k_iCESM/iCESM_ann.nc')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "e4c1f2ab-5104-4b10-bf90-52d293005d43",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.8"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
