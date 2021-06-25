@@ -131,7 +131,7 @@ class ReconSeries(EnsembleSeries):
         else:
             raise ValueError('Wrong type of target_item; should be either Series or Field.')
 
-    def plot(self, **kws):
+    def plot(self, lgd_kws=None, **kws):
         ts_array = []
         for ts in self.series_list:
             ts_array.append(ts.value)
@@ -139,6 +139,9 @@ class ReconSeries(EnsembleSeries):
         time_lmr = self.series_list[0].time
         value_lmr = np.median(ts_array, axis=0)
         ts_lmr = Series(time=time_lmr, value=value_lmr)
+
+        mute = kws['mute'] if 'mute' in kws else None
+        kws.pop('mute', None)
 
         fig, ax = self.plot_envelope(mute=True, **kws)
         xlabel = ax.get_xlabel()
@@ -151,13 +154,26 @@ class ReconSeries(EnsembleSeries):
 
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
-        ax.legend()
+        handles, labels = ax.get_legend_handles_labels()
+        if hasattr(self, 'valid_target'):
+            # put target in the end
+            handles_old, labels_old = handles.copy(), labels.copy()
+            print(labels)
+            handles[-1] = handles_old[1]
+            labels[-1] = labels_old[1]
+            handles[1] = handles_old[2]
+            labels[1] = labels_old[2]
+            handles[2] = handles_old[3]
+            labels[2] = labels_old[3]
+            print(labels)
+
+        lgd_kws = {} if lgd_kws is None else lgd_kws
+        ax.legend(handles, labels, **lgd_kws)
 
         savefig_settings = kws['savefig_settings'] if 'savefig_settings' in kws else {}
         if 'path' in savefig_settings:
             savefig(fig, settings=savefig_settings)
         else:
-            mute = kws['mute'] if 'mute' in kws else None
             if not mute:
                 showfig(fig)
         return fig, ax
