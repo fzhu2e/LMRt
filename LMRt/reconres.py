@@ -331,7 +331,7 @@ class ValidStat:
         self.stat_dict = stat_dict
 
     def plot(self, figsize=[8, 5], proj_args=None,  projection='Robinson', central_longitude=180, markersize=50, cmap=None,
-            transform=ccrs.PlateCarree(), savefig_settings=None, mute=False,
+            transform=ccrs.PlateCarree(), savefig_settings=None, mute=False, title=None,
             cbar_labels=None, cbar_pad=0.05, cbar_orientation='vertical', cbar_aspect=10,
             cbar_fraction=0.15, cbar_shrink=0.5, cbar_title=None, cbar_extend=None):
         plt.ioff()
@@ -368,6 +368,10 @@ class ValidStat:
                 vmin, vmax = 0, 1
                 cmap = 'Reds'
                 cbar_extend = 'neither'
+            elif self.stat_name == 'SNR':
+                vmin, vmax = 0, 1
+                cmap = 'Reds'
+                cbar_extend = 'neither'
             else:
                 raise ValueError('Wrong stat_name.')
 
@@ -387,6 +391,8 @@ class ValidStat:
         if cbar_labels is not None:
             cbar.set_ticks(cbar_labels)
 
+        if title is not None:
+            ax['map'].set_title(title)
 
         if 'path' in savefig_settings:
             savefig(fig, settings=savefig_settings)
