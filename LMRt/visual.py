@@ -23,6 +23,7 @@ from matplotlib.patches import Patch
 from matplotlib.legend_handler import HandlerLine2D
 
 from cartopy import util as cutil
+from . import utils
 
 class PAGES2k:
     colors_dict = {
@@ -961,6 +962,106 @@ def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
             )
             cb.set_label('Year (CE)')
 
+
+        if 'fig' in locals():
+            return fig, ax
+        else:
+            return ax
+
+
+def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_range,
+                  nbin=2000, qs=[0.05, 0.95], figsize=[5, 5], xlabel=None, ylabel='Cumulative Distribution Function',
+                  lw_nonvolc_qs=2, lw_volc_nonvolc=2, xlim=None, title=None, show_ratio_in_title=True,
+                  clr_volc_signif=sns.xkcd_rgb['pale red'], clr_volc=sns.xkcd_rgb['black'],
+                  clr_nonvolc=sns.xkcd_rgb['grey'], clr_nonvolc_qs=sns.xkcd_rgb['light grey'],
+                  fs=15, ms=100, yr_base=2001, yr_label_x_adj=None, yr_label_y_adj=0,
+                  label_volc='Volcanic years', label_nonvolc='Non-volcanic years',
+                  label_nonvolc_qs='Randomly selected\nnon-volcanic years', plot_lgd=True, ax=None, lgd_style=None):
+
+        kws = {'cumulative': True, 'density': True, 'histtype': 'step', 'range': value_range, 'bins': nbin, 'lw': lw_volc_nonvolc}
+        if ax is None:
+            fig, ax = plt.subplots(figsize=figsize)
+
+        n, bins, patches = {}, {}, {}
+        n['volc'], bins['volc'], patches['volc'] = ax.hist(anom_volc, label=label_volc, color=clr_volc, **kws, zorder=99)
+        n['nonvolc'], bins['nonvolc'], patches['nonvolc'] = ax.hist(anom_nonvolc, label=label_nonvolc, color=clr_nonvolc, zorder=98, **kws)
+
+        cdf_draw = []
+        for anom_draw in anom_nonvolc_draws:
+            cdf_anom_draw = cumfreq(anom_draw, numbins=nbin, defaultreallimits=value_range)
+            cdf = cdf_anom_draw.cumcount / np.shape(anom_nonvolc_draws)[-1]
+            cdf_draw.append(cdf)
+
+        cdf_qs = utils.calc_cdf_qs(cdf_draw, qs)
+        cdf_lb = utils.recover_cdf_from_locs(cdf_qs[qs[0]], nbin)
+        cdf_ub = utils.recover_cdf_from_locs(cdf_qs[qs[-1]], nbin)
+
+        x_values = np.linspace(value_range[0], value_range[1], nbin)
+        ub_loc_dict = {}
+        for k, v in cdf_qs[qs[-1]].items():
+            ub_loc_dict[f'{k:.2f}'] = x_values[int(v)]
+
+        for k in n.keys():
+            patches[k][0].set_xy(patches[k][0].get_xy()[:-1])
+
+        nsig = 0
+        if yr_label_x_adj is None:
+            yr_label_x_adj = -np.abs(value_range[0])/10
+
+        for i, yr in enumerate(year_volc):
+            for j, b in enumerate(bins['volc']):
+                if anom_volc[i] >= b and anom_volc[i] < bins['volc'][j+1]:
+                    n_tmp = n['volc'][j]
+
+            loc = f'{n_tmp:.2f}'
+            if anom_volc[i] < ub_loc_dict[loc]:
+                signif = False
+            else:
+                signif = True
+                nsig += 1
+
+            clr = clr_volc_signif if signif else clr_volc
+            ax.scatter(anom_volc[i], n_tmp, marker='^', color=clr, zorder=100, s=ms)
+            ax.text(anom_volc[i]+yr_label_x_adj, n_tmp+yr_label_y_adj, yr%yr_base, color=clr, zorder=100, fontsize=fs)
+
+        ax.scatter(None, None, marker='^', color=clr_volc, label='Insignificant events')
+        ax.scatter(None, None, marker='^', color=clr_volc_signif, label='Significant events')
+
+        label_nonvolc_qs = f'{label_nonvolc_qs} ({qs[0]*100:g}%-{qs[-1]*100:g}%)'
+        ax.fill_between(np.linspace(value_range[0], value_range[-1], nbin), cdf_lb, cdf_ub, color=clr_nonvolc_qs, label=label_nonvolc_qs, lw=lw_nonvolc_qs)
+
+        ax.set_ylim(0, 1.05)
+        if xlim is not None:
+            ax.set_xlim(xlim)
+        else:
+            ax.set_xlim(value_range[0], value_range[1])
+
+        ax.set_ylabel(ylabel)
+        if xlabel is not None:
+            ax.set_xlabel(xlabel)
+
+        if plot_lgd:
+            handles, labels = ax.get_legend_handles_labels()
+            order = [0, 1, 4, 2, 3]
+            handles = [handles[idx] for idx in order]
+            labels = [labels[idx] for idx in order]
+
+            new_handles = [Line2D([], [], c=h.get_edgecolor()) for h in handles[0:2]]
+            handles[0:2] = new_handles
+
+            lgd_kwargs = {'loc': 'lower right', 'bbox_to_anchor': (2., 0), 'fontsize': 15}
+            lgd_style = {} if lgd_style is None else lgd_style.copy()
+            lgd_kwargs.update(lgd_style)
+
+            ax.legend(handles, labels, **lgd_kwargs)
+
+        if title is not None:
+            ax.set_title(f'{title}', y=1.05)
+
+        if show_ratio_in_title:
+            nevents = np.size(year_volc)
+            ratio_str = f'{nsig}/{nevents}'
+            ax.text(0.02, 0.9, f'Signif. ratio: {ratio_str}', transform=ax.transAxes)
 
         if 'fig' in locals():
             return fig, ax
