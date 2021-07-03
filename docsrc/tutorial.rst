@@ -19,6 +19,7 @@ How-to
     :maxdepth: 1
 
     tutorial/howto_reconstruct-multiple-fields
+    tutorial/howto_reconstruct-cropped-domain
     tutorial/howto_assimilate-more-proxies
     tutorial/howto_gen-pseudoproxies
 

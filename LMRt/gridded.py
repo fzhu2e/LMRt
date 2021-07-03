@@ -102,6 +102,54 @@ class Field:
             new_field.ntrunc = ntrunc
             return new_field
 
+    def crop(self, domain_range, inplace=False):
+        ''' Crop the domain for reconstruction
+
+        Parameters
+        ----------
+
+        domain_range : list
+            [lat_min, lat_max, lon_min, lon_max] for a square domain or
+            [lat_min, lat_max] to crop the lats only
+
+        '''
+        if len(domain_range) == 4:
+            # crop both lat and lon
+            lat_min, lat_max, lon_min, lon_max = domain_range
+            mask_lat = (self.lat>=lat_min) & (self.lat<=lat_max)
+            mask_lon = (self.lon>=lon_min) & (self.lon<=lon_max)
+            new_lat = self.lat[mask_lat]
+            new_lon = self.lon[mask_lon]
+            new_value = self.value[:, mask_lat, :]
+            new_value = new_value[:, :, mask_lon]
+        elif len(domain_range) == 2:
+            # crop lat only
+            lat_min, lat_max = domain_range
+            mask_lat = (self.lat>=lat_min) & (self.lat<=lat_max)
+            new_lat = self.lat[mask_lat]
+            new_lon = self.lon
+            new_value = self.value[:, mask_lat, :]
+        else:
+            raise ValueError('Wrong number of elements in the list of domain_range.')
+
+
+        if inplace:
+            self.value = new_value
+            self.lat = new_lat
+            self.lon = new_lon
+            self.nlat = np.size(new_lat)
+            self.nlon = np.size(new_lon)
+            self.domain_range = domain_range
+        else:
+            new_field = self.copy()
+            new_field.value = new_value
+            new_field.lat = new_lat
+            new_field.lon = new_lon
+            new_field.nlat = np.size(new_lat)
+            new_field.nlon = np.size(new_lon)
+            new_field.domain_range = domain_range
+            return new_field
+
     def plot(self, idx_t=0, mute=False, **kwargs):
         plt.ioff()
         fig, ax =  plot_field_map(self.value[idx_t], self.lat, self.lon, **kwargs)
@@ -201,6 +249,29 @@ class Dataset:
         new_fields = {}
         for name, field in self.fields.items():
             new_fields[name] = field.regrid(ntrunc=ntrunc, inplace=False)
+
+        if inplace:
+            self.fields = new_fields
+        else:
+            new_ds = self.copy()
+            new_ds.fields = new_fields
+
+            return new_ds
+
+    def crop(self, domain_range, inplace=False):
+        ''' Crop the domain for reconstruction
+
+        Parameters
+        ----------
+
+        domain_range : list
+            [lat_min, lat_max, lon_min, lon_max] for a square domain or
+            [lat_min, lat_max] to crop the lats only
+
+        '''
+        new_fields = {}
+        for name, field in self.fields.items():
+            new_fields[name] = field.crop(domain_range, inplace=False)
 
         if inplace:
             self.fields = new_fields

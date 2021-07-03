@@ -413,7 +413,7 @@
    "id": "02440a5d-ddac-4637-b430-f9e219d3c7ef",
    "metadata": {},
    "source": [
-    "Once done, we will get the struture below in the \"recon_top\" directory:\n",
+    "Once done, we will get the struture below in the \"recon_tas_psl\" directory:\n",
     "```\n",
     ".\n",
     "├── calibed_psm.pkl\n",

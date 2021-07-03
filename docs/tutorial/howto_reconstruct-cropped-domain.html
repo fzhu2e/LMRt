@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Reconstruct multiple fields &mdash; LMR Turbo  documentation</title>
+  <title>Reconstruct a cropped domain &mdash; LMR Turbo  documentation</title>
   
 
   
@@ -44,8 +44,8 @@
     
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Reconstruct a cropped domain" href="howto_reconstruct-cropped-domain.html" />
-    <link rel="prev" title="Visualization of the results" href="quickstart_visualization.html" /> 
+    <link rel="next" title="Assimilate more proxies" href="howto_assimilate-more-proxies.html" />
+    <link rel="prev" title="Reconstruct multiple fields" href="howto_reconstruct-multiple-fields.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -96,14 +96,16 @@
 <li class="toctree-l1 current"><a class="reference internal" href="../tutorial.html">Tutorial</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../tutorial.html#quickstart">Quickstart</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../tutorial.html#how-to">How-to</a><ul class="current">
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Reconstruct multiple fields</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="howto_reconstruct-multiple-fields.html">Reconstruct multiple fields</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Reconstruct a cropped domain</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#Test-data-preparation">Test data preparation</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Load-and-modify-configurations">Load and modify configurations</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#Run-the-reconstruction-using-the-high-level-workflow">Run the reconstruction using the high-level workflow</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Crop-the-domain-before-running-DA">Crop the domain before running DA</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Running-DA">Running DA</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#A-quick-preview-of-the-results">A quick preview of the results</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="howto_reconstruct-cropped-domain.html">Reconstruct a cropped domain</a></li>
 <li class="toctree-l3"><a class="reference internal" href="howto_assimilate-more-proxies.html">Assimilate more proxies</a></li>
 <li class="toctree-l3"><a class="reference internal" href="howto_gen-pseudoproxies.html">Generate pseudoproxies</a></li>
 </ul>
@@ -163,13 +165,13 @@
         
           <li><a href="../tutorial.html">Tutorial</a> &raquo;</li>
         
-      <li>Reconstruct multiple fields</li>
+      <li>Reconstruct a cropped domain</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../_sources/tutorial/howto_reconstruct-multiple-fields.ipynb.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/tutorial/howto_reconstruct-cropped-domain.ipynb.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -452,10 +454,10 @@ div.rendered_html tbody tr:hover {
     text-align: unset;
 }
 </style>
-<div class="section" id="Reconstruct-multiple-fields">
-<h1>Reconstruct multiple fields<a class="headerlink" href="#Reconstruct-multiple-fields" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="Reconstruct-a-cropped-domain">
+<h1>Reconstruct a cropped domain<a class="headerlink" href="#Reconstruct-a-cropped-domain" title="Permalink to this headline">¶</a></h1>
 <p><strong>Expected time to run through: 10 mins</strong></p>
-<p>This tutorial demonstrates how to reconstruct multiple fields, e.g. both the temperature and sea level pressure fields.</p>
+<p>This tutorial demonstrates how to reconstruct a cropped domain to save running time.</p>
 <div class="section" id="Test-data-preparation">
 <h2>Test data preparation<a class="headerlink" href="#Test-data-preparation" title="Permalink to this headline">¶</a></h2>
 <p>To go through this tutorial, please prepare test data following the steps: 1. Download the test case named “PAGES2k_CCSM4_GISTEMP” with this <a class="reference external" href="https://drive.google.com/drive/folders/1UGn-LNd_tGSjPUKa52E6ffEM-ms2VD-N?usp=sharing">link</a>. 2. Create a directory named “testcases” in the same directory where this notebook sits. 3. Put the unzipped direcotry “PAGES2k_CCSM4_GISTEMP” into “testcases”.</p>
@@ -544,25 +546,21 @@ div.rendered_html tbody tr:hover {
  &#39;recon_vars&#39;: &#39;tas&#39;}
 </pre></div></div>
 </div>
-<p>We need to modify the <code class="docutils literal notranslate"><span class="pre">prior_path</span></code> and the <code class="docutils literal notranslate"><span class="pre">prior_varname</span></code> in the configurations, as well as <code class="docutils literal notranslate"><span class="pre">recon_vars</span></code> that indicates which variables to reconstruct. We also modify the <code class="docutils literal notranslate"><span class="pre">job_dirpath</span></code> to save the results to a different location.</p>
+<p>We need to modify the <code class="docutils literal notranslate"><span class="pre">prior_path</span></code> and the <code class="docutils literal notranslate"><span class="pre">prior_varname</span></code> in the configurations. We also modify the <code class="docutils literal notranslate"><span class="pre">job_dirpath</span></code> to save the results to a different location.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">job</span><span class="o">.</span><span class="n">configs</span><span class="p">[</span><span class="s1">&#39;job_dirpath&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;./testcases/PAGES2k_CCSM4_GISTEMP/recon_tas_psl&#39;</span>
-
-<span class="n">job</span><span class="o">.</span><span class="n">configs</span><span class="p">[</span><span class="s1">&#39;recon_vars&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;tas&#39;</span><span class="p">,</span> <span class="s1">&#39;psl&#39;</span><span class="p">]</span>
+<span></span><span class="n">job</span><span class="o">.</span><span class="n">configs</span><span class="p">[</span><span class="s1">&#39;job_dirpath&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;./testcases/PAGES2k_CCSM4_GISTEMP/recon_cropped_domain&#39;</span>
 
 <span class="n">job</span><span class="o">.</span><span class="n">configs</span><span class="p">[</span><span class="s1">&#39;prior_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s1">&#39;tas&#39;</span><span class="p">:</span> <span class="s1">&#39;./data/prior/b.e11.BLMTRC5CN.f19_g16.001.cam.h0.TREFHT.085001-184912.nc&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;psl&#39;</span><span class="p">:</span> <span class="s1">&#39;./data/prior/b.e11.BLMTRC5CN.f19_g16.001.cam.h0.PSL.085001-184912.nc&#39;</span><span class="p">,</span>
 <span class="p">}</span>
 
 <span class="c1"># prior_varname indicates the variable names in the given netCDF files</span>
 <span class="n">job</span><span class="o">.</span><span class="n">configs</span><span class="p">[</span><span class="s1">&#39;prior_varname&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s1">&#39;tas&#39;</span><span class="p">:</span> <span class="s1">&#39;TREFHT&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;psl&#39;</span><span class="p">:</span> <span class="s1">&#39;PSL&#39;</span><span class="p">,</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -592,8 +590,7 @@ div.rendered_html tbody tr:hover {
 <span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.seasonalize_proxydb() &gt;&gt;&gt; seasonalizing proxy records according to: {&#39;coral.d18O&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], &#39;coral.SrCa&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], &#39;coral.calc&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}</span>
 <span class="ansi-green-intense-fg ansi-bold">LMRt: job.seasonalize_proxydb() &gt;&gt;&gt; 95 records remaining</span>
 <span class="ansi-green-intense-fg ansi-bold">LMRt: job.seasonalize_proxydb() &gt;&gt;&gt; job.proxydb updated</span>
-<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.load_prior() &gt;&gt;&gt; loading model prior fields from: {&#39;tas&#39;: &#39;/Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/prior/b.e11.BLMTRC5CN.f19_g16.001.cam.h0.TREFHT.085001-184912.nc&#39;, &#39;psl&#39;: &#39;/Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/prior/b.e11.BLMTRC5CN.f19_g16.001.cam.h0.PSL.085001-184912.nc&#39;}</span>
-Time axis not overlap with the reference period [1951, 1980]; use its own time period as reference [850.08, 1850.00].
+<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.load_prior() &gt;&gt;&gt; loading model prior fields from: {&#39;tas&#39;: &#39;/Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/prior/b.e11.BLMTRC5CN.f19_g16.001.cam.h0.TREFHT.085001-184912.nc&#39;}</span>
 Time axis not overlap with the reference period [1951, 1980]; use its own time period as reference [850.08, 1850.00].
 <span class="ansi-black-intense-fg ansi-bold">LMRt: job.load_prior() &gt;&gt;&gt; raw prior</span>
 Dataset Overview
@@ -602,18 +599,14 @@ Dataset Overview
      Name:  tas
    Source:  /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/prior/b.e11.BLMTRC5CN.f19_g16.001.cam.h0.TREFHT.085001-184912.nc
     Shape:  time:12000, lat:96, lon:144
-
-     Name:  psl
-   Source:  /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/prior/b.e11.BLMTRC5CN.f19_g16.001.cam.h0.PSL.085001-184912.nc
-    Shape:  time:12000, lat:96, lon:144
 <span class="ansi-green-intense-fg ansi-bold">LMRt: job.load_prior() &gt;&gt;&gt; job.prior created</span>
 <span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.load_obs() &gt;&gt;&gt; loading instrumental observation fields from: {&#39;tas&#39;: &#39;/Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/obs/gistemp1200_ERSSTv4.nc&#39;}</span>
 <span class="ansi-green-intense-fg ansi-bold">LMRt: job.load_obs() &gt;&gt;&gt; job.obs created</span>
-<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.calibrate_psm() &gt;&gt;&gt; job.configs[&#34;precalc&#34;][&#34;seasonalized_prior_path&#34;] = /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_tas_psl/seasonalized_prior.pkl</span>
-<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.calibrate_psm() &gt;&gt;&gt; job.configs[&#34;precalc&#34;][&#34;seasonalized_obs_path&#34;] = /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_tas_psl/seasonalized_obs.pkl</span>
-<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.calibrate_psm() &gt;&gt;&gt; job.configs[&#34;precalc&#34;][&#34;prior_loc_path&#34;] = /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_tas_psl/prior_loc.pkl</span>
-<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.calibrate_psm() &gt;&gt;&gt; job.configs[&#34;precalc&#34;][&#34;obs_loc_path&#34;] = /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_tas_psl/obs_loc.pkl</span>
-<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.calibrate_psm() &gt;&gt;&gt; job.configs[&#34;precalc&#34;][&#34;calibed_psm_path&#34;] = /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_tas_psl/calibed_psm.pkl</span>
+<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.calibrate_psm() &gt;&gt;&gt; job.configs[&#34;precalc&#34;][&#34;seasonalized_prior_path&#34;] = /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_cropped_domain/seasonalized_prior.pkl</span>
+<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.calibrate_psm() &gt;&gt;&gt; job.configs[&#34;precalc&#34;][&#34;seasonalized_obs_path&#34;] = /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_cropped_domain/seasonalized_obs.pkl</span>
+<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.calibrate_psm() &gt;&gt;&gt; job.configs[&#34;precalc&#34;][&#34;prior_loc_path&#34;] = /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_cropped_domain/prior_loc.pkl</span>
+<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.calibrate_psm() &gt;&gt;&gt; job.configs[&#34;precalc&#34;][&#34;obs_loc_path&#34;] = /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_cropped_domain/obs_loc.pkl</span>
+<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.calibrate_psm() &gt;&gt;&gt; job.configs[&#34;precalc&#34;][&#34;calibed_psm_path&#34;] = /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/recon_cropped_domain/calibed_psm.pkl</span>
 <span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.seasonalize_ds_for_psm() &gt;&gt;&gt; job.configs[&#34;ptype_season&#34;] = {&#39;coral.d18O&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], &#39;coral.SrCa&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], &#39;coral.calc&#39;: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}</span>
 <span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.seasonalize_ds_for_psm() &gt;&gt;&gt; Seasonalizing variables from prior with season: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]</span>
 </pre></div></div>
@@ -623,7 +616,7 @@ Dataset Overview
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Searching nearest location:  12%|█▏        | 11/95 [00:00&lt;00:00, 107.50it/s]
+Searching nearest location:   8%|▊         | 8/95 [00:00&lt;00:01, 79.39it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -639,8 +632,8 @@ Searching nearest location:  12%|█▏        | 11/95 [00:00&lt;00:00, 107.50it
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Searching nearest location: 100%|██████████| 95/95 [00:00&lt;00:00, 110.08it/s]
-/Users/fzhu/Github/LMRt/LMRt/utils.py:243: RuntimeWarning: Mean of empty slice
+Searching nearest location: 100%|██████████| 95/95 [00:01&lt;00:00, 93.82it/s]
+/Users/fzhu/Github/LMRt/LMRt/utils.py:261: RuntimeWarning: Mean of empty slice
   tmp = np.nanmean(var[inds, ...], axis=0)
 </pre></div></div>
 </div>
@@ -660,7 +653,7 @@ Searching nearest location: 100%|██████████| 95/95 [00:00&lt
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Searching nearest location:  11%|█         | 10/95 [00:00&lt;00:00, 94.37it/s]
+Searching nearest location:   8%|▊         | 8/95 [00:00&lt;00:01, 77.21it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -676,8 +669,8 @@ Searching nearest location:  11%|█         | 10/95 [00:00&lt;00:00, 94.37it/s]
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Searching nearest location: 100%|██████████| 95/95 [00:00&lt;00:00, 97.94it/s]
-Calibrating PSM:   9%|▉         | 9/95 [00:00&lt;00:01, 82.41it/s]
+Searching nearest location: 100%|██████████| 95/95 [00:01&lt;00:00, 82.93it/s]
+Calibrating PSM:   7%|▋         | 7/95 [00:00&lt;00:01, 66.86it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -696,7 +689,7 @@ Calibrating PSM:   9%|▉         | 9/95 [00:00&lt;00:01, 82.41it/s]
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Calibrating PSM:  71%|███████   | 67/95 [00:00&lt;00:00, 88.60it/s]
+Calibrating PSM:  66%|██████▋   | 63/95 [00:00&lt;00:00, 76.65it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -712,26 +705,8 @@ The number of overlapped data points is 0 &lt; 25. Skipping ...
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-Calibrating PSM: 100%|██████████| 95/95 [00:01&lt;00:00, 88.26it/s]
-Forwarding PSM: 100%|██████████| 95/95 [00:00&lt;00:00, 706.48it/s]
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-green-intense-fg ansi-bold">LMRt: job.proxydb.calib_psm() &gt;&gt;&gt; job.proxydb.records[pid].psm calibrated</span>
-<span class="ansi-green-intense-fg ansi-bold">LMRt: job.proxydb.calib_psm() &gt;&gt;&gt; job.proxydb.calibed created</span>
-<span class="ansi-green-intense-fg ansi-bold">LMRt: job.proxydb.forward_psm() &gt;&gt;&gt; job.proxydb.records[pid].psm forwarded</span>
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-
+Calibrating PSM: 100%|██████████| 95/95 [00:01&lt;00:00, 74.40it/s]
+Forwarding PSM: 100%|██████████| 95/95 [00:00&lt;00:00, 617.44it/s]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -739,36 +714,63 @@ Forwarding PSM: 100%|██████████| 95/95 [00:00&lt;00:00, 706.
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
+<span class="ansi-green-intense-fg ansi-bold">LMRt: job.proxydb.calib_psm() &gt;&gt;&gt; job.proxydb.records[pid].psm calibrated</span>
+<span class="ansi-green-intense-fg ansi-bold">LMRt: job.proxydb.calib_psm() &gt;&gt;&gt; job.proxydb.calibed created</span>
+<span class="ansi-green-intense-fg ansi-bold">LMRt: job.proxydb.forward_psm() &gt;&gt;&gt; job.proxydb.records[pid].psm forwarded</span>
 <span class="ansi-black-intense-fg ansi-bold">LMRt: job.seasonalize_prior() &gt;&gt;&gt; seasonalized prior w/ season [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]</span>
 Dataset Overview
 -----------------------
 
      Name:  tas
    Source:  /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/prior/b.e11.BLMTRC5CN.f19_g16.001.cam.h0.TREFHT.085001-184912.nc
-    Shape:  time:1001, lat:96, lon:144
-
-     Name:  psl
-   Source:  /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/prior/b.e11.BLMTRC5CN.f19_g16.001.cam.h0.PSL.085001-184912.nc
-    Shape:  time:1001, lat:96, lon:144
-<span class="ansi-green-intense-fg ansi-bold">LMRt: job.seasonalize_ds_for_psm() &gt;&gt;&gt; job.prior updated</span>
+    Shape:  time:999, lat:96, lon:144
+<span class="ansi-green-intense-fg ansi-bold">LMRt: job.seasonalize_prior() &gt;&gt;&gt; job.prior updated</span>
 <span class="ansi-black-intense-fg ansi-bold">LMRt: job.regrid_prior() &gt;&gt;&gt; regridded prior</span>
 Dataset Overview
 -----------------------
 
      Name:  tas
    Source:  /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/prior/b.e11.BLMTRC5CN.f19_g16.001.cam.h0.TREFHT.085001-184912.nc
-    Shape:  time:1001, lat:42, lon:63
-
-     Name:  psl
-   Source:  /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/prior/b.e11.BLMTRC5CN.f19_g16.001.cam.h0.PSL.085001-184912.nc
-    Shape:  time:1001, lat:42, lon:63
+    Shape:  time:999, lat:42, lon:63
 <span class="ansi-green-intense-fg ansi-bold">LMRt: job.regrid_prior() &gt;&gt;&gt; job.prior updated</span>
-<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.prepare() &gt;&gt;&gt; Prepration data saved to: ./testcases/PAGES2k_CCSM4_GISTEMP/recon_tas_psl/job.pkl</span>
-<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.prepare() &gt;&gt;&gt; job.configs[&#34;precalc&#34;][&#34;prep_savepath&#34;] = ./testcases/PAGES2k_CCSM4_GISTEMP/recon_tas_psl/job.pkl</span>
+<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.prepare() &gt;&gt;&gt; Prepration data saved to: ./testcases/PAGES2k_CCSM4_GISTEMP/recon_cropped_domain/job.pkl</span>
+<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.prepare() &gt;&gt;&gt; job.configs[&#34;precalc&#34;][&#34;prep_savepath&#34;] = ./testcases/PAGES2k_CCSM4_GISTEMP/recon_cropped_domain/job.pkl</span>
 </pre></div></div>
 </div>
+</div>
+<div class="section" id="Crop-the-domain-before-running-DA">
+<h2>Crop the domain before running DA<a class="headerlink" href="#Crop-the-domain-before-running-DA" title="Permalink to this headline">¶</a></h2>
+<p>There are two ways of cropping the domain: + crop only the latitudes with the input argument <code class="docutils literal notranslate"><span class="pre">domain_range</span> <span class="pre">=</span> <span class="pre">[lat_min,</span> <span class="pre">lat_max]</span></code> + crop both the latitudes and longitudes the input argument <code class="docutils literal notranslate"><span class="pre">domain_range</span> <span class="pre">=</span> <span class="pre">[lat_min,</span> <span class="pre">lat_max,</span> <span class="pre">lon_min,</span> <span class="pre">lon_max]</span></code></p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># job.crop_prior([-30, 30], verbose=True)  # crop only the latitudes</span>
+<span class="n">job</span><span class="o">.</span><span class="n">crop_prior</span><span class="p">([</span><span class="o">-</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># crop both latitudes and longitudes</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-black-intense-fg ansi-bold">LMRt: job.crop_prior() &gt;&gt;&gt; cutted prior</span>
+Dataset Overview
+-----------------------
+
+     Name:  tas
+   Source:  /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/prior/b.e11.BLMTRC5CN.f19_g16.001.cam.h0.TREFHT.085001-184912.nc
+    Shape:  time:999, lat:14, lon:18
+<span class="ansi-green-intense-fg ansi-bold">LMRt: job.crop_prior() &gt;&gt;&gt; job.prior updated</span>
+</pre></div></div>
+</div>
+</div>
+<div class="section" id="Running-DA">
+<h2>Running DA<a class="headerlink" href="#Running-DA" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -782,7 +784,7 @@ Dataset Overview
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-KF updating:   2%|▏         | 33/2001 [00:00&lt;00:06, 322.18it/s]
+KF updating:   6%|▌         | 123/2001 [00:00&lt;00:01, 1223.42it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -792,9 +794,9 @@ KF updating:   2%|▏         | 33/2001 [00:00&lt;00:06, 322.18it/s]
 <div class="highlight"><pre>
 <span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.run() &gt;&gt;&gt; job.configs[&#34;recon_seeds&#34;] = [0]</span>
 <span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.run() &gt;&gt;&gt; job.configs[&#34;save_settings&#34;] = {&#39;compress_dict&#39;: {&#39;zlib&#39;: True, &#39;least_significant_digit&#39;: 1}, &#39;output_geo_mean&#39;: False, &#39;target_lats&#39;: [], &#39;target_lons&#39;: [], &#39;output_full_ens&#39;: False, &#39;dtype&#39;: 32}</span>
-<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.run() &gt;&gt;&gt; job.configs saved to: ./testcases/PAGES2k_CCSM4_GISTEMP/recon_tas_psl/job_configs.yml</span>
+<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.run() &gt;&gt;&gt; job.configs saved to: ./testcases/PAGES2k_CCSM4_GISTEMP/recon_cropped_domain/job_configs.yml</span>
 <span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.run() &gt;&gt;&gt; seed: 0 | max: 0</span>
-<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.run() &gt;&gt;&gt; randomized indices for prior and proxies saved to: ./testcases/PAGES2k_CCSM4_GISTEMP/recon_tas_psl/job_r00_idx.pkl</span>
+<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.run() &gt;&gt;&gt; randomized indices for prior and proxies saved to: ./testcases/PAGES2k_CCSM4_GISTEMP/recon_cropped_domain/job_r00_idx.pkl</span>
 Proxy Database Overview
 -----------------------
      Source:        /Users/fzhu/Github/LMRt/docsrc/tutorial/testcases/PAGES2k_CCSM4_GISTEMP/data/proxy/pages2k_dataset.pkl
@@ -807,7 +809,7 @@ Proxy types:        {&#39;coral.calc&#39;: 6, &#39;coral.SrCa&#39;: 19, &#39;cor
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-KF updating: 100%|██████████| 2001/2001 [02:09&lt;00:00, 15.46it/s]
+KF updating: 100%|██████████| 2001/2001 [00:08&lt;00:00, 227.88it/s]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -815,13 +817,13 @@ KF updating: 100%|██████████| 2001/2001 [02:09&lt;00:00, 15.
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.save_recon() &gt;&gt;&gt; Reconstructed fields saved to: ./testcases/PAGES2k_CCSM4_GISTEMP/recon_tas_psl/job_r00_recon.nc</span>
+<span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.save_recon() &gt;&gt;&gt; Reconstructed fields saved to: ./testcases/PAGES2k_CCSM4_GISTEMP/recon_cropped_domain/job_r00_recon.nc</span>
 <span class="ansi-cyan-intense-fg ansi-bold">LMRt: job.run() &gt;&gt;&gt; DONE!</span>
-CPU times: user 33min 23s, sys: 1min 17s, total: 34min 41s
-Wall time: 3min 44s
+CPU times: user 1min 18s, sys: 2.05 s, total: 1min 20s
+Wall time: 27.2 s
 </pre></div></div>
 </div>
-<p>Once done, we will get the struture below in the “recon_tas_psl” directory:</p>
+<p>Once done, we will get the struture below in the “recon_cropped_domain” directory:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>.
 ├── calibed_psm.pkl
 ├── job_configs.yml
@@ -839,7 +841,7 @@ Wall time: 3min 44s
 <div class="section" id="A-quick-preview-of-the-results">
 <h2>A quick preview of the results<a class="headerlink" href="#A-quick-preview-of-the-results" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -853,19 +855,18 @@ Wall time: 3min 44s
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-recon_paths: [&#39;./testcases/PAGES2k_CCSM4_GISTEMP/recon_tas_psl/job_r00_recon.nc&#39;]
-idx_paths: [&#39;./testcases/PAGES2k_CCSM4_GISTEMP/recon_tas_psl/job_r00_idx.pkl&#39;]
-job_path: ./testcases/PAGES2k_CCSM4_GISTEMP/recon_tas_psl/job.pkl
+recon_paths: [&#39;./testcases/PAGES2k_CCSM4_GISTEMP/recon_cropped_domain/job_r00_recon.nc&#39;]
+idx_paths: [&#39;./testcases/PAGES2k_CCSM4_GISTEMP/recon_cropped_domain/job_r00_idx.pkl&#39;]
+job_path: ./testcases/PAGES2k_CCSM4_GISTEMP/recon_cropped_domain/job.pkl
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="c1"># get the varialbes from the recon_paths</span>
-<span class="c1"># note: field_varnames is to indicate that &#39;tas&#39; and &#39;psl&#39; are field variables instead of series variables</span>
-<span class="n">res</span><span class="o">.</span><span class="n">get_vars</span><span class="p">([</span><span class="s1">&#39;tas&#39;</span><span class="p">,</span> <span class="s1">&#39;psl&#39;</span><span class="p">],</span> <span class="n">field_varnames</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;tas&#39;</span><span class="p">,</span> <span class="s1">&#39;psl&#39;</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">res</span><span class="o">.</span><span class="n">get_vars</span><span class="p">([</span><span class="s1">&#39;tas&#39;</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -875,40 +876,11 @@ job_path: ./testcases/PAGES2k_CCSM4_GISTEMP/recon_tas_psl/job.pkl
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 <span class="ansi-black-intense-fg ansi-bold">LMRt: res.get_var() &gt;&gt;&gt; loading variable: tas</span>
-<span class="ansi-black-intense-fg ansi-bold">LMRt: res.get_var() &gt;&gt;&gt; loading variable: psl</span>
-<span class="ansi-green-intense-fg ansi-bold">LMRt: res.get_var() &gt;&gt;&gt; res.vars filled w/ varnames: [&#39;tas&#39;, &#39;psl&#39;] and [&#39;year&#39;, &#39;lat&#39;, &#39;lon&#39;]</span>
+<span class="ansi-green-intense-fg ansi-bold">LMRt: res.get_var() &gt;&gt;&gt; res.vars filled w/ varnames: [&#39;tas&#39;] and [&#39;year&#39;, &#39;lat&#39;, &#39;lon&#39;]</span>
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># we can print the information of each variable</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="s1">&#39;tas&#39;</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="s1">&#39;psl&#39;</span><span class="p">])</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-varname: tas
-nt: 2001
-nlat: 42
-nlon: 63
-nEns: 1
-varname: psl
-nt: 2001
-nlat: 42
-nlon: 63
-nEns: 1
-</pre></div></div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -922,7 +894,7 @@ nEns: 1
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-/Users/fzhu/Github/LMRt/LMRt/visual.py:218: MatplotlibDeprecationWarning: The &#39;extend&#39; parameter to Colorbar has no effect because it is overridden by the mappable; it is deprecated since 3.3 and will be removed two minor releases later.
+/Users/fzhu/Github/LMRt/LMRt/visual.py:267: MatplotlibDeprecationWarning: The &#39;extend&#39; parameter to Colorbar has no effect because it is overridden by the mappable; it is deprecated since 3.3 and will be removed two minor releases later.
   cbar = fig.colorbar(im, ax=ax, orientation=cbar_orientation, pad=cbar_pad, aspect=cbar_aspect, extend=extend,
 </pre></div></div>
 </div>
@@ -930,33 +902,7 @@ nEns: 1
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/tutorial_howto_reconstruct-multiple-fields_17_1.png" src="../_images/tutorial_howto_reconstruct-multiple-fields_17_1.png" />
-</div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1"># plot the psl field</span>
-<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">vars</span><span class="p">[</span><span class="s1">&#39;psl&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">field_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">idx_t</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../_images/tutorial_howto_reconstruct-multiple-fields_18_0.png" src="../_images/tutorial_howto_reconstruct-multiple-fields_18_0.png" />
-</div>
-</div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>
-</pre></div>
+<img alt="../_images/tutorial_howto_reconstruct-cropped-domain_20_1.png" src="../_images/tutorial_howto_reconstruct-cropped-domain_20_1.png" />
 </div>
 </div>
 </div>
@@ -968,8 +914,8 @@ nEns: 1
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="howto_reconstruct-cropped-domain.html" class="btn btn-neutral float-right" title="Reconstruct a cropped domain" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="quickstart_visualization.html" class="btn btn-neutral float-left" title="Visualization of the results" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="howto_assimilate-more-proxies.html" class="btn btn-neutral float-right" title="Assimilate more proxies" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="howto_reconstruct-multiple-fields.html" class="btn btn-neutral float-left" title="Reconstruct multiple fields" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

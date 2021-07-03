@@ -207,6 +207,16 @@
 </dd>
 </dl>
 <dl class="py method">
+<dt class="sig sig-object py" id="LMRt.reconjob.ReconJob.crop_prior">
+<span class="sig-name descname"><span class="pre">crop_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconjob.ReconJob.crop_prior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Take a smaller domain for reconstruction</p>
+<dl class="simple">
+<dt>domain_range<span class="classifier">list</span></dt><dd><p>[lat_min, lat_max, lon_min, lon_max]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="LMRt.reconjob.ReconJob.gen_Xb">
 <span class="sig-name descname"><span class="pre">gen_Xb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recon_vars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconjob.ReconJob.gen_Xb" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate Xb</p>
@@ -292,7 +302,7 @@
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">LMRt.reconres.</span></span><span class="sig-name descname"><span class="pre">ReconSeries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">series_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconres.ReconSeries" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt class="sig sig-object py" id="LMRt.reconres.ReconSeries.plot">
-<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconres.ReconSeries.plot" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lgd_kws</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.reconres.ReconSeries.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot multiple timeseries on the same axis</p>
 <dl>
 <dt>figsize<span class="classifier">list, optional</span></dt><dd><p>Size of the figure. The default is [10, 4].</p>
@@ -558,6 +568,17 @@ See [matplotlib.axes](<a class="reference external" href="https://matplotlib.org
 <dt class="sig sig-object py" id="LMRt.gridded.Field">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">LMRt.gridded.</span></span><span class="sig-name descname"><span class="pre">Field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.gridded.Field" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
+<dt class="sig sig-object py" id="LMRt.gridded.Field.crop">
+<span class="sig-name descname"><span class="pre">crop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain_range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.gridded.Field.crop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Crop the domain for reconstruction</p>
+<dl class="simple">
+<dt>domain_range<span class="classifier">list</span></dt><dd><p>[lat_min, lat_max, lon_min, lon_max] for a square domain or
+[lat_min, lat_max] to crop the lats only</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="LMRt.gridded.Field.seasonalize">
 <span class="sig-name descname"><span class="pre">seasonalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">season</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3,</span> <span class="pre">4,</span> <span class="pre">5,</span> <span class="pre">6,</span> <span class="pre">7,</span> <span class="pre">8,</span> <span class="pre">9,</span> <span class="pre">10,</span> <span class="pre">11,</span> <span class="pre">12]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">make_year_mm_nan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.gridded.Field.seasonalize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Seasonalize the field</p>
@@ -572,6 +593,17 @@ See [matplotlib.axes](<a class="reference external" href="https://matplotlib.org
 <dt class="sig sig-object py" id="LMRt.gridded.Dataset">
 <em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">LMRt.gridded.</span></span><span class="sig-name descname"><span class="pre">Dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.gridded.Dataset" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
+<dt class="sig sig-object py" id="LMRt.gridded.Dataset.crop">
+<span class="sig-name descname"><span class="pre">crop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain_range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.gridded.Dataset.crop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Crop the domain for reconstruction</p>
+<dl class="simple">
+<dt>domain_range<span class="classifier">list</span></dt><dd><p>[lat_min, lat_max, lon_min, lon_max] for a square domain or
+[lat_min, lat_max] to crop the lats only</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="LMRt.gridded.Dataset.load_nc">
 <span class="sig-name descname"><span class="pre">load_nc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anom_period</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varname_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LMRt.gridded.Dataset.load_nc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Load a NetCDF file that assumed to include time, lat, lon, value</p>

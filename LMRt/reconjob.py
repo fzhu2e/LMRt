@@ -299,6 +299,31 @@ class ReconJob:
         self.prior = ds
         if verbose: p_success(f'LMRt: job.regrid_prior() >>> job.prior updated')
 
+    def crop_prior(self, domain_range=None, verbose=False):
+        ''' Take a smaller domain for reconstruction
+
+        Parameters
+        ----------
+
+        domain_range : list
+            [lat_min, lat_max, lon_min, lon_max]
+
+        '''
+        if domain_range is None:
+            domain_range = self.configs['prior_crop_domain_range']
+        self.configs['prior_crop_domain_range'] = domain_range
+        if self.configs['prior_crop_domain_range'] is None:
+            if verbose: p_success(f'LMRt: job.crop_prior() >>> job.prior not updated as the domain_range is set to None')
+        else:
+            ds = self.prior.copy()
+            ds.crop(self.configs['prior_crop_domain_range'], inplace=True)
+            if verbose:
+                p_hint('LMRt: job.crop_prior() >>> cutted prior')
+                print(ds)
+
+            self.prior = ds
+            if verbose: p_success(f'LMRt: job.crop_prior() >>> job.prior updated')
+
     def load_obs(self, path_dict=None, varname_dict=None, verbose=False, anom_period=None):
         ''' Load instrumental observations fields
 
