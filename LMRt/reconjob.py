@@ -696,28 +696,34 @@ class ReconJob:
             output_dict[f'{vn}_shm_ens'] = (('year', 'ens'), shm_ens)
 
             if vn == 'tas':
-                nino_ind = nino_indices(fd, lats, lons)
-                nino12 = nino_ind['nino1+2']
-                nino3 = nino_ind['nino3']
-                nino34 = nino_ind['nino3.4']
-                nino4 = nino_ind['nino4']
-                wpi = nino_ind['wpi']
+                try:
+                    nino_ind = nino_indices(fd, lats, lons)
+                    nino12 = nino_ind['nino1+2']
+                    nino3 = nino_ind['nino3']
+                    nino34 = nino_ind['nino3.4']
+                    nino4 = nino_ind['nino4']
+                    wpi = nino_ind['wpi']
 
-                nino12 = np.array(nino12, dtype=dtype)
-                nino3 = np.array(nino3, dtype=dtype)
-                nino34 = np.array(nino34, dtype=dtype)
-                nino4 = np.array(nino4, dtype=dtype)
+                    nino12 = np.array(nino12, dtype=dtype)
+                    nino3 = np.array(nino3, dtype=dtype)
+                    nino34 = np.array(nino34, dtype=dtype)
+                    nino4 = np.array(nino4, dtype=dtype)
 
-                output_dict['nino1+2'] = (('year', 'ens'), nino12)
-                output_dict['nino3'] = (('year', 'ens'), nino3)
-                output_dict['nino3.4'] = (('year', 'ens'), nino34)
-                output_dict['nino4'] = (('year', 'ens'), nino4)
-                output_dict['wpi'] = (('year', 'ens'), wpi)
+                    output_dict['nino1+2'] = (('year', 'ens'), nino12)
+                    output_dict['nino3'] = (('year', 'ens'), nino3)
+                    output_dict['nino3.4'] = (('year', 'ens'), nino34)
+                    output_dict['nino4'] = (('year', 'ens'), nino4)
+                    output_dict['wpi'] = (('year', 'ens'), wpi)
+                except:
+                    if verbose: p_warning(f'LMRt: job.save_recon() >>> NINO or West Pacific Indices cannot be calculated')
 
                 # calculate tripole index (TPI)
-                tpi = calc_tpi(fd, lats, lons)
-                tpi = np.array(tpi, dtype=dtype)
-                output_dict['tpi'] = (('year', 'ens'), tpi)
+                try:
+                    tpi = calc_tpi(fd, lats, lons)
+                    tpi = np.array(tpi, dtype=dtype)
+                    output_dict['tpi'] = (('year', 'ens'), tpi)
+                except:
+                    if verbose: p_warning(f'LMRt: job.save_recon() >>> Tripole Index (TPI) cannot be calculated')
 
             if output_geo_mean:
                 geo_mean_ts = geo_mean(fd, lats, lons, target_lats, target_lons)
