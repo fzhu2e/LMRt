@@ -310,8 +310,13 @@ class ReconJob:
 
         '''
         if domain_range is None:
-            domain_range = self.configs['prior_crop_domain_range']
-        self.configs['prior_crop_domain_range'] = domain_range
+            if 'prior_crop_domain_range' not in self.configs:
+                self.configs['prior_crop_domain_range'] = None
+            else:
+                domain_range = self.configs['prior_crop_domain_range']
+        else:
+            self.configs['prior_crop_domain_range'] = domain_range
+
         if self.configs['prior_crop_domain_range'] is None:
             if verbose: p_success(f'LMRt: job.crop_prior() >>> job.prior not updated as the domain_range is set to None')
         else:
@@ -956,6 +961,7 @@ class ReconJob:
         prior_varname_dict = self.configs['prior_varname']
         prior_season = self.configs['prior_season']
         prior_regrid_ntrunc = self.configs['prior_regrid_ntrunc']
+        prior_crop_domain_range = self.configs['prior_crop_domain_range'] if 'prior_crop_domain_range' in self.configs else None
         obs_path = cfg_abspath(cfg_path, self.configs['obs_path'])
         obs_varname_dict = self.configs['obs_varname']
         anom_period = self.configs['anom_period']
@@ -1016,6 +1022,10 @@ class ReconJob:
             obs_path=obs_path, obs_varname_dict=obs_varname_dict, anom_period=anom_period,
             calib_period=psm_calib_period, seasonalized_prior_path=seasonalized_prior_path, seasonalized_obs_path=seasonalized_obs_path,
             prior_loc_path=prior_loc_path, obs_loc_path=obs_loc_path, calibed_psm_path=calibed_psm_path, verbose=verbose)
+
+        # crop the domain if set to
+        if prior_crop_domain_range is not None:
+            self.crop_prior(prior_crop_domain_range, verbose=verbose)
 
         self.save(prep_savepath=prep_savepath, verbose=verbose)
 
