@@ -690,15 +690,18 @@ class ReconJob:
                 output_dict[vn] = (('year', 'lat', 'lon'), output_var)
 
             lats, lons = self.prior.fields[vn].lat, self.prior.fields[vn].lon
-            gm_ens = np.ndarray((nyr, nens), dtype=dtype)
-            nhm_ens = np.ndarray((nyr, nens), dtype=dtype)
-            shm_ens = np.ndarray((nyr, nens), dtype=dtype)
-            for k in range(nens):
-                gm_ens[:,k], nhm_ens[:,k], shm_ens[:,k] = global_hemispheric_means(fd[:,k,:,:], lats)
+            try:
+                gm_ens = np.ndarray((nyr, nens), dtype=dtype)
+                nhm_ens = np.ndarray((nyr, nens), dtype=dtype)
+                shm_ens = np.ndarray((nyr, nens), dtype=dtype)
+                for k in range(nens):
+                    gm_ens[:,k], nhm_ens[:,k], shm_ens[:,k] = global_hemispheric_means(fd[:,k,:,:], lats)
 
-            output_dict[f'{vn}_gm_ens'] = (('year', 'ens'), gm_ens)
-            output_dict[f'{vn}_nhm_ens'] = (('year', 'ens'), nhm_ens)
-            output_dict[f'{vn}_shm_ens'] = (('year', 'ens'), shm_ens)
+                output_dict[f'{vn}_gm_ens'] = (('year', 'ens'), gm_ens)
+                output_dict[f'{vn}_nhm_ens'] = (('year', 'ens'), nhm_ens)
+                output_dict[f'{vn}_shm_ens'] = (('year', 'ens'), shm_ens)
+            except:
+                if verbose: p_warning(f'LMRt: job.save_recon() >>> Global hemispheric means cannot be calculated')
 
             if vn == 'tas':
                 try:
