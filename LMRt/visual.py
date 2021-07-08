@@ -21,6 +21,7 @@ from scipy.integrate import cumtrapz
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 from matplotlib.legend_handler import HandlerLine2D
+import pathlib
 
 from cartopy import util as cutil
 from . import utils
