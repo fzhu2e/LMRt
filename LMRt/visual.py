@@ -971,13 +971,12 @@ def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
 
 
 def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_range,
-                  nbin=2000, qs=[0.05, 0.95], figsize=[5, 5], xlabel=None, ylabel='Cumulative Distribution Function',
+                  nbin=2000, qs=[0.05, 0.5, 0.95], band_idx=[0, -1], line_idx=1, figsize=[5, 5], xlabel=None, ylabel='Cumulative Distribution Function',
                   lw_nonvolc_qs=1, lw_volc_nonvolc=1, lw_nonvolc_med=1, xlim=None, title=None, show_ratio_in_title=True,
                   clr_volc_signif=sns.xkcd_rgb['pale red'], clr_volc=sns.xkcd_rgb['black'],
                   clr_nonvolc=sns.xkcd_rgb['grey'], clr_nonvolc_qs=sns.xkcd_rgb['light grey'],
-                  fs=15, ms=100, yr_base=2001, yr_label_x_adj=None, yr_label_y_adj=0,
+                  fs=15, ms=100, yr_base=2001, yr_label_x_adj=None, yr_label_y_adj=0, yr_lb_shift_ratio=1.8,
                   label_volc='Volcanic years', label_nonvolc='Non-volcanic years', plot_nonvolc=False,
-                  label_nonvolc_med='Randomly selected\nnon-volcanic years (50%)',
                   label_nonvolc_qs='Randomly selected\nnon-volcanic years', plot_lgd=True, ax=None, lgd_style=None):
 
         kws = {'cumulative': True, 'density': True, 'histtype': 'step', 'range': value_range, 'bins': nbin, 'lw': lw_volc_nonvolc}
@@ -994,15 +993,15 @@ def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_
             cdf_draw.append(cdf)
 
         cdf_qs = utils.calc_cdf_qs(cdf_draw, qs)
-        cdf_lb = utils.recover_cdf_from_locs(cdf_qs[qs[0]], nbin)
-        cdf_ub = utils.recover_cdf_from_locs(cdf_qs[qs[-1]], nbin)
+        cdf_lb = utils.recover_cdf_from_locs(cdf_qs[qs[band_idx[0]]], nbin)
+        cdf_ub = utils.recover_cdf_from_locs(cdf_qs[qs[band_idx[1]]], nbin)
 
         if plot_nonvolc:
             n['nonvolc'], bins['nonvolc'], patches['nonvolc'] = ax.hist(anom_nonvolc, label=label_nonvolc, color=clr_nonvolc, zorder=98, **kws)
         else:
-            cdf_qs_med = utils.calc_cdf_qs(cdf_draw, [0.5])
-            cdf_md = utils.recover_cdf_from_locs(cdf_qs_med[0.5], nbin)
-            ax.fill_between(np.linspace(value_range[0], value_range[-1], nbin), cdf_md, cdf_md, color=clr_nonvolc, label=label_nonvolc_med, lw=lw_nonvolc_med, zorder=98)
+            cdf_line = utils.recover_cdf_from_locs(cdf_qs[qs[line_idx]], nbin)
+            lb_line = f'{label_nonvolc_qs} ({qs[line_idx]*100:g}%)'
+            ax.fill_between(np.linspace(value_range[0], value_range[-1], nbin), cdf_line, cdf_line, color=clr_nonvolc, label=lb_line, lw=lw_nonvolc_med, zorder=98)
 
         x_values = np.linspace(value_range[0], value_range[1], nbin)
         ub_loc_dict = {}
@@ -1016,13 +1015,14 @@ def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_
         if yr_label_x_adj is None:
             yr_label_x_adj = -np.abs(value_range[0])/10
 
+        anom_volc_list = []
         for i, yr in enumerate(year_volc):
             for j, b in enumerate(bins['volc']):
                 if anom_volc[i] >= b and anom_volc[i] < bins['volc'][j+1]:
                     n_tmp = n['volc'][j]
 
             loc = f'{n_tmp:.2f}'
-            if anom_volc[i] < ub_loc_dict[loc]:
+            if anom_volc[i] <= ub_loc_dict[loc]:
                 signif = False
             else:
                 signif = True
@@ -1030,13 +1030,18 @@ def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_
 
             clr = clr_volc_signif if signif else clr_volc
             ax.scatter(anom_volc[i], n_tmp, marker='^', color=clr, zorder=100, s=ms)
-            ax.text(anom_volc[i]+yr_label_x_adj, n_tmp+yr_label_y_adj, yr%yr_base, color=clr, zorder=100, fontsize=fs)
+            if i>0 and f'{anom_volc[i]:.4f}' in anom_volc_list:
+                # text for the same ranking
+                ax.text(anom_volc[i]+yr_label_x_adj, n_tmp-1/len(anom_volc)/yr_lb_shift_ratio, yr%yr_base, color=clr, zorder=100, fontsize=fs)
+            else:
+                ax.text(anom_volc[i]+yr_label_x_adj, n_tmp+yr_label_y_adj, yr%yr_base, color=clr, zorder=100, fontsize=fs)
+            anom_volc_list.append(f'{anom_volc[i]:.4f}')
 
         ax.scatter(None, None, marker='^', color=clr_volc, label='Insignificant events')
-        ax.scatter(None, None, marker='^', color=clr_volc_signif, label='Significant events')
+        ax.scatter(None, None, marker='^', color=clr_volc_signif, label=f'Significant events (> {qs[band_idx[1]]*100:g}%)')
 
-        label_nonvolc_qs = f'{label_nonvolc_qs} ({qs[0]*100:g}%-{qs[-1]*100:g}%)'
-        ax.fill_between(np.linspace(value_range[0], value_range[-1], nbin), cdf_lb, cdf_ub, color=clr_nonvolc_qs, label=label_nonvolc_qs, lw=lw_nonvolc_qs)
+        lb_qs = f'{label_nonvolc_qs} ({qs[band_idx[0]]*100:g}%-{qs[band_idx[1]]*100:g}%)'
+        ax.fill_between(np.linspace(value_range[0], value_range[-1], nbin), cdf_lb, cdf_ub, color=clr_nonvolc_qs, label=lb_qs, lw=lw_nonvolc_qs)
 
         ax.set_ylim(0, 1.05)
         if xlim is not None:
