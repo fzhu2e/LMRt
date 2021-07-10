@@ -972,11 +972,12 @@ def plot_volc_pdf(year_volc, anom_volc, anom_nonvolc, xs,
 
 def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_range,
                   nbin=2000, qs=[0.05, 0.95], figsize=[5, 5], xlabel=None, ylabel='Cumulative Distribution Function',
-                  lw_nonvolc_qs=2, lw_volc_nonvolc=2, xlim=None, title=None, show_ratio_in_title=True,
+                  lw_nonvolc_qs=1, lw_volc_nonvolc=1, lw_nonvolc_med=1, xlim=None, title=None, show_ratio_in_title=True,
                   clr_volc_signif=sns.xkcd_rgb['pale red'], clr_volc=sns.xkcd_rgb['black'],
                   clr_nonvolc=sns.xkcd_rgb['grey'], clr_nonvolc_qs=sns.xkcd_rgb['light grey'],
                   fs=15, ms=100, yr_base=2001, yr_label_x_adj=None, yr_label_y_adj=0,
-                  label_volc='Volcanic years', label_nonvolc='Non-volcanic years',
+                  label_volc='Volcanic years', label_nonvolc='Non-volcanic years', plot_nonvolc=False,
+                  label_nonvolc_med='Randomly selected\nnon-volcanic years (50%)',
                   label_nonvolc_qs='Randomly selected\nnon-volcanic years', plot_lgd=True, ax=None, lgd_style=None):
 
         kws = {'cumulative': True, 'density': True, 'histtype': 'step', 'range': value_range, 'bins': nbin, 'lw': lw_volc_nonvolc}
@@ -985,7 +986,6 @@ def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_
 
         n, bins, patches = {}, {}, {}
         n['volc'], bins['volc'], patches['volc'] = ax.hist(anom_volc, label=label_volc, color=clr_volc, **kws, zorder=99)
-        n['nonvolc'], bins['nonvolc'], patches['nonvolc'] = ax.hist(anom_nonvolc, label=label_nonvolc, color=clr_nonvolc, zorder=98, **kws)
 
         cdf_draw = []
         for anom_draw in anom_nonvolc_draws:
@@ -996,6 +996,13 @@ def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_
         cdf_qs = utils.calc_cdf_qs(cdf_draw, qs)
         cdf_lb = utils.recover_cdf_from_locs(cdf_qs[qs[0]], nbin)
         cdf_ub = utils.recover_cdf_from_locs(cdf_qs[qs[-1]], nbin)
+
+        if plot_nonvolc:
+            n['nonvolc'], bins['nonvolc'], patches['nonvolc'] = ax.hist(anom_nonvolc, label=label_nonvolc, color=clr_nonvolc, zorder=98, **kws)
+        else:
+            cdf_qs_med = utils.calc_cdf_qs(cdf_draw, [0.5])
+            cdf_md = utils.recover_cdf_from_locs(cdf_qs_med[0.5], nbin)
+            ax.fill_between(np.linspace(value_range[0], value_range[-1], nbin), cdf_md, cdf_md, color=clr_nonvolc, label=label_nonvolc_med, lw=lw_nonvolc_med, zorder=98)
 
         x_values = np.linspace(value_range[0], value_range[1], nbin)
         ub_loc_dict = {}
@@ -1044,6 +1051,7 @@ def plot_volc_cdf(year_volc, anom_volc, anom_nonvolc, anom_nonvolc_draws, value_
         if plot_lgd:
             handles, labels = ax.get_legend_handles_labels()
             order = [0, 1, 4, 2, 3]
+
             handles = [handles[idx] for idx in order]
             labels = [labels[idx] for idx in order]
 
