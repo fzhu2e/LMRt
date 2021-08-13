@@ -47,6 +47,15 @@ from pyleoclim.core.ui import (
     EnsembleSeries,
 )
 class ReconSeries(EnsembleSeries):
+    def to_array(self):
+        ts_array = []
+        for ts in self.series_list:
+            ts_array.append(ts.value)
+        ts_array = np.array(ts_array)
+        # ts_array = np.moveaxis(ts_array, 0, -1)  # put ens dim to the rightmost
+
+        return ts_array
+
     def validate_fd(self, target_item, stat='corr', valid_period=[1880, 2000], corr_method_kws=None, verbose=False):
         ts_array = []
         for ts in self.series_list:
@@ -436,6 +445,15 @@ class ReconField:
 
         return msg
 
+    def to_array(self):
+        fd_array = []
+        for fd in self.field_list:
+            fd_array.append(fd.value)
+        fd_array = np.array(fd_array)
+        # fd_array = np.moveaxis(fd_array, 0, -1)  # put ens dim to the rightmost
+
+        return fd_array
+
     def validate_fd(self, target_item, stat='corr', valid_period=[1880, 2000], corr_method_kws=None, verbose=False):
         fd_array = []
         for fd in self.field_list:
@@ -659,7 +677,6 @@ class ReconRes:
                             )
                         )
 
-                # self.vars[varname] = ReconSeries(year, var_array, varname=varname)
                 self.vars[varname] = ReconSeries(series_list)
 
         if verbose: p_success(f"LMRt: res.get_var() >>> res.vars filled w/ varnames: {varnames} and ['year', 'lat', 'lon']")
