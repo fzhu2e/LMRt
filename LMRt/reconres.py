@@ -10,6 +10,7 @@ from copy import deepcopy
 from tqdm import tqdm
 import xarray as xr
 import inspect
+from scipy.stats.mstats import mquantiles
 import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm, Normalize
 import cartopy.crs as ccrs
@@ -55,6 +56,12 @@ class ReconSeries(EnsembleSeries):
         # ts_array = np.moveaxis(ts_array, 0, -1)  # put ens dim to the rightmost
 
         return ts_array
+
+    def quantiles_array(self, qs=[0.05, 0.5, 0.95]):
+        ts_array = self.to_array()
+        ts_qs = np.percentile(ts_array, np.array(qs)*100, axis=0)
+
+        return ts_qs
 
     def validate_fd(self, target_item, stat='corr', valid_period=[1880, 2000], corr_method_kws=None, verbose=False):
         ts_array = []
@@ -499,6 +506,12 @@ class ReconField:
         stat_fd = Field(stat, [0], self.lat, self.lon, stat_array)
 
         return stat_fd
+
+    def quantiles_array(self, qs=[0.05, 0.5, 0.95]):
+        fd_array = self.to_array()
+        fd_qs = np.percentile(fd_array, np.array(qs)*100, axis=0)
+
+        return fd_qs
 
     def validate_proxydb(self, target_item, stat='corr', corr_method_kws=None, verbose=False):
         if isinstance(target_item, ProxyRecord):
