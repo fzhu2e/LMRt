@@ -831,7 +831,7 @@ def get_anomaly(var, year_float, ref_period=[1951, 1980]):
 
 def sea_dbl(time, value, events, nonevents=None, preyr=5, postyr=15, seeds=None, nsample=10,
             qs=[0.05, 0.5, 0.95], qs_signif=[0.01, 0.05, 0.10, 0.90, 0.95, 0.99],
-            nboot_event=1000, verbose=False, draw_mode='non-events'):
+            nboot_event=1000, verbose=False, draw_mode='non-events', preyr_include_yr0=False):
     ''' A double bootstrap approach to Superposed Epoch Analysis to evaluate response uncertainty
 
     Args:
@@ -925,8 +925,12 @@ def sea_dbl(time, value, events, nonevents=None, preyr=5, postyr=15, seeds=None,
             composite_raw_signif[i, j, :, :] = value[center_yr_signif-preyr:center_yr_signif+postyr+1, :]
 
     # normalization: remove the mean of the pre-years
-    composite_norm = composite_raw - np.average(composite_raw[:, :, :preyr, ...], axis=2)[:, :, np.newaxis, :]
-    composite_norm_signif = composite_raw_signif - np.average(composite_raw_signif[:, :, :preyr, ...], axis=2)[:, :, np.newaxis, :]
+    if preyr_include_yr0 is True:
+        composite_norm = composite_raw - np.average(composite_raw[:, :, 1:preyr+1, ...], axis=2)[:, :, np.newaxis, :]
+        composite_norm_signif = composite_raw_signif - np.average(composite_raw_signif[:, :, 1:preyr+1, ...], axis=2)[:, :, np.newaxis, :]
+    else:
+        composite_norm = composite_raw - np.average(composite_raw[:, :, :preyr, ...], axis=2)[:, :, np.newaxis, :]
+        composite_norm_signif = composite_raw_signif - np.average(composite_raw_signif[:, :, :preyr, ...], axis=2)[:, :, np.newaxis, :]
 
     composite = np.average(composite_norm, axis=1)
     composite = composite.transpose(0, 2, 1).reshape(nboot_event*nts, -1)
