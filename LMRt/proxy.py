@@ -29,6 +29,7 @@ from .utils import (
 from .psm import (
     Linear,
     Bilinear,
+    Lake_VarveThickness,
 )
 
 import matplotlib.pyplot as plt
@@ -287,6 +288,15 @@ class ProxyRecord(Series):
                 prior_pr_time=self.prior_time['pr'],
                 prior_pr_value=self.prior_value['pr'],
             )
+        elif self.psm_name == 'varve_thickness':
+            self.psm = Lake_VarveThickness(
+                self.time, self.value,
+                self.obs_time['tas'], self.obs_value['tas'],
+                prior_tas_time=self.prior_time['tas'],
+                prior_tas_value=self.prior_value['tas'],
+            )
+        else:
+            raise ValueError('Wrong PSM name!')
 
     def calib_psm(self, calib_period=None, calib_kws=None):
         calib_kws = {} if calib_kws is None else calib_kws.copy()
@@ -301,10 +311,10 @@ class ProxyRecord(Series):
             self.R = None
 
 
-    def forward_psm(self):
+    def forward_psm(self, no_calib=False):
         ''' Forward modeling: calculate ye using the PSM according to self.psm
         '''
-        if self.psm.calib_details is not None:
+        if no_calib or self.psm.calib_details is not None:
             self.psm.forward()
             self.ye_time = self.psm.ye_time
             self.ye_value = self.psm.ye_value
@@ -715,10 +725,10 @@ class ProxyDatabase:
             p_success(f'LMRt: job.proxydb.calib_psm() >>> job.proxydb.records[pid].psm calibrated')
             p_success(f'LMRt: job.proxydb.calib_psm() >>> job.proxydb.calibed created')
 
-    def forward_psm(self, verbose=False):
+    def forward_psm(self, no_calib=False, verbose=False):
         for pid, pobj in tqdm(self.records.items(), desc='Forwarding PSM'):
-            if pobj.psm.calib_details is not None:
-                pobj.forward_psm()
+            if no_calib or pobj.psm.calib_details is not None:
+                pobj.forward_psm(no_calib=no_calib)
 
         if verbose: p_success(f'LMRt: job.proxydb.forward_psm() >>> job.proxydb.records[pid].psm forwarded')
 
