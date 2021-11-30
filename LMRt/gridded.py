@@ -185,6 +185,7 @@ class Dataset:
         varname_dict: dict
             a dict to map variable names, e.g. {'tas': 'tempanomaly'} means 'tas' is named 'tempanomaly' in the input NetCDF file
 
+
         '''
         varname_dict = {} if varname_dict is None else varname_dict.copy()
         # the default names for variables time, lat, lon
@@ -200,7 +201,10 @@ class Dataset:
             with xr.open_dataset(path) as ds:
                 if vn_dict['time'] in ds:
                     date = ds[vn_dict['time']].values
-                    time = datetime2year_float(date)
+                    if type(vn_dict['time'][0]) in [np.float32, np.float64, float]:
+                        time = date
+                    else:
+                        time = datetime2year_float(date)
                 else:
                     raise ValueError('time not available')
 
