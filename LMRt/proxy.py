@@ -205,6 +205,28 @@ class ProxyRecord(Series):
                 showfig(fig)
         return fig, ax
 
+    def add(self, records):
+        ''' Add a list of records into a database
+        '''
+        newdb = ProxyDatabase()
+        newdb.records[self.pid] = self.copy()
+        if isinstance(records, ProxyRecord):
+            # if only one record
+            records = [records]
+
+        if isinstance(records, ProxyDatabase):
+            # if a database
+            records = [records.records[pid] for pid in records.records.keys()]
+
+        for record in records:
+            newdb.records[record.pid] = record
+
+        newdb.refresh()
+        return newdb
+
+    def __add__(self, records):
+        return self.add(records)
+
     # def plot(self, ax=None, savefig_settings=None, figsize=[8, 4], mute=False, xlim=None, ylim=None, **plt_kws):
     #     plt.ioff()
     #     savefig_settings = {} if savefig_settings is None else savefig_settings.copy()
@@ -294,6 +316,16 @@ class ProxyRecord(Series):
                 self.obs_time['tas'], self.obs_value['tas'],
                 prior_tas_time=self.prior_time['tas'],
                 prior_tas_value=self.prior_value['tas'],
+            )
+        elif self.psm_name == 'ice_d18O':
+            self.psm = Ice_d18O(
+                self.time, self.value,
+                self.obs_time['tas'], self.obs_value['tas'],
+                self.obs_time['pr'], self.obs_value['pr'],
+                prior_tas_time=self.prior_time['tas'],
+                prior_tas_value=self.prior_value['tas'],
+                prior_pr_time=self.prior_time['pr'],
+                prior_pr_value=self.prior_value['pr'],
             )
         else:
             raise ValueError('Wrong PSM name!')
@@ -602,6 +634,10 @@ class ProxyDatabase:
             # if only one record
             records = [records]
 
+        if isinstance(records, ProxyDatabase):
+            # if a database
+            records = [records.records[pid] for pid in records.records.keys()]
+
         for record in records:
             newdb.records[record.pid] = record
             if verbose: p_success(f'LMRt: job.proxydb.add() >>> Record {record.pid} added.')
@@ -612,6 +648,9 @@ class ProxyDatabase:
         else:
             newdb.refresh()
             return newdb
+    
+    def __add__(self, records, inplace=False, verbose=False):
+        return self.add(records, inplace=inplace, verbose=verbose)
 
     def remove(self, pids, inplace=False, verbose=False):
         ''' Remove a list of records from the database regardless existing or not

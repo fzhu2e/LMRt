@@ -291,7 +291,7 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
                  figsize=[8, 10], projection='Robinson', proj_args=None, central_longitude=180, markersize=50,
                  plot_count=True, nrow=2, ncol=1, wspace=0.5, hspace=0.1,
                  lgd_ncol=None, lgd_anchor_upper=(1, -0.1), lgd_anchor_lower=(1, -0.05),lgd_frameon=False,
-                 enumerate_ax=False, enumerate_prop={'weight': 'bold', 'size': 30}, p=PAGES2k,
+                 enumerate_ax=False, enumerate_prop={'weight': 'bold', 'size': 30}, p=PAGES2k, stock_img=True,
                  enumerate_anchor_map=[0, 1], enumerate_anchor_count=[0, 1], map_grid_idx=0, count_grid_idx=-1):
 
     plt.ioff()
@@ -311,6 +311,8 @@ def plot_proxies(df, year=np.arange(2001), lon_col='lon', lat_col='lat', type_co
 
     ax = {}
     ax['map'] = plt.subplot(gs[map_grid_idx], projection=projection)
+    if stock_img:
+        ax['map'].stock_img()
 
     if title:
         ax['map'].set_title(title, fontweight=title_weight)
