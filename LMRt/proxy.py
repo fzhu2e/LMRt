@@ -30,6 +30,8 @@ from .psm import (
     Linear,
     Bilinear,
     Lake_VarveThickness,
+    Coral_SrCa,
+    Ice_d18O,
 )
 
 import matplotlib.pyplot as plt
@@ -316,6 +318,13 @@ class ProxyRecord(Series):
                 self.obs_time['tas'], self.obs_value['tas'],
                 prior_tas_time=self.prior_time['tas'],
                 prior_tas_value=self.prior_value['tas'],
+            )
+        elif self.psm_name == 'coral_SrCa':
+            self.psm = Coral_SrCa(
+                self.time, self.value,
+                self.obs_time['sst'], self.obs_value['sst'],
+                prior_sst_time=self.prior_time['sst'],
+                prior_sst_value=self.prior_value['sst'],
             )
         elif self.psm_name == 'ice_d18O':
             self.psm = Ice_d18O(

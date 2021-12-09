@@ -26,6 +26,8 @@ def clean_df(df, mask=None):
 
 
 class Linear:
+    ''' The univariate linear PSM
+    '''
     def __init__(self, proxy_time, proxy_value, obs_tas_time, obs_tas_value, prior_tas_time=None, prior_tas_value=None):
         self.proxy_time = proxy_time
         self.proxy_value = proxy_value
@@ -106,6 +108,8 @@ class Linear:
         self.ye_time = np.array(clean_t)
 
 class Bilinear:
+    ''' The bivariate linear PSM
+    '''
     def __init__(self, proxy_time, proxy_value, obs_tas_time, obs_tas_value, obs_pr_time, obs_pr_value,
         prior_tas_time=None, prior_tas_value=None, prior_pr_time=None, prior_pr_value=None, ):
         self.proxy_time = proxy_time
@@ -661,6 +665,40 @@ class Ice_d18O():
 
         ################
 
+
+class Coral_SrCa:
+    ''' The coral Sr/Ca model
+    '''
+    def __init__(self, proxy_time, proxy_value,
+            obs_sst_time, obs_sst_value,
+            prior_sst_time=None, prior_sst_value=None,
+        ):
+        self.proxy_time = proxy_time
+        self.proxy_value = proxy_value
+        self.obs_sst_time = obs_sst_time
+        self.obs_sst_value = obs_sst_value
+        self.prior_sst_time = prior_sst_time
+        self.prior_sst_value = prior_sst_value
+
+    def forward(self, b=10.553, a=None, seed=0):
+        ''' Sensor model for Coral Sr/Ca = a SST + b
+
+        Args:
+            sst (1-D array): sea surface temperature in [degC]
+        '''
+        if a is None:
+            mu = -0.06
+            std = 0.01
+            a = ss.norm.rvs(loc=mu, scale=std, random_state=seed)
+
+        SrCa = a*self.prior_sst_value + b
+
+        if type(self.prior_sst_value) is dict:
+            sn = list(self.prior_sst_value.keys())[0]
+            self.ye_time = self.prior_sst_time[sn]
+        else:
+            self.ye_time = self.prior_sst_time
+        self.ye_value = SrCa
 
 
 class Coral_d18O:
