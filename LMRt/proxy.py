@@ -33,6 +33,7 @@ from .psm import (
     Coral_SrCa,
     Coral_d18O,
     Ice_d18O,
+    VSLite,
 )
 
 import matplotlib.pyplot as plt
@@ -363,6 +364,16 @@ class ProxyRecord(Series):
                 prior_d18Opr_value=self.prior_value['d18Opr'],
                 prior_psl_time=self.prior_time['psl'],
                 prior_psl_value=self.prior_value['psl'],
+            )
+        elif self.psm_name == 'VSLite':
+            self.psm = VSLite(
+                self.time, self.value, self.lat,
+                self.obs_time['tas'], self.obs_value['tas'],
+                self.obs_time['pr'], self.obs_value['pr'],
+                prior_tas_time=self.prior_time['tas'],
+                prior_tas_value=self.prior_value['tas'],
+                prior_pr_time=self.prior_time['pr'],
+                prior_pr_value=self.prior_value['pr'],
             )
         else:
             raise ValueError('Wrong PSM name!')
@@ -782,7 +793,11 @@ class ProxyDatabase:
             calibed = ProxyDatabase(source=self.source)
             for pid, pobj in tqdm(self.records.items(), desc='Calibrating PSM'):
                 pobj.calib_psm(calib_period=calib_period, **calib_kws)
-                psm_model_dict[pid] = pobj.psm.model
+                if pobj.psm_name in ['linear', 'bilinaer']:
+                    psm_model_dict[pid] = pobj.psm.model
+                else:
+                    psm_model_dict[pid] = None
+
                 calib_details_dict[pid] = pobj.psm.calib_details
                 if pobj.psm.calib_details is not None:
                     calibed_pobjs.append(pobj)

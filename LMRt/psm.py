@@ -15,6 +15,7 @@ from .utils import (
     annualize_var,
 )
 from tqdm import tqdm
+import PyVSL
 
 def clean_df(df, mask=None):
     pd.options.mode.chained_assignment = None
@@ -869,3 +870,75 @@ class Coral_d18O:
 
         self.ye_value = pseudocoral(self.prior_tos_value, d18O=self.prior_d18Osw_value, lat=self.proxy_lat, lon=self.proxy_lon)
         self.ye_time = self.prior_tos_time
+
+class VSLite:
+    ''' The VS-Lite tree-ring width model that takes monthly tas, pr as input.
+    '''
+    def __init__(self, proxy_time, proxy_value, proxy_lat,
+            obs_tas_time, obs_tas_value,
+            obs_pr_time, obs_pr_value,
+            prior_tas_time=None, prior_tas_value=None,
+            prior_pr_time=None, prior_pr_value=None,
+        ):
+        self.proxy_time = proxy_time
+        self.proxy_value = proxy_value
+        self.proxy_lat = proxy_lat
+        self.obs_tas_time = obs_tas_time
+        self.obs_tas_value = obs_tas_value
+        self.obs_pr_time = obs_pr_time
+        self.obs_pr_value = obs_pr_value
+        self.prior_tas_time = prior_tas_time
+        self.prior_tas_value = prior_tas_value
+        self.prior_pr_time = prior_pr_time
+        self.prior_pr_value = prior_pr_value
+
+    def calibrate(self, calib_period=[1901, 2000], method='Bayesian'):
+        proxy_syear = np.min(self.proxy_time)
+        proxy_eyear = np.max(self.proxy_time)
+        obs_syear = np.min(np.floor(self.obs_tas_time))
+        obs_eyear = np.max(np.floor(self.obs_tas_time))
+        calib_syear = np.max([proxy_syear, obs_syear, calib_period[0]])
+        calib_eyear = np.min([proxy_eyear, obs_eyear, calib_period[1]])
+        if calib_period is not None:
+            mask_T = (self.obs_tas_time>calib_syear) & (self.obs_tas_time<calib_eyear)
+            mask_P = (self.obs_pr_time>calib_syear) & (self.obs_pr_time<calib_eyear)
+            mask_TRW = (self.proxy_time>calib_syear) & (self.proxy_time<calib_eyear)
+            T = self.obs_tas_value[mask_T]
+            P = self.obs_pr_value[mask_P]
+            TRW = self.proxy_value[mask_TRW]
+        else:
+            T = self.obs_tas_value
+            P = self.obs_pr_value
+            TRW = self.proxy_value
+
+        if method == 'Bayesian':
+            res_dict = PyVSL.est_params(T, P, self.proxy_lat, TRW)
+        else:
+            raise ValueError('Wrong estimation method for VSLite!')
+
+        self.calib_details = {
+            'T1': res_dict['T1'],
+            'T2': res_dict['T2'],
+            'M1': res_dict['M1'],
+            'M2': res_dict['M2'],
+            'seasonality': None,
+            'SNR': None,
+            'PSMmse': None,
+        }
+
+    def forward(self, **vsl_kwargs):
+        syear = np.min(np.floor(self.prior_tas_time))
+        eyear = np.max(np.floor(self.prior_tas_time))
+
+        if hasattr(self, 'calib_details'):
+            kwargs = {}
+            for k in ['T1', 'T2', 'M1', 'M2']:
+                kwargs[k] = self.calib_details[k]
+
+            vsl_kwargs.update(kwargs)
+
+        vsl_res = PyVSL.VSL(
+            syear, eyear, self.proxy_lat, self.prior_tas_value, self.prior_pr_value, **vsl_kwargs
+        )
+        self.ye_value = vsl_res['trw']
+        self.ye_time = np.arange(syear, eyear+1)
