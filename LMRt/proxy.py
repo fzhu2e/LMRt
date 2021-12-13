@@ -31,6 +31,7 @@ from .psm import (
     Bilinear,
     Lake_VarveThickness,
     Coral_SrCa,
+    Coral_d18O,
     Ice_d18O,
 )
 
@@ -325,6 +326,31 @@ class ProxyRecord(Series):
                 self.obs_time['tos'], self.obs_value['tos'],
                 prior_tos_time=self.prior_time['tos'],
                 prior_tos_value=self.prior_value['tos'],
+            )
+        elif self.psm_name == 'coral_d18O':
+            if 'sos' in self.prior_time.keys():
+                sos_time = self.prior_time['sos']
+                sos_value = self.prior_value['sos']
+            else:
+                sos_time = None
+                sos_value = None
+
+            if 'd18Osw' in self.prior_time.keys():
+                d18Osw_time = self.prior_time['d18Osw']
+                d18Osw_value = self.prior_value['d18Osw']
+            else:
+                d18Osw_time = None
+                d18Osw_value = None
+
+            self.psm = Coral_d18O(
+                self.time, self.value,
+                self.lat, self.lon,
+                prior_tos_time=self.prior_time['tos'],
+                prior_tos_value=self.prior_value['tos'],
+                prior_sos_time=sos_time,
+                prior_sos_value=sos_value,
+                prior_d18Osw_time=d18Osw_time,
+                prior_d18Osw_value=d18Osw_value,
             )
         elif self.psm_name == 'ice_d18O':
             self.psm = Ice_d18O(
