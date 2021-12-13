@@ -6,11 +6,15 @@ import numpy as np
 import pandas as pd
 import random
 import fbm
+from pathos.multiprocessing import ProcessingPool as Pool
+from scipy import integrate, signal
 # import fbm
 from .utils import (
     clean_ts,
     seasonal_var,
+    annualize_var,
 )
+from tqdm import tqdm
 
 def clean_df(df, mask=None):
     pd.options.mode.chained_assignment = None
@@ -323,21 +327,24 @@ class Lake_VarveThickness():
 
 class Ice_d18O():
     ''' The ice d18O model
+
+    It takes montly tas, pr, and psl as input.
     '''
-    def __init__(self, proxy_time, proxy_value, obs_tas_time, obs_tas_value, obs_pr_time, obs_pr_value,
-        prior_tas_time=None, prior_tas_value=None, prior_pr_time=None, prior_pr_value=None, ):
+    def __init__(self, proxy_time, proxy_value,
+        prior_tas_time=None, prior_tas_value=None, prior_pr_time=None, prior_pr_value=None,
+        prior_d18Opr_time=None, prior_d18Opr_value=None, prior_psl_time=None, prior_psl_value=None):
         self.proxy_time = proxy_time
         self.proxy_value = proxy_value
-        self.obs_tas_time = obs_tas_time
-        self.obs_tas_value = obs_tas_value
-        self.obs_pr_time = obs_pr_time
-        self.obs_pr_value = obs_pr_value
         self.prior_tas_time = prior_tas_time
         self.prior_tas_value = prior_tas_value
         self.prior_pr_time = prior_pr_time
         self.prior_pr_value = prior_pr_value
+        self.prior_d18Opr_time = prior_d18Opr_time
+        self.prior_d18Opr_value =prior_d18Opr_value
+        self.prior_psl_time = prior_psl_time
+        self.prior_psl_value = prior_psl_value
 
-    def forward(self):
+    def forward(self, nproc=8):
         def ice_sensor(year, d18Op, pr, alt_diff=0.):
             ''' Icecore sensor model
 
@@ -364,7 +371,7 @@ class Ice_d18O():
             alt_eff = -0.25
             alt_corr = (alt_diff/100.)*alt_eff
 
-            d18Op_weighted, year_int = LMRt.utils.annualize_var(d18Op, year, weights=pr)
+            year_ann, d18Op_weighted = annualize_var(year, d18Op, weights=pr)
             d18O_ice = d18Op_weighted + alt_corr
 
             return d18O_ice
@@ -433,7 +440,7 @@ class Ice_d18O():
 
 
             Args:
-                Tavg: 10m temperature in celcius ## CELCIUS!
+                Tavg: 10m temperature in celcius ## CELCIUS!  # fzhu: should be in K now
                 bdot: accumulation rate in mwe/yr or (kg/m2/yr)
                 rhos: surface density in kg/m3
                 z: depth in true_metres
@@ -664,40 +671,55 @@ class Ice_d18O():
             return ice_diffused
 
         ################
+        # run the model
+
+        # annualize the data
+        year_ann, tas_ann = annualize_var(self.prior_tas_time, self.prior_tas_value)
+        year_ann, psl_ann = annualize_var(self.prior_psl_time, self.prior_psl_value)
+        year_ann, pr_ann = annualize_var(self.prior_pr_time, self.prior_pr_value)
+
+        # sensor model
+        d18O_ice = ice_sensor(self.prior_pr_time, self.prior_d18Opr_value, self.prior_pr_value)
+
+        # diffuse model
+        ice_diffused = ice_archive(d18O_ice, pr_ann, tas_ann, psl_ann, nproc=nproc)
+
+        self.ye_time = year_ann
+        self.ye_value = ice_diffused[::-1]
 
 
 class Coral_SrCa:
     ''' The coral Sr/Ca model
     '''
     def __init__(self, proxy_time, proxy_value,
-            obs_sst_time, obs_sst_value,
-            prior_sst_time=None, prior_sst_value=None,
+            obs_tos_time, obs_tos_value,
+            prior_tos_time=None, prior_tos_value=None,
         ):
         self.proxy_time = proxy_time
         self.proxy_value = proxy_value
-        self.obs_sst_time = obs_sst_time
-        self.obs_sst_value = obs_sst_value
-        self.prior_sst_time = prior_sst_time
-        self.prior_sst_value = prior_sst_value
+        self.obs_tos_time = obs_tos_time
+        self.obs_tos_value = obs_tos_value
+        self.prior_tos_time = prior_tos_time
+        self.prior_tos_value = prior_tos_value
 
     def forward(self, b=10.553, a=None, seed=0):
-        ''' Sensor model for Coral Sr/Ca = a SST + b
+        ''' Sensor model for Coral Sr/Ca = a * tos + b
 
         Args:
-            sst (1-D array): sea surface temperature in [degC]
+            tos (1-D array): sea surface temperature in [degC]
         '''
         if a is None:
             mu = -0.06
             std = 0.01
             a = ss.norm.rvs(loc=mu, scale=std, random_state=seed)
 
-        SrCa = a*self.prior_sst_value + b
+        SrCa = a*self.prior_tos_value + b
 
-        if type(self.prior_sst_value) is dict:
-            sn = list(self.prior_sst_value.keys())[0]
-            self.ye_time = self.prior_sst_time[sn]
+        if type(self.prior_tos_value) is dict:
+            sn = list(self.prior_tos_value.keys())[0]
+            self.ye_time = self.prior_tos_time[sn]
         else:
-            self.ye_time = self.prior_sst_time
+            self.ye_time = self.prior_tos_time
         self.ye_value = SrCa
 
 

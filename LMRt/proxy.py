@@ -322,25 +322,26 @@ class ProxyRecord(Series):
         elif self.psm_name == 'coral_SrCa':
             self.psm = Coral_SrCa(
                 self.time, self.value,
-                self.obs_time['sst'], self.obs_value['sst'],
-                prior_sst_time=self.prior_time['sst'],
-                prior_sst_value=self.prior_value['sst'],
+                self.obs_time['tos'], self.obs_value['tos'],
+                prior_tos_time=self.prior_time['tos'],
+                prior_tos_value=self.prior_value['tos'],
             )
         elif self.psm_name == 'ice_d18O':
             self.psm = Ice_d18O(
                 self.time, self.value,
-                self.obs_time['tas'], self.obs_value['tas'],
-                self.obs_time['pr'], self.obs_value['pr'],
                 prior_tas_time=self.prior_time['tas'],
                 prior_tas_value=self.prior_value['tas'],
                 prior_pr_time=self.prior_time['pr'],
                 prior_pr_value=self.prior_value['pr'],
+                prior_d18Opr_time=self.prior_time['d18Opr'],
+                prior_d18Opr_value=self.prior_value['d18Opr'],
+                prior_psl_time=self.prior_time['psl'],
+                prior_psl_value=self.prior_value['psl'],
             )
         else:
             raise ValueError('Wrong PSM name!')
 
-    def calib_psm(self, calib_period=None, calib_kws=None):
-        calib_kws = {} if calib_kws is None else calib_kws.copy()
+    def calib_psm(self, calib_period=None, **calib_kws):
         self.psm.calibrate(calib_period=calib_period, **calib_kws)
         if self.psm.calib_details is not None:
             self.seasonality_opt = self.psm.calib_details['seasonality']
@@ -352,11 +353,11 @@ class ProxyRecord(Series):
             self.R = None
 
 
-    def forward_psm(self, no_calib=False):
+    def forward_psm(self, no_calib=False, **forward_kws):
         ''' Forward modeling: calculate ye using the PSM according to self.psm
         '''
         if no_calib or self.psm.calib_details is not None:
-            self.psm.forward()
+            self.psm.forward(**forward_kws)
             self.ye_time = self.psm.ye_time
             self.ye_value = self.psm.ye_value
         else:
@@ -724,7 +725,7 @@ class ProxyDatabase:
         if verbose: p_success(f'LMRt: job.proxydb.init_psm() >>> job.proxydb.records[pid].psm initialized')
 
 
-    def calib_psm(self, calib_period=None, calib_kws=None, save_path=None, calibed_psm_path=None, verbose=False):
+    def calib_psm(self, calib_period=None, save_path=None, calibed_psm_path=None, verbose=False, **calib_kws):
         if calibed_psm_path is not None and os.path.exists(calibed_psm_path):
             with open(calibed_psm_path, 'rb') as f:
                 psm_model_dict, calib_details_dict = pickle.load(f)
@@ -749,13 +750,12 @@ class ProxyDatabase:
             calibed.refresh()
             self.calibed = calibed
         else:
-            calib_kws = {} if calib_kws is None else calib_kws.copy()
             psm_model_dict = {}
             calib_details_dict = {}
             calibed_pobjs = []
             calibed = ProxyDatabase(source=self.source)
             for pid, pobj in tqdm(self.records.items(), desc='Calibrating PSM'):
-                pobj.calib_psm(calib_period=calib_period, calib_kws=calib_kws)
+                pobj.calib_psm(calib_period=calib_period, **calib_kws)
                 psm_model_dict[pid] = pobj.psm.model
                 calib_details_dict[pid] = pobj.psm.calib_details
                 if pobj.psm.calib_details is not None:
@@ -773,10 +773,10 @@ class ProxyDatabase:
             p_success(f'LMRt: job.proxydb.calib_psm() >>> job.proxydb.records[pid].psm calibrated')
             p_success(f'LMRt: job.proxydb.calib_psm() >>> job.proxydb.calibed created')
 
-    def forward_psm(self, no_calib=False, verbose=False):
+    def forward_psm(self, no_calib=False, verbose=False, **forward_kws):
         for pid, pobj in tqdm(self.records.items(), desc='Forwarding PSM'):
             if no_calib or pobj.psm.calib_details is not None:
-                pobj.forward_psm(no_calib=no_calib)
+                pobj.forward_psm(no_calib=no_calib, **forward_kws)
 
         if verbose: p_success(f'LMRt: job.proxydb.forward_psm() >>> job.proxydb.records[pid].psm forwarded')
 
