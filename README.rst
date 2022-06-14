@@ -63,9 +63,40 @@ References of the LMR framework
 Published studies using LMRt
 ============================
 + Zhu, F., Emile‐Geay, J., Hakim, G. J., King, J., & Anchukaitis, K. J. (2020). Resolving the Differences in the Simulated and Reconstructed Temperature Response to Volcanism. Geophysical Research Letters, 47(8), e2019GL086908. https://doi.org/10.1029/2019GL086908
-+ Zhu, F., Emile-Geay, J., Anchukaitis, K., Hakim, G., Wittenberg, A., Morales, M., & King, J. (2021). Volcanoes and ENSO: a re-appraisal with the Last Millennium Reanalysis. https://doi.org/10.21203/rs.3.rs-130239/v1
++ Zhu, F., Emile-Geay, J., Anchukaitis, K. J., Hakim, G. J., Wittenberg, A. T., Morales, M. S., Toohey, M., & King, J. (2022). A re-appraisal of the ENSO response to volcanism with paleoclimate data assimilation. Nature Communications, 13(1), 747. https://doi.org/10.1038/s41467-022-28210-1
 
 
 How to cite
 ===========
-If you find this package useful, please cite it with `DOI: 10.5281/zenodo.2655097 <https://doi.org/10.5281/zenodo.2655097>`_
+If you find this package useful, please cite it with `DOI: 10.5281/zenodo.2655097 <https://doi.org/10.5281/zenodo.2655097>`_ along with the below studies:
+
+.. code-block::
+
+    @article{zhu_re-appraisal_2022,
+    	title = {A re-appraisal of the {ENSO} response to volcanism with paleoclimate data assimilation},
+    	volume = {13},
+    	issn = {2041-1723},
+    	url = {https://www.nature.com/articles/s41467-022-28210-1},
+    	doi = {10.1038/s41467-022-28210-1},
+    	language = {en},
+    	number = {1},
+    	journal = {Nature Communications},
+    	author = {Zhu, Feng and Emile-Geay, Julien and Anchukaitis, Kevin J. and Hakim, Gregory J. and Wittenberg, Andrew T. and Morales, Mariano S. and Toohey, Matthew and King, Jonathan},
+    	month = feb,
+    	year = {2022},
+    	pages = {747},
+    }
+
+    @article{zhu_resolving_2020,
+    	title = {Resolving the {Differences} in the {Simulated} and {Reconstructed} {Temperature} {Response} to {Volcanism}},
+    	volume = {47},
+    	issn = {1944-8007},
+    	url = {https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/2019GL086908},
+    	doi = {10.1029/2019GL086908},
+    	language = {en},
+    	number = {8},
+    	journal = {Geophysical Research Letters},
+    	author = {Zhu, Feng and Emile‐Geay, Julien and Hakim, Gregory J. and King, Jonathan and Anchukaitis, Kevin J.},
+    	year = {2020},
+    	pages = {e2019GL086908},
+    }

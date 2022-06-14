@@ -3,7 +3,7 @@
 import numpy as np
 import inspect
 import xarray as xr
-from spharm import Spharmt, regrid
+# from spharm import Spharmt, regrid
 import copy
 import matplotlib.pyplot as plt
 from .visual import (

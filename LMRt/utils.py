@@ -5,7 +5,7 @@ import pprint
 pp = pprint.PrettyPrinter()
 from termcolor import cprint
 import os
-from spharm import Spharmt, regrid
+# from spharm import Spharmt, regrid
 import pandas as pd
 from scipy import spatial
 from scipy.special import factorial
