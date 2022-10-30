@@ -43,10 +43,9 @@ from .proxy import (
     ProxyRecord,
 )
 
-from pyleoclim.core.series import (
-    Series,
-    EnsembleSeries,
-)
+from pyleoclim.core.series import Series
+from pyleoclim.core.ensembleseries import EnsembleSeries
+
 class ReconSeries(EnsembleSeries):
     def to_array(self):
         ts_array = []

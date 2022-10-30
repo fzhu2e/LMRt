@@ -10,9 +10,7 @@ from collections import OrderedDict
 from tqdm import tqdm
 import random
 
-from pyleoclim.core.series import (
-    Series,
-)
+from pyleoclim.core.series import Series
 
 from .utils import (
     pp,

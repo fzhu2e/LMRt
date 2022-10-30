@@ -16,10 +16,8 @@ from .visual import (
     closefig,
 )
 
-from pyleoclim.core.series import (
-    Series,
-    EnsembleSeries,
-)
+from pyleoclim.core.series import Series
+from pyleoclim.core.ensembleseries import EnsembleSeries
 
 from .gridded import (
     Field,

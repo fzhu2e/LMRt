@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-__version__ = '0.8.1'
+__version__ = '0.8.2'
 
 with open('README.rst', 'r') as fh:
     long_description = fh.read()
@@ -22,6 +22,7 @@ setup(
     classifiers=[
         'Natural Language :: English',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
     ],
     install_requires=[
         'termcolor',
