@@ -16,7 +16,7 @@ from .visual import (
     closefig,
 )
 
-from pyleoclim.core.ui import (
+from pyleoclim.core.series import (
     Series,
     EnsembleSeries,
 )
