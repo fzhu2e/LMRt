@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-__version__ = '0.8.2'
+__version__ = '0.8.3'
 
 with open('README.rst', 'r') as fh:
     long_description = fh.read()
@@ -35,5 +35,8 @@ setup(
         'statsmodels',
         'seaborn',
         'pyleoclim',
+        'pyvsl',
+        'pyresample',
+        'fbm',
     ],
 )
