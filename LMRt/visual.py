@@ -511,7 +511,7 @@ def showfig(fig, close=False):
     pyleoclim.utils.plotting.in_notebook: Functions to sense a notebook environment
 
     '''
-    if in_notebook:
+    if in_notebook():
         try:
             from IPython.display import display
         except ImportError as error:
