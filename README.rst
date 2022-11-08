@@ -56,13 +56,13 @@ Documentation
 References of the LMR framework
 ===============================
 
-+ Hakim, G. J., J. Emile‐Geay, E. J. Steig, D. Noone, D. M. Anderson, R. Tardif, N. Steiger, and W. A. Perkins, 2016: The last millennium climate reanalysis project: Framework and first results. Journal of Geophysical Research: Atmospheres, 121, 6745–6764, https://doi.org/10.1002/2016JD024751.
++ Hakim, G. J., J. Emile-Geay, E. J. Steig, D. Noone, D. M. Anderson, R. Tardif, N. Steiger, and W. A. Perkins, 2016: The last millennium climate reanalysis project: Framework and first results. Journal of Geophysical Research: Atmospheres, 121, 6745–6764, https://doi.org/10.1002/2016JD024751.
 + Tardif, R., Hakim, G. J., Perkins, W. A., Horlick, K. A., Erb, M. P., Emile-Geay, J., et al. (2019). Last Millennium Reanalysis with an expanded proxy database and seasonal proxy modeling. Climate of the Past, 15(4), 1251–1273. https://doi.org/10.5194/cp-15-1251-2019
 
 
 Published studies using LMRt
 ============================
-+ Zhu, F., Emile‐Geay, J., Hakim, G. J., King, J., & Anchukaitis, K. J. (2020). Resolving the Differences in the Simulated and Reconstructed Temperature Response to Volcanism. Geophysical Research Letters, 47(8), e2019GL086908. https://doi.org/10.1029/2019GL086908
++ Zhu, F., Emile-Geay, J., Hakim, G. J., King, J., & Anchukaitis, K. J. (2020). Resolving the Differences in the Simulated and Reconstructed Temperature Response to Volcanism. Geophysical Research Letters, 47(8), e2019GL086908. https://doi.org/10.1029/2019GL086908
 + Zhu, F., Emile-Geay, J., Anchukaitis, K. J., Hakim, G. J., Wittenberg, A. T., Morales, M. S., Toohey, M., & King, J. (2022). A re-appraisal of the ENSO response to volcanism with paleoclimate data assimilation. Nature Communications, 13(1), 747. https://doi.org/10.1038/s41467-022-28210-1
 
 
@@ -96,7 +96,7 @@ If you find this package useful, please cite it with `DOI: 10.5281/zenodo.265509
     	language = {en},
     	number = {8},
     	journal = {Geophysical Research Letters},
-    	author = {Zhu, Feng and Emile‐Geay, Julien and Hakim, Gregory J. and King, Jonathan and Anchukaitis, Kevin J.},
+    	author = {Zhu, Feng and Emile-Geay, Julien and Hakim, Gregory J. and King, Jonathan and Anchukaitis, Kevin J.},
     	year = {2020},
     	pages = {e2019GL086908},
     }
