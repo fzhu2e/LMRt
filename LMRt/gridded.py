@@ -3,7 +3,7 @@
 import numpy as np
 import inspect
 import xarray as xr
-# from spharm import Spharmt, regrid
+from spharm import Spharmt, regrid
 import copy
 import matplotlib.pyplot as plt
 from .visual import (
@@ -55,8 +55,8 @@ class Field:
         if inplace:
             self.time = new_time
             self.value = new_value
-            self.nt = np.size(time)
-            self.dt = np.median(np.diff(time))
+            self.nt = np.size(self.time)
+            self.dt = np.median(np.diff(self.time))
         else:
             new_field = self.copy()
             new_field.value = new_value
